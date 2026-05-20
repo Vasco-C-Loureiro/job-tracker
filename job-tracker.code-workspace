@@ -3,13 +3,13 @@
     { "path": ".", "name": "🏠 root" },
     { "path": "apps/web", "name": "🌐 web" },
     { "path": "apps/extension", "name": "🧩 extension" },
-    { "path": "packages/shared", "name": "📦 shared" }
+    { "path": "packages/shared", "name": "📦 shared" },
   ],
   "settings": {
     "editor.formatOnSave": true,
     "editor.defaultFormatter": "esbenp.prettier-vscode",
     "editor.codeActionsOnSave": {
-      "source.fixAll.eslint": "explicit"
+      "source.fixAll.eslint": "explicit",
     },
     "typescript.tsdk": "node_modules/typescript/lib",
     "typescript.enablePromptUseWorkspaceTsdk": true,
@@ -17,8 +17,9 @@
       "**/node_modules": true,
       "**/.next": true,
       "**/.plasmo": true,
-      "**/.turbo": true
-    }
+      "**/.turbo": true,
+    },
+    "js/ts.tsdk.path": "🏠 root\\node_modules\\typescript\\lib",
   },
   "extensions": {
     "recommendations": [
@@ -28,7 +29,7 @@
       "bradlc.vscode-tailwindcss",
       "eamodio.gitlens",
       "supabase.vscode-supabase-extension",
-      "anthropic.claude-code"
-    ]
-  }
+      "anthropic.claude-code",
+    ],
+  },
 }
