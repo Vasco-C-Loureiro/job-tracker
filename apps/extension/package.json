@@ -26,10 +26,10 @@
   },
   "manifest": {
     "host_permissions": [
-      "https://*/*"
+      "https://*.indeed.com/*"
     ],
     "permissions": [
-      "tabs"
+      "activeTab"
     ]
   }
 }

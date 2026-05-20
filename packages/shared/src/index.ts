@@ -31,3 +31,17 @@ export type SaveJobPayload = Pick<
   JobApplication,
   "company" | "title" | "sourceUrl" | "source"
 >;
+
+// ─── Extension ⇄ content script messaging ───────────────────────
+
+export type ExtractJobRequest = {
+  type: "EXTRACT_JOB";
+};
+
+export type ExtractJobFailureReason =
+  | "not-supported"     // page has no content script registered (synthesized by popup)
+  | "extraction-failed"; // content script ran but couldn't find a job
+
+export type ExtractJobResponse =
+  | { ok: true; payload: SaveJobPayload }
+  | { ok: false; reason: ExtractJobFailureReason };
