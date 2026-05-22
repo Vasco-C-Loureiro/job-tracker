@@ -5,7 +5,7 @@ import type { SaveJobPayload } from "@job-tracker/shared";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
 };
 
 // Handle CORS preflight — Chrome extension triggers this before POST
@@ -25,9 +25,28 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // Validate Authorization header
+  const authHeader = request.headers.get("Authorization");
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return NextResponse.json(
+      { error: "Unauthorized" },
+      { status: 401, headers: corsHeaders },
+    );
+  }
+  const token = authHeader.slice(7);
+  const supabase = createSupabaseServiceClient();
+  const { data: userData, error: authError } =
+    await supabase.auth.getUser(token);
+  if (authError || !userData.user) {
+    return NextResponse.json(
+      { error: "Unauthorized" },
+      { status: 401, headers: corsHeaders },
+    );
+  }
+  const userId = userData.user.id;
+
   // Validate — all four payload fields are required non-empty strings
   const { company, title, sourceUrl, source } = body as Partial<SaveJobPayload>;
-  const { userId: bodyUserId } = body as { userId?: string };
 
   if (
     typeof company !== "string" ||
@@ -48,22 +67,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // TODO(unit 8): replace EXTENSION_USER_ID fallback with real
-  // extension session token validation
-  const userId =
-    typeof bodyUserId === "string" && bodyUserId.trim()
-      ? bodyUserId.trim()
-      : process.env.EXTENSION_USER_ID;
-
-  if (!userId) {
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401, headers: corsHeaders },
-    );
-  }
-
   // camelCase → snake_case at the API boundary
-  const supabase = createSupabaseServiceClient();
   const { data, error } = await supabase
     .from("job_applications")
     .insert({
