@@ -2,6 +2,11 @@ import { createServerClient } from "@supabase/ssr";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function proxy(request: NextRequest) {
+  // API routes handle their own auth via Bearer token — never redirect them
+  if (request.nextUrl.pathname.startsWith("/api")) {
+    return NextResponse.next();
+  }
+
   // Start with a pass-through response that carries the original request.
   // All cookie mutations must land on this exact object — never create a fresh
   // NextResponse.next() and return it, or the Set-Cookie headers are lost.
