@@ -22,19 +22,19 @@ The extension never speaks to Supabase directly. Supabase RLS still applies as d
 
 ## Tech stack
 
-| Layer | Choice | Rationale |
-|-------|--------|-----------|
-| **Extension framework** | Plasmo | Hot reload, TypeScript out of box, cross-browser support, file-based structure. Faster dev loop than vanilla MV3 without hiding the underlying APIs. |
-| **Extension manifest** | Manifest V3 | Chrome's current standard; mandatory for new extensions. Plasmo abstracts boilerplate but you still touch permissions, content scripts, message passing. |
-| **Frontend framework** | Next.js 15 (App Router) | Industry default for React in 2026. Server Components, Server Actions, Route Handlers. Better mention in CVs than Pages Router. |
-| **Styling** | Tailwind CSS | Industry default; fast iteration; works well with shadcn/ui later if needed. |
-| **Backend** | Next.js Route Handlers | Lives in the same Next.js app under `app/api/`. The endpoints the extension calls over HTTPS. |
-| **Database** | Supabase Postgres | Managed Postgres with auth, RLS, full-text search built in. Free tier sufficient for portfolio + early users. |
-| **Auth** | Supabase Auth | Email/password + Google OAuth. Free, no MAU limits on OAuth providers. |
-| **Hosting (web)** | Vercel | One-click Next.js deploys, free tier, automatic preview deployments per PR. |
-| **Hosting (DB/Auth)** | Supabase | Free tier: 500 MB DB, 2 GB bandwidth, generous auth. |
-| **Repo structure** | pnpm workspaces monorepo | Single repo for web + extension + shared types; pnpm is faster and disk-efficient. |
-| **Language** | TypeScript throughout | Type safety end-to-end; shared types between extension and web via packages/shared. |
+| Layer                   | Choice                   | Rationale                                                                                                                                                |
+| ----------------------- | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Extension framework** | Plasmo                   | Hot reload, TypeScript out of box, cross-browser support, file-based structure. Faster dev loop than vanilla MV3 without hiding the underlying APIs.     |
+| **Extension manifest**  | Manifest V3              | Chrome's current standard; mandatory for new extensions. Plasmo abstracts boilerplate but you still touch permissions, content scripts, message passing. |
+| **Frontend framework**  | Next.js 15 (App Router)  | Industry default for React in 2026. Server Components, Server Actions, Route Handlers. Better mention in CVs than Pages Router.                          |
+| **Styling**             | Tailwind CSS             | Industry default; fast iteration; works well with shadcn/ui later if needed.                                                                             |
+| **Backend**             | Next.js Route Handlers   | Lives in the same Next.js app under `app/api/`. The endpoints the extension calls over HTTPS.                                                            |
+| **Database**            | Supabase Postgres        | Managed Postgres with auth, RLS, full-text search built in. Free tier sufficient for portfolio + early users.                                            |
+| **Auth**                | Supabase Auth            | Email/password + Google OAuth. Free, no MAU limits on OAuth providers.                                                                                   |
+| **Hosting (web)**       | Vercel                   | One-click Next.js deploys, free tier, automatic preview deployments per PR.                                                                              |
+| **Hosting (DB/Auth)**   | Supabase                 | Free tier: 500 MB DB, 2 GB bandwidth, generous auth.                                                                                                     |
+| **Repo structure**      | pnpm workspaces monorepo | Single repo for web + extension + shared types; pnpm is faster and disk-efficient.                                                                       |
+| **Language**            | TypeScript throughout    | Type safety end-to-end; shared types between extension and web via packages/shared.                                                                      |
 
 ## Repo structure
 
@@ -91,6 +91,7 @@ Whatever extracts gets normalized to the `JobApplication` schema before save.
 - **Versions are git tags** (`v0.1.0`, `v1.0.0`), not branches. Long-lived version branches add complexity without benefit for a project with no legacy users to maintain.
 - **No layer-based branches.** Features typically touch schema + API + extension + UI together and should ship atomically.
 - **Branch protection on `main`:** require PRs, no direct pushes. Builds the habit.
+- **Merge strategy: rebase and merge**, not squash. Atomic commits from the feature branch land directly on `main`, preserving the logical progression of changes without collapsing everything into one blob. Keep branch commits granular and descriptive so the history reads well long-term.
 
 ## Dev environment
 
