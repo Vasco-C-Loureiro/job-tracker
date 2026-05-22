@@ -30,7 +30,9 @@
       "http://localhost:3000/*"
     ],
     "permissions": [
-      "activeTab"
+      "activeTab",
+      "cookies",
+      "storage"
     ]
   }
 }
