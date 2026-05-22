@@ -26,7 +26,8 @@
   },
   "manifest": {
     "host_permissions": [
-      "https://*.indeed.com/*"
+      "https://*.indeed.com/*",
+      "http://localhost:3000/*"
     ],
     "permissions": [
       "activeTab"
