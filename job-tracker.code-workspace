@@ -19,7 +19,7 @@
       "**/.plasmo": true,
       "**/.turbo": true,
     },
-    "js/ts.tsdk.path": "🏠 root\\node_modules\\typescript\\lib",
+    "js/ts.tsdk.path": "🧩 extension/node_modules/typescript/lib",
   },
   "extensions": {
     "recommendations": [
