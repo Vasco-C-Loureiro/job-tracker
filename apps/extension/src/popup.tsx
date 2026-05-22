@@ -50,6 +50,9 @@ function IndexPopup() {
       return
     }
 
+    // "reason" in response narrows to the error branch; "!response.ok"
+    // should do the same but TS 5.3.3 (Plasmo's pinned version) misses it.
+    // Revisit when we bump TS — see chore/ts-bump.
     if ("reason" in response) {
       setState({
         kind: "error",
