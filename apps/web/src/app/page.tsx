@@ -1,5 +1,7 @@
 import type { JobApplication } from "@job-tracker/shared";
-import { supabase } from "@/lib/supabase";
+import { createSupabaseServerClient } from "@/lib/supabase.server";
+import { redirect } from "next/navigation";
+import SignOutButton from "@/app/_components/sign-out-button";
 
 // Raw Postgres row shape (snake_case). Mirror of the JobApplication type.
 type JobApplicationRow = {
@@ -29,14 +31,21 @@ function rowToJobApplication(row: JobApplicationRow): JobApplication {
 }
 
 export default async function Home() {
-  const userId = process.env.V01_USER_ID!;
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
 
   const { data, error } = await supabase
     .from("job_applications")
     .select(
       "id, user_id, company, title, source_url, source, status, saved_at, updated_at",
     )
-    .eq("user_id", userId)
+    .eq("user_id", user!.id)
     .order("saved_at", { ascending: false })
     .returns<JobApplicationRow[]>();
 
@@ -54,7 +63,10 @@ export default async function Home() {
 
   return (
     <main className="min-h-screen p-8 font-sans">
-      <h1 className="text-3xl font-bold mb-6">Job Tracker</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-3xl font-bold">Job Tracker</h1>
+        <SignOutButton />
+      </div>
 
       {jobs.length === 0 ? (
         <p className="text-gray-600">

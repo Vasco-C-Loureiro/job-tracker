@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { createSupabaseServiceClient } from "@/lib/supabase.server";
 import type { SaveJobPayload } from "@job-tracker/shared";
 
 const corsHeaders = {
@@ -25,8 +25,9 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Validate — all four fields are required non-empty strings
+  // Validate — all four payload fields are required non-empty strings
   const { company, title, sourceUrl, source } = body as Partial<SaveJobPayload>;
+  const { userId: bodyUserId } = body as { userId?: string };
 
   if (
     typeof company !== "string" ||
@@ -47,11 +48,26 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // TODO(unit 8): replace EXTENSION_USER_ID fallback with real
+  // extension session token validation
+  const userId =
+    typeof bodyUserId === "string" && bodyUserId.trim()
+      ? bodyUserId.trim()
+      : process.env.EXTENSION_USER_ID;
+
+  if (!userId) {
+    return NextResponse.json(
+      { error: "Unauthorized" },
+      { status: 401, headers: corsHeaders },
+    );
+  }
+
   // camelCase → snake_case at the API boundary
+  const supabase = createSupabaseServiceClient();
   const { data, error } = await supabase
     .from("job_applications")
     .insert({
-      user_id: process.env.V01_USER_ID,
+      user_id: userId,
       company: company.trim(),
       title: title.trim(),
       source_url: sourceUrl.trim(),
