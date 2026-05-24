@@ -1,6 +1,8 @@
 import type {
   ExtractJobRequest,
   ExtractJobResponse,
+  JobType,
+  RemoteType,
   SaveJobPayload
 } from "@job-tracker/shared"
 import { useEffect, useState } from "react"
@@ -26,6 +28,22 @@ type SaveState =
   | { kind: "preview"; payload: SaveJobPayload }
   | { kind: "success"; payload: SaveJobPayload }
   | { kind: "error"; message: string }
+
+const inputStyle: React.CSSProperties = {
+  width: "100%",
+  padding: "4px 8px",
+  fontSize: 13,
+  border: "1px solid #d1d5db",
+  borderRadius: 4,
+  boxSizing: "border-box"
+}
+
+const labelStyle: React.CSSProperties = {
+  fontSize: 11,
+  color: "#6b7280",
+  display: "block",
+  marginBottom: 2
+}
 
 async function sendExtractMessage(
   tabId: number
@@ -254,6 +272,13 @@ function IndexPopup() {
     )
   }
 
+  function updateField<K extends keyof SaveJobPayload>(
+    field: K,
+    value: SaveJobPayload[K]
+  ) {
+    setPreviewFields((prev) => (prev ? { ...prev, [field]: value } : null))
+  }
+
   const topBar = (
     <div
       style={{
@@ -291,23 +316,142 @@ function IndexPopup() {
     </div>
   )
 
-  if (saveState.kind === "preview") {
+  if (saveState.kind === "preview" && previewFields) {
     return (
       <div style={{ width: 300, fontFamily: "system-ui, -apple-system, sans-serif" }}>
         {topBar}
         <div style={{ padding: 16 }}>
-          <h1 style={{ fontSize: 15, fontWeight: 600, margin: "0 0 8px" }}>
+          <h1 style={{ fontSize: 15, fontWeight: 600, margin: "0 0 10px" }}>
             Review & Save
           </h1>
-          <p style={{ fontSize: 13, color: "#374151", margin: "0 0 4px" }}>
-            <strong>{saveState.payload.title}</strong>
-          </p>
-          <p style={{ fontSize: 12, color: "#6b7280", margin: "0 0 12px" }}>
-            {saveState.payload.company}
-          </p>
-          <p style={{ fontSize: 12, color: "#9ca3af", margin: 0 }}>
-            Edit form — coming in next commit.
-          </p>
+
+          <div style={{ marginBottom: 6 }}>
+            <label style={labelStyle}>Title</label>
+            <input
+              style={inputStyle}
+              value={previewFields.title}
+              onChange={(e) => updateField("title", e.target.value)}
+            />
+          </div>
+
+          <div style={{ marginBottom: 6 }}>
+            <label style={labelStyle}>Company</label>
+            <input
+              style={inputStyle}
+              value={previewFields.company}
+              onChange={(e) => updateField("company", e.target.value)}
+            />
+          </div>
+
+          <div style={{ marginBottom: 6 }}>
+            <label style={labelStyle}>Location</label>
+            <input
+              style={inputStyle}
+              value={previewFields.location ?? ""}
+              onChange={(e) =>
+                updateField("location", e.target.value || undefined)
+              }
+            />
+          </div>
+
+          <div style={{ display: "flex", gap: 8, marginBottom: 6 }}>
+            <div style={{ flex: 1 }}>
+              <label style={labelStyle}>Remote</label>
+              <select
+                style={inputStyle}
+                value={previewFields.remoteType ?? ""}
+                onChange={(e) =>
+                  updateField(
+                    "remoteType",
+                    (e.target.value as RemoteType) || undefined
+                  )
+                }>
+                <option value="">—</option>
+                <option value="remote">remote</option>
+                <option value="hybrid">hybrid</option>
+                <option value="onsite">onsite</option>
+              </select>
+            </div>
+            <div style={{ flex: 1 }}>
+              <label style={labelStyle}>Job Type</label>
+              <select
+                style={inputStyle}
+                value={previewFields.jobType ?? ""}
+                onChange={(e) =>
+                  updateField(
+                    "jobType",
+                    (e.target.value as JobType) || undefined
+                  )
+                }>
+                <option value="">—</option>
+                <option value="full-time">full-time</option>
+                <option value="part-time">part-time</option>
+                <option value="contract">contract</option>
+                <option value="internship">internship</option>
+                <option value="graduate">graduate</option>
+                <option value="fixed-term">fixed-term</option>
+                <option value="permanent">permanent</option>
+              </select>
+            </div>
+          </div>
+
+          <div style={{ marginBottom: 6 }}>
+            <label style={labelStyle}>Salary</label>
+            <input
+              style={inputStyle}
+              value={previewFields.salary ?? ""}
+              onChange={(e) =>
+                updateField("salary", e.target.value || undefined)
+              }
+            />
+          </div>
+
+          <div style={{ marginBottom: 10 }}>
+            <label style={labelStyle}>Description</label>
+            <textarea
+              style={{
+                ...inputStyle,
+                resize: "vertical",
+                minHeight: 60,
+                maxHeight: 100
+              }}
+              value={previewFields.description ?? ""}
+              onChange={(e) =>
+                updateField("description", e.target.value || undefined)
+              }
+            />
+          </div>
+
+          <div style={{ display: "flex", gap: 8 }}>
+            <button
+              style={{
+                flex: 1,
+                padding: "7px 12px",
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: "pointer",
+                background: "#2563eb",
+                color: "white",
+                border: "none",
+                borderRadius: 6
+              }}>
+              Confirm
+            </button>
+            <button
+              style={{
+                flex: 1,
+                padding: "7px 12px",
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: "pointer",
+                background: "white",
+                color: "#374151",
+                border: "1px solid #d1d5db",
+                borderRadius: 6
+              }}>
+              Cancel
+            </button>
+          </div>
         </div>
       </div>
     )
