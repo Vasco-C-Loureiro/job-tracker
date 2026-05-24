@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import type { JobApplication } from "@job-tracker/shared";
 import { createSupabaseBrowserClient } from "@/lib/supabase";
@@ -45,6 +46,7 @@ function jobToFormState(job: JobApplication): FormState {
 }
 
 export default function JobEditForm({ job }: { job: JobApplication }) {
+  const router = useRouter();
   const [form, setForm] = useState<FormState>(() => jobToFormState(job));
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(
@@ -106,6 +108,7 @@ export default function JobEditForm({ job }: { job: JobApplication }) {
 
     if (response.ok) {
       setMessage({ type: "success", text: "Saved." });
+      setTimeout(() => router.push("/"), 500);
     } else {
       const body = await response.json().catch(() => ({})) as { error?: string };
       setMessage({
@@ -118,7 +121,7 @@ export default function JobEditForm({ job }: { job: JobApplication }) {
   };
 
   const inputCls =
-    "w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500";
+    "w-full border border-gray-300 rounded px-3 py-1.5 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500";
   const labelCls = "block text-xs font-medium text-gray-500 mb-1";
   const fieldCls = "mb-4";
 
@@ -171,10 +174,10 @@ export default function JobEditForm({ job }: { job: JobApplication }) {
               value={form.remoteType}
               onChange={(e) => set("remoteType", e.target.value)}
             >
-              <option value="">—</option>
-              <option value="remote">remote</option>
-              <option value="hybrid">hybrid</option>
-              <option value="onsite">onsite</option>
+              <option className="text-gray-900 bg-white" value="">—</option>
+              <option className="text-gray-900 bg-white" value="remote">remote</option>
+              <option className="text-gray-900 bg-white" value="hybrid">hybrid</option>
+              <option className="text-gray-900 bg-white" value="onsite">onsite</option>
             </select>
           </div>
         </div>
@@ -187,14 +190,14 @@ export default function JobEditForm({ job }: { job: JobApplication }) {
               value={form.jobType}
               onChange={(e) => set("jobType", e.target.value)}
             >
-              <option value="">—</option>
-              <option value="full-time">full-time</option>
-              <option value="part-time">part-time</option>
-              <option value="contract">contract</option>
-              <option value="internship">internship</option>
-              <option value="graduate">graduate</option>
-              <option value="fixed-term">fixed-term</option>
-              <option value="permanent">permanent</option>
+              <option className="text-gray-900 bg-white" value="">—</option>
+              <option className="text-gray-900 bg-white" value="full-time">full-time</option>
+              <option className="text-gray-900 bg-white" value="part-time">part-time</option>
+              <option className="text-gray-900 bg-white" value="contract">contract</option>
+              <option className="text-gray-900 bg-white" value="internship">internship</option>
+              <option className="text-gray-900 bg-white" value="graduate">graduate</option>
+              <option className="text-gray-900 bg-white" value="fixed-term">fixed-term</option>
+              <option className="text-gray-900 bg-white" value="permanent">permanent</option>
             </select>
           </div>
           <div className="flex-1">
@@ -232,13 +235,13 @@ export default function JobEditForm({ job }: { job: JobApplication }) {
               value={form.status}
               onChange={(e) => set("status", e.target.value)}
             >
-              <option value="saved">saved</option>
-              <option value="applied">applied</option>
-              <option value="oa">oa</option>
-              <option value="interview">interview</option>
-              <option value="rejected">rejected</option>
-              <option value="offer">offer</option>
-              <option value="ghosted">ghosted</option>
+              <option className="text-gray-900 bg-white" value="saved">saved</option>
+              <option className="text-gray-900 bg-white" value="applied">applied</option>
+              <option className="text-gray-900 bg-white" value="oa">oa</option>
+              <option className="text-gray-900 bg-white" value="interview">interview</option>
+              <option className="text-gray-900 bg-white" value="rejected">rejected</option>
+              <option className="text-gray-900 bg-white" value="offer">offer</option>
+              <option className="text-gray-900 bg-white" value="ghosted">ghosted</option>
             </select>
           </div>
           <div className="flex-1">
@@ -248,11 +251,11 @@ export default function JobEditForm({ job }: { job: JobApplication }) {
               value={form.interestLevel}
               onChange={(e) => set("interestLevel", e.target.value)}
             >
-              <option value="">—</option>
-              <option value="low">low</option>
-              <option value="medium">medium</option>
-              <option value="high">high</option>
-              <option value="very-high">very-high</option>
+              <option className="text-gray-900 bg-white" value="">—</option>
+              <option className="text-gray-900 bg-white" value="low">low</option>
+              <option className="text-gray-900 bg-white" value="medium">medium</option>
+              <option className="text-gray-900 bg-white" value="high">high</option>
+              <option className="text-gray-900 bg-white" value="very-high">very-high</option>
             </select>
           </div>
         </div>
