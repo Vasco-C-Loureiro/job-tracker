@@ -61,6 +61,7 @@ function IndexPopup() {
   const [saveState, setSaveState] = useState<SaveState>({ kind: "idle" })
   const [previewFields, setPreviewFields] = useState<SaveJobPayload | null>(null)
   const [confirming, setConfirming] = useState(false)
+  const [showFullEdit, setShowFullEdit] = useState(false)
   const [authError, setAuthError] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -332,6 +333,7 @@ function IndexPopup() {
 
   const handleCancel = () => {
     setPreviewFields(null)
+    setShowFullEdit(false)
     setSaveState({ kind: "idle" })
   }
 
@@ -380,45 +382,260 @@ function IndexPopup() {
   )
 
   if (saveState.kind === "preview" && previewFields) {
+    const hasTitle = !!previewFields.title
+    const hasCompany = !!previewFields.company
+    const hasLocation = !!previewFields.location
+    const hasRemoteType = !!previewFields.remoteType
+    const hasJobType = !!previewFields.jobType
+    const hasSalary = !!previewFields.salary
+    const anyExtracted =
+      hasTitle || hasCompany || hasLocation || hasRemoteType || hasJobType || hasSalary
+
+    const infoLabel: React.CSSProperties = {
+      fontSize: 10,
+      color: "#9ca3af",
+      display: "block",
+      marginBottom: 1
+    }
+    const infoValue: React.CSSProperties = { fontSize: 13, color: "#111827" }
+
+    const confirmCancelRow = (
+      <div style={{ display: "flex", gap: 8 }}>
+        <button
+          onClick={handleConfirm}
+          disabled={confirming}
+          style={{
+            flex: 1,
+            padding: "7px 12px",
+            fontSize: 13,
+            fontWeight: 600,
+            cursor: confirming ? "wait" : "pointer",
+            background: "#2563eb",
+            color: "white",
+            border: "none",
+            borderRadius: 6
+          }}>
+          {confirming ? "Saving…" : "Confirm"}
+        </button>
+        <button
+          onClick={handleCancel}
+          disabled={confirming}
+          style={{
+            flex: 1,
+            padding: "7px 12px",
+            fontSize: 13,
+            fontWeight: 600,
+            cursor: confirming ? "default" : "pointer",
+            background: "white",
+            color: "#374151",
+            border: "1px solid #d1d5db",
+            borderRadius: 6
+          }}>
+          Cancel
+        </button>
+      </div>
+    )
+
+    // ── Screen 2: Full Edit ───────────────────────────────────────
+    if (showFullEdit) {
+      return (
+        <div
+          style={{ width: 300, fontFamily: "system-ui, -apple-system, sans-serif" }}>
+          {topBar}
+          <div style={{ padding: 16 }}>
+            <button
+              onClick={() => setShowFullEdit(false)}
+              style={{
+                fontSize: 12,
+                color: "#6b7280",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                padding: 0,
+                marginBottom: 10,
+                display: "block"
+              }}>
+              ← Back
+            </button>
+
+            <div style={{ marginBottom: 6 }}>
+              <label style={labelStyle}>Title</label>
+              <input
+                style={inputStyle}
+                value={previewFields.title}
+                onChange={(e) => updateField("title", e.target.value)}
+              />
+            </div>
+
+            <div style={{ marginBottom: 6 }}>
+              <label style={labelStyle}>Company</label>
+              <input
+                style={inputStyle}
+                value={previewFields.company}
+                onChange={(e) => updateField("company", e.target.value)}
+              />
+            </div>
+
+            <div style={{ marginBottom: 6 }}>
+              <label style={labelStyle}>Location</label>
+              <input
+                style={inputStyle}
+                value={previewFields.location ?? ""}
+                onChange={(e) =>
+                  updateField("location", e.target.value || undefined)
+                }
+              />
+            </div>
+
+            <div style={{ display: "flex", gap: 8, marginBottom: 6 }}>
+              <div style={{ flex: 1 }}>
+                <label style={labelStyle}>Remote</label>
+                <select
+                  style={inputStyle}
+                  value={previewFields.remoteType ?? ""}
+                  onChange={(e) =>
+                    updateField(
+                      "remoteType",
+                      (e.target.value as RemoteType) || undefined
+                    )
+                  }>
+                  <option value="">—</option>
+                  <option value="remote">remote</option>
+                  <option value="hybrid">hybrid</option>
+                  <option value="onsite">onsite</option>
+                </select>
+              </div>
+              <div style={{ flex: 1 }}>
+                <label style={labelStyle}>Job Type</label>
+                <select
+                  style={inputStyle}
+                  value={previewFields.jobType ?? ""}
+                  onChange={(e) =>
+                    updateField(
+                      "jobType",
+                      (e.target.value as JobType) || undefined
+                    )
+                  }>
+                  <option value="">—</option>
+                  <option value="full-time">full-time</option>
+                  <option value="part-time">part-time</option>
+                  <option value="contract">contract</option>
+                  <option value="internship">internship</option>
+                  <option value="graduate">graduate</option>
+                  <option value="fixed-term">fixed-term</option>
+                  <option value="permanent">permanent</option>
+                </select>
+              </div>
+            </div>
+
+            <div style={{ marginBottom: 10 }}>
+              <label style={labelStyle}>Salary</label>
+              <input
+                style={inputStyle}
+                value={previewFields.salary ?? ""}
+                onChange={(e) =>
+                  updateField("salary", e.target.value || undefined)
+                }
+              />
+            </div>
+
+            {confirmCancelRow}
+          </div>
+        </div>
+      )
+    }
+
+    // ── Screen 1: Smart Preview ───────────────────────────────────
     return (
-      <div style={{ width: 300, fontFamily: "system-ui, -apple-system, sans-serif" }}>
+      <div
+        style={{ width: 300, fontFamily: "system-ui, -apple-system, sans-serif" }}>
         {topBar}
         <div style={{ padding: 16 }}>
           <h1 style={{ fontSize: 15, fontWeight: 600, margin: "0 0 10px" }}>
             Review & Save
           </h1>
 
-          <div style={{ marginBottom: 6 }}>
-            <label style={labelStyle}>Title</label>
-            <input
-              style={inputStyle}
-              value={previewFields.title}
-              onChange={(e) => updateField("title", e.target.value)}
-            />
-          </div>
+          {/* Read-only info block — extracted fields only */}
+          {hasTitle && (
+            <div style={{ marginBottom: 8 }}>
+              <span style={infoLabel}>Title</span>
+              <span style={infoValue}>{previewFields.title}</span>
+            </div>
+          )}
+          {hasCompany && (
+            <div style={{ marginBottom: 8 }}>
+              <span style={infoLabel}>Company</span>
+              <span style={infoValue}>{previewFields.company}</span>
+            </div>
+          )}
+          {(hasLocation || hasRemoteType) && (
+            <div style={{ display: "flex", gap: 12, marginBottom: 8 }}>
+              {hasLocation && (
+                <div style={{ flex: 1 }}>
+                  <span style={infoLabel}>Location</span>
+                  <span style={infoValue}>{previewFields.location}</span>
+                </div>
+              )}
+              {hasRemoteType && (
+                <div style={{ flex: 1 }}>
+                  <span style={infoLabel}>Remote</span>
+                  <span style={infoValue}>{previewFields.remoteType}</span>
+                </div>
+              )}
+            </div>
+          )}
+          {(hasJobType || hasSalary) && (
+            <div style={{ display: "flex", gap: 12, marginBottom: 8 }}>
+              {hasJobType && (
+                <div style={{ flex: 1 }}>
+                  <span style={infoLabel}>Job Type</span>
+                  <span style={infoValue}>{previewFields.jobType}</span>
+                </div>
+              )}
+              {hasSalary && (
+                <div style={{ flex: 1 }}>
+                  <span style={infoLabel}>Salary</span>
+                  <span style={infoValue}>{previewFields.salary}</span>
+                </div>
+              )}
+            </div>
+          )}
 
-          <div style={{ marginBottom: 6 }}>
-            <label style={labelStyle}>Company</label>
-            <input
-              style={inputStyle}
-              value={previewFields.company}
-              onChange={(e) => updateField("company", e.target.value)}
-            />
-          </div>
-
-          <div style={{ marginBottom: 6 }}>
-            <label style={labelStyle}>Location</label>
-            <input
-              style={inputStyle}
-              value={previewFields.location ?? ""}
-              onChange={(e) =>
-                updateField("location", e.target.value || undefined)
-              }
-            />
-          </div>
-
-          <div style={{ display: "flex", gap: 8, marginBottom: 6 }}>
-            <div style={{ flex: 1 }}>
+          {/* Editable inputs for missing fields only */}
+          {!hasTitle && (
+            <div style={{ marginBottom: 6 }}>
+              <label style={labelStyle}>Title</label>
+              <input
+                style={inputStyle}
+                value={previewFields.title}
+                onChange={(e) => updateField("title", e.target.value)}
+              />
+            </div>
+          )}
+          {!hasCompany && (
+            <div style={{ marginBottom: 6 }}>
+              <label style={labelStyle}>Company</label>
+              <input
+                style={inputStyle}
+                value={previewFields.company}
+                onChange={(e) => updateField("company", e.target.value)}
+              />
+            </div>
+          )}
+          {!hasLocation && (
+            <div style={{ marginBottom: 6 }}>
+              <label style={labelStyle}>Location</label>
+              <input
+                style={inputStyle}
+                value={previewFields.location ?? ""}
+                onChange={(e) =>
+                  updateField("location", e.target.value || undefined)
+                }
+              />
+            </div>
+          )}
+          {!hasRemoteType && (
+            <div style={{ marginBottom: 6 }}>
               <label style={labelStyle}>Remote</label>
               <select
                 style={inputStyle}
@@ -435,7 +652,9 @@ function IndexPopup() {
                 <option value="onsite">onsite</option>
               </select>
             </div>
-            <div style={{ flex: 1 }}>
+          )}
+          {!hasJobType && (
+            <div style={{ marginBottom: 6 }}>
               <label style={labelStyle}>Job Type</label>
               <select
                 style={inputStyle}
@@ -456,69 +675,40 @@ function IndexPopup() {
                 <option value="permanent">permanent</option>
               </select>
             </div>
-          </div>
+          )}
+          {!hasSalary && (
+            <div style={{ marginBottom: 6 }}>
+              <label style={labelStyle}>Salary</label>
+              <input
+                style={inputStyle}
+                value={previewFields.salary ?? ""}
+                onChange={(e) =>
+                  updateField("salary", e.target.value || undefined)
+                }
+              />
+            </div>
+          )}
 
-          <div style={{ marginBottom: 6 }}>
-            <label style={labelStyle}>Salary</label>
-            <input
-              style={inputStyle}
-              value={previewFields.salary ?? ""}
-              onChange={(e) =>
-                updateField("salary", e.target.value || undefined)
-              }
-            />
-          </div>
-
-          <div style={{ marginBottom: 10 }}>
-            <label style={labelStyle}>Description</label>
-            <textarea
-              style={{
-                ...inputStyle,
-                resize: "vertical",
-                minHeight: 60,
-                maxHeight: 100
-              }}
-              value={previewFields.description ?? ""}
-              onChange={(e) =>
-                updateField("description", e.target.value || undefined)
-              }
-            />
-          </div>
-
-          <div style={{ display: "flex", gap: 8 }}>
+          {/* Edit all link — only when at least one field was extracted */}
+          {anyExtracted && (
             <button
-              onClick={handleConfirm}
-              disabled={confirming}
+              onClick={() => setShowFullEdit(true)}
               style={{
-                flex: 1,
-                padding: "7px 12px",
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: confirming ? "wait" : "pointer",
-                background: "#2563eb",
-                color: "white",
+                fontSize: 12,
+                color: "#6b7280",
+                background: "none",
                 border: "none",
-                borderRadius: 6
+                cursor: "pointer",
+                padding: 0,
+                marginTop: 4,
+                marginBottom: 10,
+                display: "block"
               }}>
-              {confirming ? "Saving…" : "Confirm"}
+              Edit all fields →
             </button>
-            <button
-              onClick={handleCancel}
-              disabled={confirming}
-              style={{
-                flex: 1,
-                padding: "7px 12px",
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: confirming ? "default" : "pointer",
-                background: "white",
-                color: "#374151",
-                border: "1px solid #d1d5db",
-                borderRadius: 6
-              }}>
-              Cancel
-            </button>
-          </div>
+          )}
+
+          {confirmCancelRow}
         </div>
       </div>
     )
