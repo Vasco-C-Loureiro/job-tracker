@@ -8,6 +8,16 @@ export type ApplicationStatus =
   | "offer"
   | "ghosted";
 
+export type RemoteType = "remote" | "hybrid" | "onsite";
+
+export type JobType =
+  | "full-time"
+  | "part-time"
+  | "contract"
+  | "internship"
+  | "graduate"
+  | "fixed-term";
+
 // The minimal v0.1 shape — title, company, URL only.
 // Will expand to the full SCHEMA.md shape in v1.0.
 export type JobApplication = {
@@ -21,6 +31,12 @@ export type JobApplication = {
 
   status: ApplicationStatus;
 
+  location?: string;
+  remoteType?: RemoteType;
+  jobType?: JobType;
+  salary?: string;
+  description?: string;
+
   savedAt: string;   // ISO 8601
   updatedAt: string; // ISO 8601
 };
@@ -29,7 +45,15 @@ export type JobApplication = {
 // Subset of JobApplication — server fills in id, userId, status, timestamps.
 export type SaveJobPayload = Pick<
   JobApplication,
-  "company" | "title" | "sourceUrl" | "source"
+  | "company"
+  | "title"
+  | "sourceUrl"
+  | "source"
+  | "location"
+  | "remoteType"
+  | "jobType"
+  | "salary"
+  | "description"
 >;
 
 // ─── Extension ⇄ content script messaging ───────────────────────
