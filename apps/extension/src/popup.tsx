@@ -60,6 +60,7 @@ function IndexPopup() {
   const [authState, setAuthState] = useState<AuthState>("checking")
   const [saveState, setSaveState] = useState<SaveState>({ kind: "idle" })
   const [previewFields, setPreviewFields] = useState<SaveJobPayload | null>(null)
+  const [confirming, setConfirming] = useState(false)
   const [authError, setAuthError] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -272,6 +273,68 @@ function IndexPopup() {
     )
   }
 
+  const handleConfirm = async () => {
+    if (!previewFields || confirming) return
+    setConfirming(true)
+
+    const token = await getValidToken()
+    console.log("[job-tracker] token:", token ? `${token.slice(0, 20)}…` : null)
+    if (!token) {
+      setSaveState({ kind: "error", message: "Session expired — please sign in again" })
+      setAuthError("Session expired — please sign in again.")
+      setAuthState("signed-out")
+      setConfirming(false)
+      return
+    }
+
+    try {
+      const apiResponse = await fetch(API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(previewFields)
+      })
+
+      console.log("[job-tracker] POST /api/jobs status:", apiResponse.status)
+
+      if (apiResponse.status === 401) {
+        console.log("[job-tracker] 401 received, clearing tokens")
+        await clearTokens()
+        setAuthError("Session expired — please sign in again.")
+        setAuthState("signed-out")
+        setSaveState({ kind: "error", message: "Session expired — please sign in again." })
+        setConfirming(false)
+        return
+      }
+
+      if (!apiResponse.ok) {
+        const errorBody = await apiResponse.json().catch(() => ({}))
+        setSaveState({
+          kind: "error",
+          message: errorBody.error ?? `Save failed (${apiResponse.status})`
+        })
+        setConfirming(false)
+        return
+      }
+
+      console.log("[job-tracker] 201 success")
+      setSaveState({ kind: "success", payload: previewFields })
+    } catch {
+      setSaveState({
+        kind: "error",
+        message: "Couldn't reach the backend. Is the dev server running?"
+      })
+    }
+    setConfirming(false)
+  }
+
+  const handleCancel = () => {
+    setPreviewFields(null)
+    setSaveState({ kind: "idle" })
+  }
+
   function updateField<K extends keyof SaveJobPayload>(
     field: K,
     value: SaveJobPayload[K]
@@ -424,26 +487,30 @@ function IndexPopup() {
 
           <div style={{ display: "flex", gap: 8 }}>
             <button
+              onClick={handleConfirm}
+              disabled={confirming}
               style={{
                 flex: 1,
                 padding: "7px 12px",
                 fontSize: 13,
                 fontWeight: 600,
-                cursor: "pointer",
+                cursor: confirming ? "wait" : "pointer",
                 background: "#2563eb",
                 color: "white",
                 border: "none",
                 borderRadius: 6
               }}>
-              Confirm
+              {confirming ? "Saving…" : "Confirm"}
             </button>
             <button
+              onClick={handleCancel}
+              disabled={confirming}
               style={{
                 flex: 1,
                 padding: "7px 12px",
                 fontSize: 13,
                 fontWeight: 600,
-                cursor: "pointer",
+                cursor: confirming ? "default" : "pointer",
                 background: "white",
                 color: "#374151",
                 border: "1px solid #d1d5db",
