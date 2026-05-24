@@ -165,7 +165,7 @@ function extractFromDom(): Partial<SaveJobPayload> | null {
     '[data-testid="jobsearch-SalaryInfoAndJobType"], #salaryInfoAndJobType'
   );
   const jobTypeEls = document.querySelectorAll<HTMLElement>(
-    '[data-testid="jobsearch-JobInfoHeader-jobType"] span'
+    '[data-testid="jobsearch-JobInfoHeader-jobType"] span, [data-testid="job-types"] span, [data-testid="attributesHeader"] span, .css-k5flys span'
   );
 
   const title = titleEl?.textContent?.trim() || undefined;
@@ -178,13 +178,15 @@ function extractFromDom(): Partial<SaveJobPayload> | null {
   for (const el of jobTypeEls) {
     const text = el.textContent?.trim().toLowerCase() ?? "";
     if (!jobType) {
-      if (text.includes("full")) jobType = "full-time";
-      else if (text.includes("part")) jobType = "part-time";
+      if (text.includes("full-time") || text.includes("full time")) jobType = "full-time";
+      else if (text.includes("part-time") || text.includes("part time")) jobType = "part-time";
       else if (text.includes("contract")) jobType = "contract";
       else if (text.includes("intern")) jobType = "internship";
-      else if (text.includes("graduate") || text.includes("grad"))
-        jobType = "graduate";
+      else if (text.includes("graduate") || text.includes("grad")) jobType = "graduate";
       else if (text.includes("fixed")) jobType = "fixed-term";
+      else if (text.includes("permanent")) jobType = "permanent";
+      else if (text.includes("full")) jobType = "full-time";
+      else if (text.includes("part")) jobType = "part-time";
     }
     if (!remoteType) {
       if (text.includes("remote")) remoteType = "remote";
