@@ -40,6 +40,14 @@ export type JobApplication = {
 
   savedAt: string;   // ISO 8601
   updatedAt: string; // ISO 8601
+
+  notes?: string;
+  appliedAt?: string; // ISO 8601
+  interestLevel?: "low" | "medium" | "high" | "very-high";
+  tags?: string[];
+  resumeSubmitted?: boolean;
+  coverLetterSubmitted?: boolean;
+  companyApplicationUrl?: string;
 };
 
 // Shape the extension POSTs to the API on save.
