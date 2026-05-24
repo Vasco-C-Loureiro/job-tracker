@@ -1,6 +1,7 @@
 import type { JobApplication, JobType, RemoteType } from "@job-tracker/shared";
 import { createSupabaseServerClient } from "@/lib/supabase.server";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import SignOutButton from "@/app/_components/sign-out-button";
 
 // Raw Postgres row shape (snake_case). Mirror of the JobApplication type.
@@ -99,9 +100,17 @@ export default async function Home() {
           </thead>
           <tbody>
             {jobs.map((job) => (
-              <tr key={job.id} className="border-b border-gray-200">
-                <td className="py-2 pr-4">{job.title}</td>
-                <td className="py-2 pr-4">{job.company}</td>
+              <tr key={job.id} className="border-b border-gray-200 hover:bg-gray-50 cursor-pointer">
+                <td className="py-2 pr-4">
+                  <Link href={`/jobs/${job.id}`} className="text-blue-700 hover:underline">
+                    {job.title}
+                  </Link>
+                </td>
+                <td className="py-2 pr-4">
+                  <Link href={`/jobs/${job.id}`} className="hover:underline">
+                    {job.company}
+                  </Link>
+                </td>
                 <td className="py-2 pr-4">{job.location ?? "—"}</td>
                 <td className="py-2 pr-4">{job.remoteType ?? "—"}</td>
                 <td className="py-2 pr-4">{job.salary ?? "—"}</td>
