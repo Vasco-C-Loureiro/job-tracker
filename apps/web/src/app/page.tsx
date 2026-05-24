@@ -1,4 +1,4 @@
-import type { JobApplication } from "@job-tracker/shared";
+import type { JobApplication, JobType, RemoteType } from "@job-tracker/shared";
 import { createSupabaseServerClient } from "@/lib/supabase.server";
 import { redirect } from "next/navigation";
 import SignOutButton from "@/app/_components/sign-out-button";
@@ -14,6 +14,11 @@ type JobApplicationRow = {
   status: JobApplication["status"];
   saved_at: string;
   updated_at: string;
+  location?: string;
+  remote_type?: string;
+  job_type?: string;
+  salary?: string;
+  description?: string;
 };
 
 function rowToJobApplication(row: JobApplicationRow): JobApplication {
@@ -27,6 +32,11 @@ function rowToJobApplication(row: JobApplicationRow): JobApplication {
     status: row.status,
     savedAt: row.saved_at,
     updatedAt: row.updated_at,
+    location: row.location,
+    remoteType: row.remote_type as RemoteType | undefined,
+    jobType: row.job_type as JobType | undefined,
+    salary: row.salary,
+    description: row.description,
   };
 }
 
@@ -43,7 +53,7 @@ export default async function Home() {
   const { data, error } = await supabase
     .from("job_applications")
     .select(
-      "id, user_id, company, title, source_url, source, status, saved_at, updated_at",
+      "id, user_id, company, title, source_url, source, status, saved_at, updated_at, location, remote_type, job_type, salary, description",
     )
     .eq("user_id", user!.id)
     .order("saved_at", { ascending: false })
@@ -78,6 +88,9 @@ export default async function Home() {
             <tr className="border-b-2 border-gray-300 text-left">
               <th className="py-2 pr-4 font-semibold">Title</th>
               <th className="py-2 pr-4 font-semibold">Company</th>
+              <th className="py-2 pr-4 font-semibold">Location</th>
+              <th className="py-2 pr-4 font-semibold">Remote</th>
+              <th className="py-2 pr-4 font-semibold">Salary</th>
               <th className="py-2 pr-4 font-semibold">Source</th>
               <th className="py-2 pr-4 font-semibold">Status</th>
               <th className="py-2 pr-4 font-semibold">Saved at</th>
@@ -89,6 +102,9 @@ export default async function Home() {
               <tr key={job.id} className="border-b border-gray-200">
                 <td className="py-2 pr-4">{job.title}</td>
                 <td className="py-2 pr-4">{job.company}</td>
+                <td className="py-2 pr-4">{job.location ?? "—"}</td>
+                <td className="py-2 pr-4">{job.remoteType ?? "—"}</td>
+                <td className="py-2 pr-4">{job.salary ?? "—"}</td>
                 <td className="py-2 pr-4">{job.source}</td>
                 <td className="py-2 pr-4">{job.status}</td>
                 <td className="py-2 pr-4">
