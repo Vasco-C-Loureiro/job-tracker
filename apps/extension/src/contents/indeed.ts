@@ -31,6 +31,28 @@ const EMPLOYMENT_TYPE_MAP: Partial<Record<string, JobType>> = {
   PERMANENT: "permanent"
 };
 
+// Ordered most-specific first to avoid "full" matching before "full-time"
+const JOB_TYPE_TEXT_MAP: Array<[string, JobType]> = [
+  ["full-time", "full-time"],
+  ["full time", "full-time"],
+  ["part-time", "part-time"],
+  ["part time", "part-time"],
+  ["contract", "contract"],
+  ["internship", "internship"],
+  ["graduate", "graduate"],
+  ["fixed-term", "fixed-term"],
+  ["fixed term", "fixed-term"],
+  ["permanent", "permanent"],
+];
+
+function extractJobTypeFromText(text: string): JobType | undefined {
+  const lower = text.toLowerCase();
+  for (const [term, jobType] of JOB_TYPE_TEXT_MAP) {
+    if (lower.includes(term)) return jobType;
+  }
+  return undefined;
+}
+
 const UNIT_TEXT_MAP: Record<string, string> = {
   YEAR: "/year",
   MONTH: "/month",
@@ -100,10 +122,14 @@ function extractFromJsonLd(): Partial<SaveJobPayload> | null {
         }
 
         // jobType — map schema.org employmentType to our enum
+        // employmentType may be a string or an array (both occur on Indeed)
         const rawEmpType =
           typeof item.employmentType === "string"
             ? item.employmentType
-            : undefined;
+            : Array.isArray(item.employmentType) &&
+                typeof item.employmentType[0] === "string"
+              ? item.employmentType[0]
+              : undefined;
         const jobType: JobType | undefined = rawEmpType
           ? EMPLOYMENT_TYPE_MAP[rawEmpType]
           : undefined;
@@ -175,19 +201,11 @@ function extractFromDom(): Partial<SaveJobPayload> | null {
 
   let jobType: JobType | undefined;
   let remoteType: RemoteType | undefined;
+
+  // Attempt 1: structured span elements (header badge area)
   for (const el of jobTypeEls) {
     const text = el.textContent?.trim().toLowerCase() ?? "";
-    if (!jobType) {
-      if (text.includes("full-time") || text.includes("full time")) jobType = "full-time";
-      else if (text.includes("part-time") || text.includes("part time")) jobType = "part-time";
-      else if (text.includes("contract")) jobType = "contract";
-      else if (text.includes("intern")) jobType = "internship";
-      else if (text.includes("graduate") || text.includes("grad")) jobType = "graduate";
-      else if (text.includes("fixed")) jobType = "fixed-term";
-      else if (text.includes("permanent")) jobType = "permanent";
-      else if (text.includes("full")) jobType = "full-time";
-      else if (text.includes("part")) jobType = "part-time";
-    }
+    if (!jobType) jobType = extractJobTypeFromText(text);
     if (!remoteType) {
       if (text.includes("remote")) remoteType = "remote";
       else if (text.includes("hybrid")) remoteType = "hybrid";
@@ -198,6 +216,23 @@ function extractFromDom(): Partial<SaveJobPayload> | null {
       )
         remoteType = "onsite";
     }
+  }
+
+  // Attempt 2: OtherJobDetailsContainer — stable data-testid confirmed present
+  // on viewjob pages; job type appears as plain text inside this container
+  if (!jobType) {
+    const otherDetails = document.querySelector(
+      '[data-testid="jobsearch-OtherJobDetailsContainer"]'
+    );
+    if (otherDetails) jobType = extractJobTypeFromText(otherDetails.textContent ?? "");
+  }
+
+  // Attempt 3: structured "Job type" item block further down the page
+  if (!jobType) {
+    const jobTypeItem = document.querySelector(
+      '[data-testid="JobInfoItem-jobType"], [data-testid="job-type-details"]'
+    );
+    if (jobTypeItem) jobType = extractJobTypeFromText(jobTypeItem.textContent ?? "");
   }
 
   const result: Partial<SaveJobPayload> = {};
