@@ -16,7 +16,8 @@ export type JobType =
   | "contract"
   | "internship"
   | "graduate"
-  | "fixed-term";
+  | "fixed-term"
+  | "permanent";
 
 // The minimal v0.1 shape — title, company, URL only.
 // Will expand to the full SCHEMA.md shape in v1.0.

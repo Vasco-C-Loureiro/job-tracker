@@ -4,7 +4,7 @@ import type { RemoteType, JobType, SaveJobPayload } from "@job-tracker/shared";
 
 const VALID_REMOTE_TYPES: RemoteType[] = ["remote", "hybrid", "onsite"];
 const VALID_JOB_TYPES: JobType[] = [
-  "full-time", "part-time", "contract", "internship", "graduate", "fixed-term",
+  "full-time", "part-time", "contract", "internship", "graduate", "fixed-term", "permanent",
 ];
 
 const corsHeaders = {

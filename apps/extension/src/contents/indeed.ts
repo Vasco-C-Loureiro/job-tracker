@@ -27,7 +27,8 @@ const EMPLOYMENT_TYPE_MAP: Partial<Record<string, JobType>> = {
   FULL_TIME: "full-time",
   PART_TIME: "part-time",
   CONTRACTOR: "contract",
-  INTERN: "internship"
+  INTERN: "internship",
+  PERMANENT: "permanent"
 };
 
 const UNIT_TEXT_MAP: Record<string, string> = {
