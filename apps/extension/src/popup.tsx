@@ -23,6 +23,7 @@ type AuthState = "checking" | "signed-out" | "signed-in"
 type SaveState =
   | { kind: "idle" }
   | { kind: "saving" }
+  | { kind: "preview"; payload: SaveJobPayload }
   | { kind: "success"; payload: SaveJobPayload }
   | { kind: "error"; message: string }
 
@@ -40,6 +41,7 @@ async function sendExtractMessage(
 function IndexPopup() {
   const [authState, setAuthState] = useState<AuthState>("checking")
   const [saveState, setSaveState] = useState<SaveState>({ kind: "idle" })
+  const [previewFields, setPreviewFields] = useState<SaveJobPayload | null>(null)
   const [authError, setAuthError] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -135,61 +137,13 @@ function IndexPopup() {
       return
     }
 
-    // Step 2 — validate token before POST
-    const token = await getValidToken()
-    console.log("[job-tracker] token:", token ? `${token.slice(0, 20)}…` : null)
-    if (!token) {
-      setSaveState({
-        kind: "error",
-        message: "Session expired — please sign in again"
-      })
-      setAuthError("Session expired — please sign in again.")
-      setAuthState("signed-out")
-      return
+    // Transition to preview — token check and POST happen on confirm
+    const payload: SaveJobPayload = {
+      ...response.payload,
+      description: response.payload.description?.slice(0, 300)
     }
-
-    // Step 3 — POST the payload to the backend
-    try {
-      const apiResponse = await fetch(API_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify(response.payload)
-      })
-
-      console.log("[job-tracker] POST /api/jobs status:", apiResponse.status)
-
-      if (apiResponse.status === 401) {
-        console.log("[job-tracker] 401 received, clearing tokens")
-        await clearTokens()
-        setAuthError("Session expired — please sign in again.")
-        setAuthState("signed-out")
-        setSaveState({
-          kind: "error",
-          message: "Session expired — please sign in again."
-        })
-        return
-      }
-
-      if (!apiResponse.ok) {
-        const errorBody = await apiResponse.json().catch(() => ({}))
-        setSaveState({
-          kind: "error",
-          message: errorBody.error ?? `Save failed (${apiResponse.status})`
-        })
-        return
-      }
-
-      console.log("[job-tracker] 201 success")
-      setSaveState({ kind: "success", payload: response.payload })
-    } catch {
-      setSaveState({
-        kind: "error",
-        message: "Couldn't reach the backend. Is the dev server running?"
-      })
-    }
+    setPreviewFields(payload)
+    setSaveState({ kind: "preview", payload })
   }
 
   if (authState === "checking") {
@@ -300,46 +254,72 @@ function IndexPopup() {
     )
   }
 
+  const topBar = (
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        padding: "8px 16px",
+        borderBottom: "1px solid #e5e7eb"
+      }}>
+      <button
+        onClick={() => chrome.tabs.create({ url: DASHBOARD_URL })}
+        style={{
+          fontSize: 13,
+          fontWeight: 600,
+          color: "#2563eb",
+          background: "none",
+          border: "none",
+          cursor: "pointer",
+          padding: 0
+        }}>
+        Open Dashboard →
+      </button>
+      <button
+        onClick={handleSignOut}
+        style={{
+          fontSize: 12,
+          color: "#6b7280",
+          background: "none",
+          border: "none",
+          cursor: "pointer",
+          padding: 0
+        }}>
+        Sign out
+      </button>
+    </div>
+  )
+
+  if (saveState.kind === "preview") {
+    return (
+      <div style={{ width: 300, fontFamily: "system-ui, -apple-system, sans-serif" }}>
+        {topBar}
+        <div style={{ padding: 16 }}>
+          <h1 style={{ fontSize: 15, fontWeight: 600, margin: "0 0 8px" }}>
+            Review & Save
+          </h1>
+          <p style={{ fontSize: 13, color: "#374151", margin: "0 0 4px" }}>
+            <strong>{saveState.payload.title}</strong>
+          </p>
+          <p style={{ fontSize: 12, color: "#6b7280", margin: "0 0 12px" }}>
+            {saveState.payload.company}
+          </p>
+          <p style={{ fontSize: 12, color: "#9ca3af", margin: 0 }}>
+            Edit form — coming in next commit.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div
       style={{
         width: 300,
         fontFamily: "system-ui, -apple-system, sans-serif"
       }}>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          padding: "8px 16px",
-          borderBottom: "1px solid #e5e7eb"
-        }}>
-        <button
-          onClick={() => chrome.tabs.create({ url: DASHBOARD_URL })}
-          style={{
-            fontSize: 13,
-            fontWeight: 600,
-            color: "#2563eb",
-            background: "none",
-            border: "none",
-            cursor: "pointer",
-            padding: 0
-          }}>
-          Open Dashboard →
-        </button>
-        <button
-          onClick={handleSignOut}
-          style={{
-            fontSize: 12,
-            color: "#6b7280",
-            background: "none",
-            border: "none",
-            cursor: "pointer",
-            padding: 0
-          }}>
-          Sign out
-        </button>
-      </div>
+      {topBar}
       <div style={{ padding: 16 }}>
         <h1 style={{ fontSize: 16, margin: "0 0 12px" }}>Job Tracker</h1>
         <button
