@@ -45,6 +45,28 @@ const labelStyle: React.CSSProperties = {
   marginBottom: 2
 }
 
+const salarySelectStyle: React.CSSProperties = {
+  padding: "4px 4px",
+  fontSize: 13,
+  border: "1px solid #d1d5db",
+  borderRadius: 4
+}
+
+const SALARY_CURRENCIES = ["£", "$", "€", "kr"] as const
+
+function splitSalary(salary: string | undefined): { currency: string; raw: string } {
+  if (!salary) return { currency: "£", raw: "" }
+  for (const prefix of SALARY_CURRENCIES) {
+    if (salary.startsWith(prefix)) return { currency: prefix, raw: salary.slice(prefix.length) }
+  }
+  return { currency: "£", raw: salary }
+}
+
+function salaryKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+  const control = ["Backspace", "Delete", "Tab", "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"]
+  if (!control.includes(e.key) && !/^[0-9,.\-kK]$/.test(e.key)) e.preventDefault()
+}
+
 async function sendExtractMessage(
   tabId: number
 ): Promise<ExtractJobResponse | null> {
@@ -63,6 +85,8 @@ function IndexPopup() {
   const [confirming, setConfirming] = useState(false)
   const [showFullEdit, setShowFullEdit] = useState(false)
   const [initiallyMissingFields, setInitiallyMissingFields] = useState<Set<keyof SaveJobPayload>>(new Set())
+  const [salaryCurrency, setSalaryCurrency] = useState("£")
+  const [salaryRaw, setSalaryRaw] = useState("")
   const [authError, setAuthError] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -165,6 +189,9 @@ function IndexPopup() {
     }
     const displayFields: Array<keyof SaveJobPayload> = ["title", "company", "location", "remoteType", "jobType", "salary"]
     setInitiallyMissingFields(new Set(displayFields.filter((k) => !payload[k])))
+    const { currency, raw } = splitSalary(payload.salary)
+    setSalaryCurrency(currency)
+    setSalaryRaw(raw)
     setPreviewFields(payload)
     setSaveState({ kind: "preview", payload })
   }
@@ -338,6 +365,8 @@ function IndexPopup() {
     setPreviewFields(null)
     setShowFullEdit(false)
     setInitiallyMissingFields(new Set())
+    setSalaryCurrency("£")
+    setSalaryRaw("")
     setSaveState({ kind: "idle" })
   }
 
@@ -534,13 +563,31 @@ function IndexPopup() {
 
             <div style={{ marginBottom: 10 }}>
               <label style={labelStyle}>Salary</label>
-              <input
-                style={inputStyle}
-                value={previewFields.salary ?? ""}
-                onChange={(e) =>
-                  updateField("salary", e.target.value || undefined)
-                }
-              />
+              <div style={{ display: "flex", gap: 4 }}>
+                <select
+                  style={salarySelectStyle}
+                  value={salaryCurrency}
+                  onChange={(e) => {
+                    const cur = e.target.value
+                    setSalaryCurrency(cur)
+                    updateField("salary", salaryRaw ? cur + salaryRaw : undefined)
+                  }}>
+                  <option value="£">£ GBP</option>
+                  <option value="$">$ USD</option>
+                  <option value="€">€ EUR</option>
+                  <option value="kr">kr SEK</option>
+                </select>
+                <input
+                  style={{ ...inputStyle, flex: 1, width: "auto" }}
+                  value={salaryRaw}
+                  onKeyDown={salaryKeyDown}
+                  onChange={(e) => {
+                    const raw = e.target.value
+                    setSalaryRaw(raw)
+                    updateField("salary", raw ? salaryCurrency + raw : undefined)
+                  }}
+                />
+              </div>
             </div>
 
             {confirmCancelRow}
@@ -683,13 +730,31 @@ function IndexPopup() {
           {initiallyMissingFields.has("salary") && (
             <div style={{ marginBottom: 6 }}>
               <label style={labelStyle}>Salary</label>
-              <input
-                style={inputStyle}
-                value={previewFields.salary ?? ""}
-                onChange={(e) =>
-                  updateField("salary", e.target.value || undefined)
-                }
-              />
+              <div style={{ display: "flex", gap: 4 }}>
+                <select
+                  style={salarySelectStyle}
+                  value={salaryCurrency}
+                  onChange={(e) => {
+                    const cur = e.target.value
+                    setSalaryCurrency(cur)
+                    updateField("salary", salaryRaw ? cur + salaryRaw : undefined)
+                  }}>
+                  <option value="£">£ GBP</option>
+                  <option value="$">$ USD</option>
+                  <option value="€">€ EUR</option>
+                  <option value="kr">kr SEK</option>
+                </select>
+                <input
+                  style={{ ...inputStyle, flex: 1, width: "auto" }}
+                  value={salaryRaw}
+                  onKeyDown={salaryKeyDown}
+                  onChange={(e) => {
+                    const raw = e.target.value
+                    setSalaryRaw(raw)
+                    updateField("salary", raw ? salaryCurrency + raw : undefined)
+                  }}
+                />
+              </div>
             </div>
           )}
 
