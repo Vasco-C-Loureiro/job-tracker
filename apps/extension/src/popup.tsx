@@ -62,6 +62,7 @@ function IndexPopup() {
   const [previewFields, setPreviewFields] = useState<SaveJobPayload | null>(null)
   const [confirming, setConfirming] = useState(false)
   const [showFullEdit, setShowFullEdit] = useState(false)
+  const [initiallyMissingFields, setInitiallyMissingFields] = useState<Set<keyof SaveJobPayload>>(new Set())
   const [authError, setAuthError] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -162,6 +163,8 @@ function IndexPopup() {
       ...response.payload,
       description: response.payload.description?.slice(0, 300)
     }
+    const displayFields: Array<keyof SaveJobPayload> = ["title", "company", "location", "remoteType", "jobType", "salary"]
+    setInitiallyMissingFields(new Set(displayFields.filter((k) => !payload[k])))
     setPreviewFields(payload)
     setSaveState({ kind: "preview", payload })
   }
@@ -334,6 +337,7 @@ function IndexPopup() {
   const handleCancel = () => {
     setPreviewFields(null)
     setShowFullEdit(false)
+    setInitiallyMissingFields(new Set())
     setSaveState({ kind: "idle" })
   }
 
@@ -555,28 +559,28 @@ function IndexPopup() {
             Review & Save
           </h1>
 
-          {/* Read-only info block — extracted fields only */}
-          {hasTitle && (
+          {/* Read-only info block — initially extracted fields only */}
+          {!initiallyMissingFields.has("title") && hasTitle && (
             <div style={{ marginBottom: 8 }}>
               <span style={infoLabel}>Title</span>
               <span style={infoValue}>{previewFields.title}</span>
             </div>
           )}
-          {hasCompany && (
+          {!initiallyMissingFields.has("company") && hasCompany && (
             <div style={{ marginBottom: 8 }}>
               <span style={infoLabel}>Company</span>
               <span style={infoValue}>{previewFields.company}</span>
             </div>
           )}
-          {(hasLocation || hasRemoteType) && (
+          {((!initiallyMissingFields.has("location") && hasLocation) || (!initiallyMissingFields.has("remoteType") && hasRemoteType)) && (
             <div style={{ display: "flex", gap: 12, marginBottom: 8 }}>
-              {hasLocation && (
+              {!initiallyMissingFields.has("location") && hasLocation && (
                 <div style={{ flex: 1 }}>
                   <span style={infoLabel}>Location</span>
                   <span style={infoValue}>{previewFields.location}</span>
                 </div>
               )}
-              {hasRemoteType && (
+              {!initiallyMissingFields.has("remoteType") && hasRemoteType && (
                 <div style={{ flex: 1 }}>
                   <span style={infoLabel}>Remote</span>
                   <span style={infoValue}>{previewFields.remoteType}</span>
@@ -584,15 +588,15 @@ function IndexPopup() {
               )}
             </div>
           )}
-          {(hasJobType || hasSalary) && (
+          {((!initiallyMissingFields.has("jobType") && hasJobType) || (!initiallyMissingFields.has("salary") && hasSalary)) && (
             <div style={{ display: "flex", gap: 12, marginBottom: 8 }}>
-              {hasJobType && (
+              {!initiallyMissingFields.has("jobType") && hasJobType && (
                 <div style={{ flex: 1 }}>
                   <span style={infoLabel}>Job Type</span>
                   <span style={infoValue}>{previewFields.jobType}</span>
                 </div>
               )}
-              {hasSalary && (
+              {!initiallyMissingFields.has("salary") && hasSalary && (
                 <div style={{ flex: 1 }}>
                   <span style={infoLabel}>Salary</span>
                   <span style={infoValue}>{previewFields.salary}</span>
@@ -601,8 +605,8 @@ function IndexPopup() {
             </div>
           )}
 
-          {/* Editable inputs for missing fields only */}
-          {!hasTitle && (
+          {/* Editable inputs — shown only for fields that were missing at preview entry */}
+          {initiallyMissingFields.has("title") && (
             <div style={{ marginBottom: 6 }}>
               <label style={labelStyle}>Title</label>
               <input
@@ -612,7 +616,7 @@ function IndexPopup() {
               />
             </div>
           )}
-          {!hasCompany && (
+          {initiallyMissingFields.has("company") && (
             <div style={{ marginBottom: 6 }}>
               <label style={labelStyle}>Company</label>
               <input
@@ -622,7 +626,7 @@ function IndexPopup() {
               />
             </div>
           )}
-          {!hasLocation && (
+          {initiallyMissingFields.has("location") && (
             <div style={{ marginBottom: 6 }}>
               <label style={labelStyle}>Location</label>
               <input
@@ -634,7 +638,7 @@ function IndexPopup() {
               />
             </div>
           )}
-          {!hasRemoteType && (
+          {initiallyMissingFields.has("remoteType") && (
             <div style={{ marginBottom: 6 }}>
               <label style={labelStyle}>Remote</label>
               <select
@@ -653,7 +657,7 @@ function IndexPopup() {
               </select>
             </div>
           )}
-          {!hasJobType && (
+          {initiallyMissingFields.has("jobType") && (
             <div style={{ marginBottom: 6 }}>
               <label style={labelStyle}>Job Type</label>
               <select
@@ -676,7 +680,7 @@ function IndexPopup() {
               </select>
             </div>
           )}
-          {!hasSalary && (
+          {initiallyMissingFields.has("salary") && (
             <div style={{ marginBottom: 6 }}>
               <label style={labelStyle}>Salary</label>
               <input
