@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServiceClient } from "@/lib/supabase.server";
-import type { SaveJobPayload } from "@job-tracker/shared";
+import type { RemoteType, JobType, SaveJobPayload } from "@job-tracker/shared";
+
+const VALID_REMOTE_TYPES: RemoteType[] = ["remote", "hybrid", "onsite"];
+const VALID_JOB_TYPES: JobType[] = [
+  "full-time", "part-time", "contract", "internship", "graduate", "fixed-term",
+];
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -67,6 +72,27 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // Optional fields — validate enums against allowlists, coerce bad values to undefined
+  const { location, remoteType, jobType, salary, description } =
+    body as Partial<SaveJobPayload>;
+
+  const safeLocation =
+    typeof location === "string" && location.trim() ? location.trim() : undefined;
+  const safeRemoteType =
+    typeof remoteType === "string" && VALID_REMOTE_TYPES.includes(remoteType as RemoteType)
+      ? (remoteType as RemoteType)
+      : undefined;
+  const safeJobType =
+    typeof jobType === "string" && VALID_JOB_TYPES.includes(jobType as JobType)
+      ? (jobType as JobType)
+      : undefined;
+  const safeSalary =
+    typeof salary === "string" && salary.trim() ? salary.trim() : undefined;
+  const safeDescription =
+    typeof description === "string" && description.trim()
+      ? description.trim()
+      : undefined;
+
   // camelCase → snake_case at the API boundary
   const { data, error } = await supabase
     .from("job_applications")
@@ -77,6 +103,11 @@ export async function POST(request: NextRequest) {
       source_url: sourceUrl.trim(),
       source: source.trim(),
       status: "saved",
+      location: safeLocation,
+      remote_type: safeRemoteType,
+      job_type: safeJobType,
+      salary: safeSalary,
+      description: safeDescription,
     })
     .select()
     .single();
