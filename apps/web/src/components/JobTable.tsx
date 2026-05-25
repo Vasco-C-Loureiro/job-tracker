@@ -483,14 +483,21 @@ export function JobTable({ jobs }: Props) {
     column: SortColumn;
     children: React.ReactNode;
   }) {
+    const isActive = sort.column === column;
     return (
       <th
-        className="py-2 pr-4 font-semibold cursor-pointer select-none hover:text-blue-600 whitespace-nowrap"
+        className={`py-2 pr-4 font-semibold cursor-pointer select-none whitespace-nowrap group transition-colors ${
+          isActive ? "bg-blue-50 border-b-2 border-blue-500" : "hover:bg-gray-100"
+        }`}
         onClick={() => handleSort(column)}
       >
         {children}
-        <span className="ml-1 text-xs text-gray-400">
-          {sort.column === column ? (sort.direction === "asc" ? "▲" : "▼") : ""}
+        <span
+          className={`ml-1 text-xs transition-colors ${
+            isActive ? "text-blue-600" : "text-gray-400 group-hover:text-gray-600"
+          }`}
+        >
+          {isActive ? (sort.direction === "asc" ? "▲" : "▼") : "⇅"}
         </span>
       </th>
     );
