@@ -82,3 +82,5 @@ export type ExtractJobFailureReason =
 export type ExtractJobResponse =
   | { ok: true; payload: SaveJobPayload }
   | { ok: false; reason: ExtractJobFailureReason };
+
+export { parseSalary } from "./utils";
