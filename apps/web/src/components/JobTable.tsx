@@ -8,6 +8,7 @@ import type {
   RemoteType,
   JobType,
 } from "@job-tracker/shared";
+import { parseSalary } from "@job-tracker/shared";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -62,15 +63,6 @@ const DEFAULT_FILTERS: FilterState = {
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function parseSalary(salary: string | undefined): number | null {
-  if (!salary) return null;
-  const cleaned = salary.replace(/[£$€,\s]/g, "");
-  const match = cleaned.match(/(\d+(?:\.\d+)?)(k)?/i);
-  if (!match) return null;
-  const value = parseFloat(match[1]);
-  return match[2]?.toLowerCase() === "k" ? value * 1000 : value;
-}
 
 function countActiveFilters(f: FilterState): number {
   let n = 0;
