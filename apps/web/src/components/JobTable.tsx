@@ -675,15 +675,24 @@ export function JobTable({ jobs }: Props) {
                   minVal={sliderMin}
                   maxVal={sliderMax || maxSalary}
                   includeUnspecified={filters.includeUnspecifiedSalary}
-                  onMinChange={(v) =>
-                    setFilters((f) => ({ ...f, salaryMin: v === 0 ? null : v }))
-                  }
-                  onMaxChange={(v) =>
+                  onMinChange={(v) => {
+                    const newMin = v === 0 ? null : v;
                     setFilters((f) => ({
                       ...f,
-                      salaryMax: v === maxSalary ? null : v,
-                    }))
-                  }
+                      salaryMin: newMin,
+                      includeUnspecifiedSalary:
+                        newMin !== null || f.salaryMax !== null ? false : true,
+                    }));
+                  }}
+                  onMaxChange={(v) => {
+                    const newMax = v === maxSalary ? null : v;
+                    setFilters((f) => ({
+                      ...f,
+                      salaryMax: newMax,
+                      includeUnspecifiedSalary:
+                        f.salaryMin !== null || newMax !== null ? false : true,
+                    }));
+                  }}
                   onIncludeUnspecifiedChange={(v) =>
                     setFilters((f) => ({ ...f, includeUnspecifiedSalary: v }))
                   }
