@@ -394,6 +394,7 @@ export function JobTable({ jobs }: Props) {
   const router = useRouter();
   const [sort, setSort] = useState<SortState>({ column: "savedAt", direction: "desc" });
   const [search, setSearch] = useState("");
+  const searchRef = useRef<HTMLInputElement>(null);
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
   const [filterOpen, setFilterOpen] = useState(false);
 
@@ -563,12 +564,22 @@ export function JobTable({ jobs }: Props) {
             &#x1F50D;
           </span>
           <input
+            ref={searchRef}
             type="text"
             placeholder="Search company, title, location, or tags…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:border-blue-400"
+            className="w-full pl-9 pr-7 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:border-blue-400"
           />
+          {search && (
+            <button
+              onClick={() => { setSearch(""); searchRef.current?.focus(); }}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200 text-sm leading-none"
+              aria-label="Clear search"
+            >
+              ×
+            </button>
+          )}
         </div>
         <div className="flex-1" />
         <button
