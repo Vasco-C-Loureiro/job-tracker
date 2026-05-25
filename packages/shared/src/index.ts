@@ -48,7 +48,11 @@ export type JobApplication = {
   resumeSubmitted?: boolean;
   coverLetterSubmitted?: boolean;
   companyApplicationUrl?: string;
+  isArchived: boolean;
+  archivedAt?: string;
 };
+
+export type JobApplicationListItem = Omit<JobApplication, "description">;
 
 // Shape the extension POSTs to the API on save.
 // Subset of JobApplication — server fills in id, userId, status, timestamps.
