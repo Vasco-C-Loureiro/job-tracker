@@ -64,6 +64,10 @@ const DEFAULT_FILTERS: FilterState = {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+function formatSalary(n: number): string {
+  return n >= 1000 ? `${Math.round(n / 1000)}k` : String(n);
+}
+
 function countActiveFilters(f: FilterState): number {
   let n = 0;
   if (f.status.size > 0) n++;
@@ -256,7 +260,51 @@ function SalarySlider({
   return (
     <div>
       <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Salary</p>
-      <div className="relative h-5 mb-3">
+      <div className="relative h-5 mt-8 mb-3">
+        {/* Min value bubble — floats above the min thumb */}
+        <div
+          className="absolute pointer-events-none flex flex-col items-center"
+          style={{
+            left: `${Math.max(2, Math.min(98, minPercent))}%`,
+            bottom: "calc(100% + 4px)",
+            transform: "translateX(-50%)",
+          }}
+        >
+          <div className="bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full whitespace-nowrap">
+            {formatSalary(minVal)}
+          </div>
+          <div
+            style={{
+              width: 0,
+              height: 0,
+              borderLeft: "4px solid transparent",
+              borderRight: "4px solid transparent",
+              borderTop: "4px solid #2563eb",
+            }}
+          />
+        </div>
+        {/* Max value bubble — floats above the max thumb */}
+        <div
+          className="absolute pointer-events-none flex flex-col items-center"
+          style={{
+            left: `${Math.max(2, Math.min(98, maxPercent))}%`,
+            bottom: "calc(100% + 4px)",
+            transform: "translateX(-50%)",
+          }}
+        >
+          <div className="bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full whitespace-nowrap">
+            {formatSalary(maxVal)}
+          </div>
+          <div
+            style={{
+              width: 0,
+              height: 0,
+              borderLeft: "4px solid transparent",
+              borderRight: "4px solid transparent",
+              borderTop: "4px solid #2563eb",
+            }}
+          />
+        </div>
         {/* Track background */}
         <div className="absolute top-1/2 -translate-y-1/2 left-0 right-0 h-1.5 bg-gray-200 rounded" />
         {/* Active range fill */}
