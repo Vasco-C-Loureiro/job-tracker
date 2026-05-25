@@ -537,15 +537,15 @@ export function JobTable({ jobs }: Props) {
     const isActive = sort.column === column;
     return (
       <th
-        className={`py-2 pr-4 font-semibold cursor-pointer select-none whitespace-nowrap group transition-colors ${
-          isActive ? "bg-blue-50 border-b-2 border-blue-500" : "hover:bg-gray-100"
+        className={`py-2 pr-4 cursor-pointer select-none whitespace-nowrap group transition-colors ${
+          isActive ? "font-medium border-b-2 border-blue-400" : "font-semibold hover:bg-white/5"
         }`}
         onClick={() => handleSort(column)}
       >
         {children}
         <span
           className={`ml-1 text-xs transition-colors ${
-            isActive ? "text-blue-600" : "text-gray-400 group-hover:text-gray-600"
+            isActive ? "text-blue-400" : "text-gray-500 group-hover:text-gray-300"
           }`}
         >
           {isActive ? (sort.direction === "asc" ? "▲" : "▼") : "⇅"}
