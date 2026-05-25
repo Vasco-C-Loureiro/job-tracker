@@ -106,7 +106,7 @@ function MultiPills<T extends string>({
             className={`px-3 py-1 rounded-full text-sm border transition-colors ${
               selected.has(value)
                 ? "bg-blue-600 text-white border-blue-600"
-                : "bg-white text-gray-700 border-gray-300 hover:border-blue-400"
+                : "bg-white text-gray-900 border-gray-300 hover:border-blue-400"
             }`}
           >
             {optLabel}
@@ -152,7 +152,7 @@ function MultiDropdown<T extends string>({
           onClick={() => setOpen((o) => !o)}
           className="w-full flex items-center justify-between px-3 py-2 border border-gray-300 rounded-md text-sm text-left hover:border-blue-400 focus:outline-none bg-white"
         >
-          <span className="truncate text-gray-700">
+          <span className="truncate text-gray-900">
             {selected.size === 0 ? placeholder : `${selected.size} selected`}
           </span>
           <span className="ml-2 text-gray-400 text-xs">{open ? "▲" : "▼"}</span>
@@ -162,7 +162,7 @@ function MultiDropdown<T extends string>({
             {options.map(({ value, label: optLabel }) => (
               <label
                 key={value}
-                className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-50 cursor-pointer"
+                className="flex items-center gap-2 px-3 py-2 text-sm text-gray-900 hover:bg-gray-50 cursor-pointer"
               >
                 <input
                   type="checkbox"
@@ -212,7 +212,7 @@ function ThreeWayToggle({
             className={`flex-1 py-1.5 text-sm transition-colors ${
               value === opt.value
                 ? "bg-blue-600 text-white"
-                : "bg-white text-gray-700 hover:bg-gray-50"
+                : "bg-white text-gray-900 hover:bg-gray-50"
             }`}
           >
             {opt.label}
@@ -295,7 +295,7 @@ function SalarySlider({
       </div>
       <div className="flex gap-3 mb-3">
         <div className="flex-1">
-          <label className="text-xs text-gray-500 block mb-1">Min</label>
+          <label className="text-xs text-gray-900 block mb-1">Min</label>
           <input
             type="number"
             min={0}
@@ -306,11 +306,11 @@ function SalarySlider({
               const v = Math.max(0, Math.min(Number(e.target.value), maxVal - step));
               onMinChange(isNaN(v) ? 0 : v);
             }}
-            className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm focus:outline-none focus:border-blue-400"
+            className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm text-gray-900 focus:outline-none focus:border-blue-400"
           />
         </div>
         <div className="flex-1">
-          <label className="text-xs text-gray-500 block mb-1">Max</label>
+          <label className="text-xs text-gray-900 block mb-1">Max</label>
           <input
             type="number"
             min={minVal}
@@ -321,11 +321,11 @@ function SalarySlider({
               const v = Math.min(max, Math.max(Number(e.target.value), minVal + step));
               onMaxChange(isNaN(v) ? max : v);
             }}
-            className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm focus:outline-none focus:border-blue-400"
+            className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm text-gray-900 focus:outline-none focus:border-blue-400"
           />
         </div>
       </div>
-      <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+      <label className="flex items-center gap-2 text-sm text-gray-900 cursor-pointer">
         <input
           type="checkbox"
           checked={includeUnspecified}
@@ -654,7 +654,7 @@ export function JobTable({ jobs }: Props) {
                         savedDateFrom: e.target.value || null,
                       }))
                     }
-                    className="flex-1 px-2 py-1.5 border border-gray-300 rounded text-sm focus:outline-none focus:border-blue-400"
+                    className="flex-1 px-2 py-1.5 border border-gray-300 rounded text-sm text-gray-900 focus:outline-none focus:border-blue-400"
                   />
                   <span className="text-gray-400 text-sm">–</span>
                   <input
@@ -666,7 +666,7 @@ export function JobTable({ jobs }: Props) {
                         savedDateTo: e.target.value || null,
                       }))
                     }
-                    className="flex-1 px-2 py-1.5 border border-gray-300 rounded text-sm focus:outline-none focus:border-blue-400"
+                    className="flex-1 px-2 py-1.5 border border-gray-300 rounded text-sm text-gray-900 focus:outline-none focus:border-blue-400"
                   />
                 </div>
               </div>
