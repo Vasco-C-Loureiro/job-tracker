@@ -26,6 +26,8 @@ type JobApplicationRow = {
   resume_submitted?: boolean | null;
   cover_letter_submitted?: boolean | null;
   company_application_url?: string | null;
+  is_archived?: boolean | null;
+  archived_at?: string | null;
 };
 
 function rowToJobApplication(row: JobApplicationRow): JobApplication {
@@ -52,6 +54,8 @@ function rowToJobApplication(row: JobApplicationRow): JobApplication {
     resumeSubmitted: row.resume_submitted ?? undefined,
     coverLetterSubmitted: row.cover_letter_submitted ?? undefined,
     companyApplicationUrl: row.company_application_url ?? undefined,
+    isArchived: row.is_archived ?? false,
+    archivedAt: row.archived_at ?? undefined,
   };
 }
 
