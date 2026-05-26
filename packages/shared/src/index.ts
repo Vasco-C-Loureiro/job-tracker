@@ -92,3 +92,34 @@ export type ExtractJobResponse =
   | { ok: false; reason: ExtractJobFailureReason };
 
 export { parseSalary } from "./utils";
+
+// ─── Interview Rounds ─────────────────────────────────────────────────────────
+
+export type InterviewType =
+  | "screening"
+  | "technical-phone"
+  | "take-home"
+  | "coding"
+  | "pair-programming"
+  | "technical-deep-dive"
+  | "system-design"
+  | "behavioral"
+  | "panel"
+  | "final"
+  | "other";
+
+export type InterviewRound = {
+  id: string;
+  jobApplicationId: string;
+  roundNumber: number;
+  type: InterviewType;
+  date?: string;
+  location?: string;
+  contactName?: string;
+  contactRole?: string;
+  done: boolean;
+  followUpSent: boolean;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+};
