@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import type { JobApplication } from "@job-tracker/shared";
+import type { JobApplication, InterviewRound, InterviewType } from "@job-tracker/shared";
 import { createSupabaseBrowserClient } from "@/lib/supabase";
 
 type FormState = {
@@ -47,13 +47,195 @@ function jobToFormState(job: JobApplication): FormState {
   };
 }
 
-export default function JobEditForm({ job }: { job: JobApplication }) {
+// ─── Interview rounds ─────────────────────────────────────────────────────────
+
+type RoundState = {
+  id: string | null; // null = not yet saved to DB
+  roundNumber: number;
+  type: string;
+  date: string;
+  location: string;
+  contactName: string;
+  contactRole: string;
+  done: boolean;
+  followUpSent: boolean;
+  notes: string;
+  saving: boolean;
+  deleting: boolean;
+};
+
+function roundToState(r: InterviewRound): RoundState {
+  return {
+    id: r.id,
+    roundNumber: r.roundNumber,
+    type: r.type,
+    date: r.date ? r.date.slice(0, 10) : "",
+    location: r.location ?? "",
+    contactName: r.contactName ?? "",
+    contactRole: r.contactRole ?? "",
+    done: r.done,
+    followUpSent: r.followUpSent,
+    notes: r.notes ?? "",
+    saving: false,
+    deleting: false,
+  };
+}
+
+const INTERVIEW_TYPES: { value: InterviewType; label: string }[] = [
+  { value: "screening",           label: "Screening"           },
+  { value: "technical-phone",     label: "Technical phone"     },
+  { value: "take-home",           label: "Take-home"           },
+  { value: "coding",              label: "Coding"              },
+  { value: "pair-programming",    label: "Pair programming"    },
+  { value: "technical-deep-dive", label: "Technical deep-dive" },
+  { value: "system-design",       label: "System design"       },
+  { value: "behavioral",          label: "Behavioral"          },
+  { value: "panel",               label: "Panel"               },
+  { value: "final",               label: "Final"               },
+  { value: "other",               label: "Other"               },
+];
+
+export default function JobEditForm({
+  job,
+  initialRounds,
+}: {
+  job: JobApplication;
+  initialRounds: InterviewRound[];
+}) {
   const router = useRouter();
   const [form, setForm] = useState<FormState>(() => jobToFormState(job));
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(
     null,
   );
+
+  // Interview rounds state
+  const [rounds, setRounds] = useState<RoundState[]>(() =>
+    initialRounds.map(roundToState),
+  );
+
+  // Shared token helper (avoids repeating supabase session logic)
+  async function getToken(): Promise<string | null> {
+    const supabase = createSupabaseBrowserClient();
+    const { data: { session } } = await supabase.auth.getSession();
+    return session?.access_token ?? null;
+  }
+
+  function updateRound<K extends keyof RoundState>(
+    index: number,
+    field: K,
+    value: RoundState[K],
+  ) {
+    setRounds((prev) =>
+      prev.map((r, i) => (i === index ? { ...r, [field]: value } : r)),
+    );
+  }
+
+  function addRound() {
+    const nextNum =
+      rounds.length > 0
+        ? Math.max(...rounds.map((r) => r.roundNumber)) + 1
+        : 1;
+    setRounds((prev) => [
+      ...prev,
+      {
+        id: null,
+        roundNumber: nextNum,
+        type: "screening",
+        date: "",
+        location: "",
+        contactName: "",
+        contactRole: "",
+        done: false,
+        followUpSent: false,
+        notes: "",
+        saving: false,
+        deleting: false,
+      },
+    ]);
+  }
+
+  async function saveRound(index: number) {
+    const round = rounds[index];
+    setRounds((prev) =>
+      prev.map((r, i) => (i === index ? { ...r, saving: true } : r)),
+    );
+    const token = await getToken();
+    if (!token) {
+      setRounds((prev) =>
+        prev.map((r, i) => (i === index ? { ...r, saving: false } : r)),
+      );
+      return;
+    }
+    const payload = {
+      roundNumber: round.roundNumber,
+      type: round.type,
+      date: round.date || null,
+      location: round.location || null,
+      contactName: round.contactName || null,
+      contactRole: round.contactRole || null,
+      done: round.done,
+      followUpSent: round.followUpSent,
+      notes: round.notes || null,
+    };
+    if (round.id === null) {
+      const res = await fetch(`/api/jobs/${job.id}/interviews`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify(payload),
+      });
+      if (res.ok) {
+        const created = (await res.json()) as { id: string };
+        setRounds((prev) =>
+          prev.map((r, i) =>
+            i === index ? { ...r, id: created.id, saving: false } : r,
+          ),
+        );
+      } else {
+        setRounds((prev) =>
+          prev.map((r, i) => (i === index ? { ...r, saving: false } : r)),
+        );
+      }
+    } else {
+      await fetch(`/api/interviews/${round.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify(payload),
+      });
+      setRounds((prev) =>
+        prev.map((r, i) => (i === index ? { ...r, saving: false } : r)),
+      );
+    }
+  }
+
+  async function deleteRound(index: number) {
+    const round = rounds[index];
+    if (round.id === null) {
+      setRounds((prev) => prev.filter((_, i) => i !== index));
+      return;
+    }
+    setRounds((prev) =>
+      prev.map((r, i) => (i === index ? { ...r, deleting: true } : r)),
+    );
+    const token = await getToken();
+    if (!token) {
+      setRounds((prev) =>
+        prev.map((r, i) => (i === index ? { ...r, deleting: false } : r)),
+      );
+      return;
+    }
+    const res = await fetch(`/api/interviews/${round.id}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (res.ok) {
+      setRounds((prev) => prev.filter((_, i) => i !== index));
+    } else {
+      setRounds((prev) =>
+        prev.map((r, i) => (i === index ? { ...r, deleting: false } : r)),
+      );
+    }
+  }
 
   function set<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -64,11 +246,7 @@ export default function JobEditForm({ job }: { job: JobApplication }) {
     setSaving(true);
     setMessage(null);
 
-    const supabase = createSupabaseBrowserClient();
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    const token = session?.access_token;
+    const token = await getToken();
 
     if (!token) {
       setMessage({ type: "error", text: "Not authenticated. Please sign in again." });
@@ -337,7 +515,7 @@ export default function JobEditForm({ job }: { job: JobApplication }) {
       </section>
 
       {/* ── Save ─────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4 mb-12">
         <button
           onClick={handleSave}
           disabled={saving}
@@ -354,6 +532,137 @@ export default function JobEditForm({ job }: { job: JobApplication }) {
           </span>
         )}
       </div>
+
+      {/* ── Interview rounds ─────────────────────────────────────── */}
+      <section>
+        <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-4">
+          Interview rounds
+        </h2>
+
+        {rounds.length === 0 && (
+          <p className="text-sm text-gray-500 mb-4">No interview rounds yet.</p>
+        )}
+
+        {rounds.map((round, idx) => (
+          <div
+            key={round.id ?? `new-${idx}`}
+            className="border border-gray-200 rounded-lg p-4 mb-4"
+          >
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
+                Round {round.roundNumber}
+              </span>
+              <button
+                onClick={() => deleteRound(idx)}
+                disabled={round.deleting}
+                className="text-xs text-red-500 hover:text-red-700 disabled:opacity-40"
+              >
+                {round.deleting ? "Removing…" : "Remove"}
+              </button>
+            </div>
+
+            <div className="flex gap-4 mb-3">
+              <div className="flex-1">
+                <label className={labelCls}>Type</label>
+                <select
+                  className={inputCls}
+                  value={round.type}
+                  onChange={(e) => updateRound(idx, "type", e.target.value)}
+                >
+                  {INTERVIEW_TYPES.map(({ value, label }) => (
+                    <option key={value} className="text-gray-900 bg-white" value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex-1">
+                <label className={labelCls}>Date</label>
+                <input
+                  type="date"
+                  className={inputCls}
+                  value={round.date}
+                  onChange={(e) => updateRound(idx, "date", e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-4 mb-3">
+              <div className="flex-1">
+                <label className={labelCls}>Contact name</label>
+                <input
+                  className={inputCls}
+                  value={round.contactName}
+                  onChange={(e) => updateRound(idx, "contactName", e.target.value)}
+                />
+              </div>
+              <div className="flex-1">
+                <label className={labelCls}>Contact role</label>
+                <input
+                  className={inputCls}
+                  value={round.contactRole}
+                  onChange={(e) => updateRound(idx, "contactRole", e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className={fieldCls}>
+              <label className={labelCls}>Location</label>
+              <input
+                className={inputCls}
+                value={round.location}
+                onChange={(e) => updateRound(idx, "location", e.target.value)}
+              />
+            </div>
+
+            <div className="flex gap-6 mb-3">
+              <label className="flex items-center gap-2 text-sm cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="w-4 h-4"
+                  checked={round.done}
+                  onChange={(e) => updateRound(idx, "done", e.target.checked)}
+                />
+                Done
+              </label>
+              <label className="flex items-center gap-2 text-sm cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="w-4 h-4"
+                  checked={round.followUpSent}
+                  onChange={(e) => updateRound(idx, "followUpSent", e.target.checked)}
+                />
+                Follow-up sent
+              </label>
+            </div>
+
+            <div className={fieldCls}>
+              <label className={labelCls}>Notes</label>
+              <textarea
+                className={`${inputCls} resize-y`}
+                rows={3}
+                value={round.notes}
+                onChange={(e) => updateRound(idx, "notes", e.target.value)}
+              />
+            </div>
+
+            <button
+              onClick={() => saveRound(idx)}
+              disabled={round.saving}
+              className="px-4 py-1.5 bg-blue-600 text-white text-sm font-semibold rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {round.saving ? "Saving…" : round.id ? "Save round" : "Add round"}
+            </button>
+          </div>
+        ))}
+
+        <button
+          onClick={addRound}
+          className="px-4 py-2 border border-gray-300 text-sm font-medium rounded hover:bg-gray-50"
+        >
+          + Add round
+        </button>
+      </section>
     </div>
   );
 }
