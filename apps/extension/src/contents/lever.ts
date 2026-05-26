@@ -87,7 +87,7 @@ function extractJob(): SaveJobPayload | null {
     location: fromDom.location,
     remoteType: fromDom.remoteType,
     jobType: fromDom.jobType,
-    salary: fromDom.salary,
+    salaryRaw: fromDom.salaryRaw,
     description: fromDom.description
   };
 }

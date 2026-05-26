@@ -88,7 +88,7 @@ function extractJob(): SaveJobPayload | null {
     location,
     remoteType,
     jobType,
-    salary
+    salaryRaw: salary
   };
 }
 

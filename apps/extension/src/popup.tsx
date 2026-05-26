@@ -54,12 +54,21 @@ const salarySelectStyle: React.CSSProperties = {
 
 const SALARY_CURRENCIES = ["£", "$", "€", "kr"] as const
 
-function splitSalary(salary: string | undefined): { currency: string; raw: string } {
-  if (!salary) return { currency: "£", raw: "" }
+const SYMBOL_TO_CODE: Record<string, string> = {
+  "£": "GBP",
+  "$": "USD",
+  "€": "EUR",
+  "kr": "SEK",
+}
+
+function splitSalary(salary: string | undefined): { currencyCode: string; raw: string } {
+  if (!salary) return { currencyCode: "GBP", raw: "" }
   for (const prefix of SALARY_CURRENCIES) {
-    if (salary.startsWith(prefix)) return { currency: prefix, raw: salary.slice(prefix.length) }
+    if (salary.startsWith(prefix)) {
+      return { currencyCode: SYMBOL_TO_CODE[prefix] ?? "GBP", raw: salary.slice(prefix.length).trim() }
+    }
   }
-  return { currency: "£", raw: salary }
+  return { currencyCode: "GBP", raw: salary }
 }
 
 function salaryKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
@@ -85,7 +94,7 @@ function IndexPopup() {
   const [confirming, setConfirming] = useState(false)
   const [showFullEdit, setShowFullEdit] = useState(false)
   const [initiallyMissingFields, setInitiallyMissingFields] = useState<Set<keyof SaveJobPayload>>(new Set())
-  const [salaryCurrency, setSalaryCurrency] = useState("£")
+  const [salaryCurrency, setSalaryCurrency] = useState("GBP")
   const [salaryRaw, setSalaryRaw] = useState("")
   const [authError, setAuthError] = useState("")
   const [email, setEmail] = useState("")
@@ -187,10 +196,10 @@ function IndexPopup() {
       ...response.payload,
       description: response.payload.description?.slice(0, 300)
     }
-    const displayFields: Array<keyof SaveJobPayload> = ["title", "company", "location", "remoteType", "jobType", "salary"]
+    const displayFields: Array<keyof SaveJobPayload> = ["title", "company", "location", "remoteType", "jobType", "salaryRaw"]
     setInitiallyMissingFields(new Set(displayFields.filter((k) => !payload[k])))
-    const { currency, raw } = splitSalary(payload.salary)
-    setSalaryCurrency(currency)
+    const { currencyCode, raw } = splitSalary(payload.salaryRaw)
+    setSalaryCurrency(currencyCode)
     setSalaryRaw(raw)
     setPreviewFields(payload)
     setSaveState({ kind: "preview", payload })
@@ -365,7 +374,7 @@ function IndexPopup() {
     setPreviewFields(null)
     setShowFullEdit(false)
     setInitiallyMissingFields(new Set())
-    setSalaryCurrency("£")
+    setSalaryCurrency("GBP")
     setSalaryRaw("")
     setSaveState({ kind: "idle" })
   }
@@ -420,7 +429,7 @@ function IndexPopup() {
     const hasLocation = !!previewFields.location
     const hasRemoteType = !!previewFields.remoteType
     const hasJobType = !!previewFields.jobType
-    const hasSalary = !!previewFields.salary
+    const hasSalary = !!previewFields.salaryRaw
     const anyExtracted =
       hasTitle || hasCompany || hasLocation || hasRemoteType || hasJobType || hasSalary
 
@@ -568,14 +577,14 @@ function IndexPopup() {
                   style={salarySelectStyle}
                   value={salaryCurrency}
                   onChange={(e) => {
-                    const cur = e.target.value
-                    setSalaryCurrency(cur)
-                    updateField("salary", salaryRaw ? cur + salaryRaw : undefined)
+                    const code = e.target.value
+                    setSalaryCurrency(code)
+                    updateField("salaryCurrency", code)
                   }}>
-                  <option value="£">£ GBP</option>
-                  <option value="$">$ USD</option>
-                  <option value="€">€ EUR</option>
-                  <option value="kr">kr SEK</option>
+                  <option value="GBP">£ GBP</option>
+                  <option value="USD">$ USD</option>
+                  <option value="EUR">€ EUR</option>
+                  <option value="SEK">kr SEK</option>
                 </select>
                 <input
                   style={{ ...inputStyle, flex: 1, width: "auto" }}
@@ -584,7 +593,8 @@ function IndexPopup() {
                   onChange={(e) => {
                     const raw = e.target.value
                     setSalaryRaw(raw)
-                    updateField("salary", raw ? salaryCurrency + raw : undefined)
+                    updateField("salaryRaw", raw || undefined)
+                    if (raw) updateField("salaryCurrency", salaryCurrency)
                   }}
                 />
               </div>
@@ -635,7 +645,7 @@ function IndexPopup() {
               )}
             </div>
           )}
-          {((!initiallyMissingFields.has("jobType") && hasJobType) || (!initiallyMissingFields.has("salary") && hasSalary)) && (
+          {((!initiallyMissingFields.has("jobType") && hasJobType) || (!initiallyMissingFields.has("salaryRaw") && hasSalary)) && (
             <div style={{ display: "flex", gap: 12, marginBottom: 8 }}>
               {!initiallyMissingFields.has("jobType") && hasJobType && (
                 <div style={{ flex: 1 }}>
@@ -643,10 +653,10 @@ function IndexPopup() {
                   <span style={infoValue}>{previewFields.jobType}</span>
                 </div>
               )}
-              {!initiallyMissingFields.has("salary") && hasSalary && (
+              {!initiallyMissingFields.has("salaryRaw") && hasSalary && (
                 <div style={{ flex: 1 }}>
                   <span style={infoLabel}>Salary</span>
-                  <span style={infoValue}>{previewFields.salary}</span>
+                  <span style={infoValue}>{previewFields.salaryRaw}</span>
                 </div>
               )}
             </div>
@@ -727,7 +737,7 @@ function IndexPopup() {
               </select>
             </div>
           )}
-          {initiallyMissingFields.has("salary") && (
+          {initiallyMissingFields.has("salaryRaw") && (
             <div style={{ marginBottom: 6 }}>
               <label style={labelStyle}>Salary</label>
               <div style={{ display: "flex", gap: 4 }}>
@@ -735,14 +745,14 @@ function IndexPopup() {
                   style={salarySelectStyle}
                   value={salaryCurrency}
                   onChange={(e) => {
-                    const cur = e.target.value
-                    setSalaryCurrency(cur)
-                    updateField("salary", salaryRaw ? cur + salaryRaw : undefined)
+                    const code = e.target.value
+                    setSalaryCurrency(code)
+                    updateField("salaryCurrency", code)
                   }}>
-                  <option value="£">£ GBP</option>
-                  <option value="$">$ USD</option>
-                  <option value="€">€ EUR</option>
-                  <option value="kr">kr SEK</option>
+                  <option value="GBP">£ GBP</option>
+                  <option value="USD">$ USD</option>
+                  <option value="EUR">€ EUR</option>
+                  <option value="SEK">kr SEK</option>
                 </select>
                 <input
                   style={{ ...inputStyle, flex: 1, width: "auto" }}
@@ -751,7 +761,8 @@ function IndexPopup() {
                   onChange={(e) => {
                     const raw = e.target.value
                     setSalaryRaw(raw)
-                    updateField("salary", raw ? salaryCurrency + raw : undefined)
+                    updateField("salaryRaw", raw || undefined)
+                    if (raw) updateField("salaryCurrency", salaryCurrency)
                   }}
                 />
               </div>

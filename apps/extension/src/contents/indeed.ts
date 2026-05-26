@@ -162,7 +162,7 @@ function extractFromJsonLd(): Partial<SaveJobPayload> | null {
           typeof item.description === "string" ? item.description : undefined;
         const description = rawDesc ? stripHtml(rawDesc) || undefined : undefined;
 
-        return { title, company, location, remoteType, jobType, salary, description };
+        return { title, company, location, remoteType, jobType, salaryRaw: salary, description };
       }
     } catch {
       // Malformed JSON in this <script>, try the next one
@@ -241,7 +241,7 @@ function extractFromDom(): Partial<SaveJobPayload> | null {
   if (location) result.location = location;
   if (remoteType) result.remoteType = remoteType;
   if (jobType) result.jobType = jobType;
-  if (salary) result.salary = salary;
+  if (salary) result.salaryRaw = salary;
 
   return Object.keys(result).length > 0 ? result : null;
 }
@@ -265,7 +265,7 @@ function extractJob(): SaveJobPayload | null {
     location: merged.location,
     remoteType: merged.remoteType,
     jobType: merged.jobType,
-    salary: merged.salary,
+    salaryRaw: merged.salaryRaw,
     description: merged.description
   };
 }

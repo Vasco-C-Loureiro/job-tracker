@@ -58,7 +58,7 @@ function extractJob(): SaveJobPayload | null {
     location: merged.location,
     remoteType: merged.remoteType,
     jobType: merged.jobType,
-    salary: merged.salary,
+    salaryRaw: merged.salaryRaw,
     description: merged.description
   };
 }
