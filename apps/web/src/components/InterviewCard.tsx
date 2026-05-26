@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import type { JobApplicationRow, InterviewRoundRow } from "./InterviewKanban";
 
 type RoundState = {
@@ -91,6 +92,7 @@ export default function InterviewCard({
   onRoundsChange,
 }: Props) {
   const [pillOpen, setPillOpen] = useState(false);
+  const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number } | null>(null);
   const [roundsEditMode, setRoundsEditMode] = useState(false);
   const [localRounds, setLocalRounds] = useState<RoundState[]>(() =>
     initialRounds.map(rowToRoundState),
@@ -98,7 +100,8 @@ export default function InterviewCard({
   const [saveMessage, setSaveMessage] = useState<{ type: "ok" | "err"; text: string } | null>(
     null,
   );
-  const pillRef = useRef<HTMLDivElement>(null);
+  const pillRef = useRef<HTMLButtonElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Sync when parent rounds change (e.g. after add/delete elsewhere)
   useEffect(() => {
@@ -110,12 +113,27 @@ export default function InterviewCard({
   useEffect(() => {
     if (!pillOpen) return;
     function handleDown(e: MouseEvent) {
-      if (pillRef.current && !pillRef.current.contains(e.target as Node)) {
+      if (
+        !(pillRef.current?.contains(e.target as Node)) &&
+        !(dropdownRef.current?.contains(e.target as Node))
+      ) {
         setPillOpen(false);
+        setDropdownPos(null);
       }
     }
     document.addEventListener("mousedown", handleDown);
     return () => document.removeEventListener("mousedown", handleDown);
+  }, [pillOpen]);
+
+  // Close pill on scroll
+  useEffect(() => {
+    if (!pillOpen) return;
+    function handleScroll() {
+      setPillOpen(false);
+      setDropdownPos(null);
+    }
+    window.addEventListener("scroll", handleScroll, true);
+    return () => window.removeEventListener("scroll", handleScroll, true);
   }, [pillOpen]);
 
   async function patchJob(payload: Record<string, unknown>): Promise<boolean> {
@@ -331,443 +349,467 @@ export default function InterviewCard({
   const labelCls = "block text-xs text-gray-500 mb-1";
 
   return (
-    <div
-      className={`bg-white border rounded-lg overflow-hidden transition-all relative ${
-        isSelected
-          ? "z-20 border-blue-400 shadow-md"
-          : "border-gray-200 hover:border-blue-300 hover:shadow-sm"
-      }`}
-      onClick={(e) => {
-        e.stopPropagation();
-        onSelect(isSelected ? null : job.id);
-      }}
-    >
-      {/* ── Card face ──────────────────────────────────────────────── */}
-      <div className="p-3">
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex-1 min-w-0">
-            <p className="font-semibold text-gray-900 text-sm line-clamp-2">
-              {job.title}
-            </p>
-            <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">
-              {job.company}
-            </p>
-            {job.location && (
-              <p className="text-xs text-gray-400 mt-0.5 truncate">
-                {job.location}
-              </p>
-            )}
-          </div>
-
-          {/* Round pill + round date/location */}
-          <div
-            ref={pillRef}
-            className="shrink-0 text-right"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="relative inline-block">
-              <button
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700 hover:bg-amber-200 transition-colors cursor-pointer"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setPillOpen((o) => !o);
-                }}
-              >
-                {job.status === "offer"
-                  ? "Offer"
-                  : `Round ${job.current_interview_round}`}
-                <svg
-                  className="w-3 h-3"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 9l-7 7-7-7"
-                  />
-                </svg>
-              </button>
-
-              {pillOpen && (
-                <div className="absolute right-0 top-full mt-1 w-44 bg-white border border-gray-200 rounded-xl shadow-lg z-30">
-                  <div className="py-1">
-                    {roundOptions.map((n) => (
-                      <button
-                        key={n}
-                        className="w-full text-left px-3 py-1.5 text-sm text-gray-900 hover:bg-gray-50 flex items-center gap-2"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          void handleSelectRound(n);
-                        }}
-                      >
-                        <span
-                          className={
-                            job.current_interview_round === n
-                              ? "text-blue-600"
-                              : "text-gray-300"
-                          }
-                        >
-                          {job.current_interview_round === n ? "✓" : "○"}
-                        </span>
-                        Round {n}
-                      </button>
-                    ))}
-                    <div className="border-t border-gray-100 my-1" />
-                    <button
-                      className="w-full text-left px-3 py-1.5 text-sm text-blue-600 hover:bg-blue-50 flex items-center gap-1.5"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        void handleNextRound();
-                      }}
-                    >
-                      → Next Round
-                    </button>
-                    <button
-                      className="w-full text-left px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 flex items-center gap-1.5"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        void handleRejected();
-                      }}
-                    >
-                      ✕ Rejected
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {currentRound?.date && (
-              <p className="text-xs text-gray-400 mt-1">
-                {new Date(currentRound.date).toLocaleDateString("en-GB")}
-              </p>
-            )}
-            {currentRound?.location && (
-              <p className="text-xs text-gray-400">{currentRound.location}</p>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* ── Expandable section ─────────────────────────────────────── */}
+    <>
       <div
-        className={`grid transition-all duration-300 ease-out ${
-          isSelected ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+        className={`bg-white border rounded-lg overflow-hidden transition-all relative ${
+          isSelected
+            ? "z-20 border-blue-400 shadow-md"
+            : "border-gray-200 hover:border-blue-300 hover:shadow-sm"
         }`}
+        onClick={(e) => {
+          e.stopPropagation();
+          onSelect(isSelected ? null : job.id);
+        }}
       >
-        <div className="min-h-0 overflow-hidden">
-          <div
-            className="border-t border-gray-100 p-4"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Section 1 — Read-only job details */}
-            <div className="mb-5 space-y-1.5 text-sm">
-              <div className="flex gap-2">
-                <span className="text-gray-400 w-20 shrink-0">Title</span>
-                <span className="text-gray-900 font-medium">{job.title}</span>
-              </div>
-              <div className="flex gap-2">
-                <span className="text-gray-400 w-20 shrink-0">Company</span>
-                <span className="text-gray-900">{job.company}</span>
-              </div>
+        {/* ── Card face ──────────────────────────────────────────────── */}
+        <div className="p-3">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-gray-900 text-sm line-clamp-2">
+                {job.title}
+              </p>
+              <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">
+                {job.company}
+              </p>
               {job.location && (
-                <div className="flex gap-2">
-                  <span className="text-gray-400 w-20 shrink-0">Location</span>
-                  <span className="text-gray-900">
-                    {job.location}
-                    {job.remote_type ? ` · ${job.remote_type}` : ""}
-                  </span>
-                </div>
-              )}
-              {job.job_type && (
-                <div className="flex gap-2">
-                  <span className="text-gray-400 w-20 shrink-0">Job type</span>
-                  <span className="text-gray-900">{job.job_type}</span>
-                </div>
-              )}
-              {job.salary_raw && (
-                <div className="flex gap-2">
-                  <span className="text-gray-400 w-20 shrink-0">Salary</span>
-                  <span className="text-gray-900">{job.salary_raw}</span>
-                </div>
-              )}
-              {job.applied_at && (
-                <div className="flex gap-2">
-                  <span className="text-gray-400 w-20 shrink-0">Applied</span>
-                  <span className="text-gray-900">
-                    {formatDate(job.applied_at)}
-                  </span>
-                </div>
-              )}
-              <div className="flex gap-2 items-center">
-                <span className="text-gray-400 w-20 shrink-0">Status</span>
-                <span
-                  className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                    STATUS_BADGE[job.status] ?? "bg-gray-100 text-gray-600"
-                  }`}
-                >
-                  {job.status}
-                </span>
-                {job.interest_level && (
-                  <span className="text-xs text-gray-400 ml-1">
-                    {job.interest_level}
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {/* Section 2 — Interview rounds */}
-            <div className="mb-5">
-              <div className="flex items-center justify-between mb-2">
-                <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
-                  Interview Rounds
-                </h4>
-                <button
-                  className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
-                  onClick={() => setRoundsEditMode((m) => !m)}
-                >
-                  {roundsEditMode ? "done" : "✏ edit"}
-                </button>
-              </div>
-
-              {!roundsEditMode ? (
-                localRounds.length === 0 ? (
-                  <p className="text-xs text-gray-400">No rounds logged.</p>
-                ) : (
-                  <div className="space-y-1">
-                    {localRounds.map((r) => (
-                      <div
-                        key={r.id ?? `new-${r.roundNumber}`}
-                        className="text-xs text-gray-600 flex flex-wrap gap-1 items-center"
-                      >
-                        <span className="font-medium">
-                          Round {r.roundNumber}
-                        </span>
-                        <span className="text-gray-300">·</span>
-                        <span>{r.type}</span>
-                        {r.date && (
-                          <>
-                            <span className="text-gray-300">·</span>
-                            <span>{formatDate(r.date)}</span>
-                          </>
-                        )}
-                        {r.contactName && (
-                          <>
-                            <span className="text-gray-300">·</span>
-                            <span>{r.contactName}</span>
-                          </>
-                        )}
-                        {r.done && (
-                          <>
-                            <span className="text-gray-300">·</span>
-                            <span className="text-green-600">Done ✓</span>
-                          </>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )
-              ) : (
-                <div>
-                  {localRounds.map((round, idx) => (
-                    <div
-                      key={round.id ?? `new-${idx}`}
-                      className="border border-gray-200 rounded-lg p-3 mb-3"
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-semibold text-gray-400">
-                          Round {round.roundNumber}
-                        </span>
-                        <button
-                          onClick={() => void deleteLocalRound(idx)}
-                          disabled={round.deleting}
-                          className="text-xs text-red-500 hover:text-red-700 disabled:opacity-40"
-                        >
-                          {round.deleting ? "Removing…" : "Remove"}
-                        </button>
-                      </div>
-                      <div className="grid grid-cols-2 gap-3 mb-3">
-                        {/* Row 1: Type + Date */}
-                        <div>
-                          <label className={labelCls}>Type</label>
-                          <select
-                            className={inputCls}
-                            value={round.type}
-                            onChange={(e) =>
-                              updateLocalRound(idx, "type", e.target.value)
-                            }
-                          >
-                            {INTERVIEW_TYPES.map(({ value, label }) => (
-                              <option
-                                key={value}
-                                className="text-gray-900 bg-white"
-                                value={value}
-                              >
-                                {label}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                        <div>
-                          <label className={labelCls}>Date</label>
-                          <input
-                            type="date"
-                            className={inputCls}
-                            value={round.date}
-                            onChange={(e) =>
-                              updateLocalRound(idx, "date", e.target.value)
-                            }
-                          />
-                        </div>
-                        {/* Row 2: Contact name + Contact role */}
-                        <div>
-                          <label className={labelCls}>Contact name</label>
-                          <input
-                            className={inputCls}
-                            value={round.contactName}
-                            onChange={(e) =>
-                              updateLocalRound(idx, "contactName", e.target.value)
-                            }
-                          />
-                        </div>
-                        <div>
-                          <label className={labelCls}>Contact role</label>
-                          <input
-                            className={inputCls}
-                            value={round.contactRole}
-                            onChange={(e) =>
-                              updateLocalRound(idx, "contactRole", e.target.value)
-                            }
-                          />
-                        </div>
-                        {/* Row 3: Location + checkboxes */}
-                        <div>
-                          <label className={labelCls}>Location</label>
-                          <input
-                            className={inputCls}
-                            value={round.location}
-                            onChange={(e) =>
-                              updateLocalRound(idx, "location", e.target.value)
-                            }
-                          />
-                        </div>
-                        <div className="flex gap-4 items-center pt-5">
-                          <label className="flex items-center gap-1.5 text-sm text-gray-700 cursor-pointer">
-                            <input
-                              type="checkbox"
-                              className="w-3.5 h-3.5"
-                              checked={round.done}
-                              onChange={(e) =>
-                                updateLocalRound(idx, "done", e.target.checked)
-                              }
-                            />
-                            Done
-                          </label>
-                          <label className="flex items-center gap-1.5 text-sm text-gray-700 cursor-pointer">
-                            <input
-                              type="checkbox"
-                              className="w-3.5 h-3.5"
-                              checked={round.followUpSent}
-                              onChange={(e) =>
-                                updateLocalRound(idx, "followUpSent", e.target.checked)
-                              }
-                            />
-                            Follow-up sent
-                          </label>
-                        </div>
-                        {/* Row 4: Notes (full width) */}
-                        <div className="col-span-2">
-                          <label className={labelCls}>Notes</label>
-                          <textarea
-                            className={`${inputCls} resize-y`}
-                            rows={2}
-                            value={round.notes}
-                            onChange={(e) =>
-                              updateLocalRound(idx, "notes", e.target.value)
-                            }
-                          />
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => void saveLocalRound(idx)}
-                        disabled={round.saving}
-                        className="px-3 py-1 bg-blue-600 text-white text-xs font-semibold rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {round.saving
-                          ? "Saving…"
-                          : round.id
-                            ? "Save round"
-                            : "Add round"}
-                      </button>
-                    </div>
-                  ))}
-                  <button
-                    onClick={addLocalRound}
-                    className="px-3 py-1.5 border border-gray-300 text-xs font-medium rounded hover:bg-gray-50"
-                  >
-                    + Add round
-                  </button>
-                </div>
+                <p className="text-xs text-gray-400 mt-0.5 truncate">
+                  {job.location}
+                </p>
               )}
             </div>
 
-            {/* Section 3 — Action buttons */}
-            <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-              <div className="flex items-center gap-3">
+            {/* Round pill + round date/location */}
+            <div
+              className="shrink-0 text-right"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="inline-block">
                 <button
-                  onClick={async (e) => {
+                  ref={pillRef}
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700 hover:bg-amber-200 transition-colors cursor-pointer"
+                  onClick={(e) => {
                     e.stopPropagation();
-                    const ok = await patchJob({ notes: job.notes });
-                    if (ok) {
-                      onSelect(null);
+                    if (pillOpen) {
+                      setPillOpen(false);
+                      setDropdownPos(null);
                     } else {
-                      setSaveMessage({ type: "err", text: "Save failed" });
-                      setTimeout(() => setSaveMessage(null), 2000);
+                      const rect = pillRef.current?.getBoundingClientRect();
+                      if (rect) {
+                        setDropdownPos({ top: rect.bottom + 4, left: rect.right });
+                      }
+                      setPillOpen(true);
                     }
                   }}
-                  className="px-3 py-1.5 bg-blue-600 text-white text-xs font-semibold rounded hover:bg-blue-700"
                 >
-                  Save changes
+                  {job.status === "offer"
+                    ? "Offer"
+                    : `Round ${job.current_interview_round}`}
+                  <svg
+                    className="w-3 h-3"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
                 </button>
-                {saveMessage && (
+              </div>
+
+              {currentRound?.date && (
+                <p className="text-xs text-gray-400 mt-1">
+                  {new Date(currentRound.date).toLocaleDateString("en-GB")}
+                </p>
+              )}
+              {currentRound?.location && (
+                <p className="text-xs text-gray-400">{currentRound.location}</p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* ── Expandable section ─────────────────────────────────────── */}
+        <div
+          className={`grid transition-all duration-300 ease-out ${
+            isSelected ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+          }`}
+        >
+          <div className="min-h-0 overflow-hidden">
+            <div
+              className="border-t border-gray-100 p-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Section 1 — Read-only job details */}
+              <div className="mb-5 space-y-1.5 text-sm">
+                <div className="flex gap-2">
+                  <span className="text-gray-400 w-20 shrink-0">Title</span>
+                  <span className="text-gray-900 font-medium">{job.title}</span>
+                </div>
+                <div className="flex gap-2">
+                  <span className="text-gray-400 w-20 shrink-0">Company</span>
+                  <span className="text-gray-900">{job.company}</span>
+                </div>
+                {job.location && (
+                  <div className="flex gap-2">
+                    <span className="text-gray-400 w-20 shrink-0">Location</span>
+                    <span className="text-gray-900">
+                      {job.location}
+                      {job.remote_type ? ` · ${job.remote_type}` : ""}
+                    </span>
+                  </div>
+                )}
+                {job.job_type && (
+                  <div className="flex gap-2">
+                    <span className="text-gray-400 w-20 shrink-0">Job type</span>
+                    <span className="text-gray-900">{job.job_type}</span>
+                  </div>
+                )}
+                {job.salary_raw && (
+                  <div className="flex gap-2">
+                    <span className="text-gray-400 w-20 shrink-0">Salary</span>
+                    <span className="text-gray-900">{job.salary_raw}</span>
+                  </div>
+                )}
+                {job.applied_at && (
+                  <div className="flex gap-2">
+                    <span className="text-gray-400 w-20 shrink-0">Applied</span>
+                    <span className="text-gray-900">
+                      {formatDate(job.applied_at)}
+                    </span>
+                  </div>
+                )}
+                <div className="flex gap-2 items-center">
+                  <span className="text-gray-400 w-20 shrink-0">Status</span>
                   <span
-                    className={`text-xs ${
-                      saveMessage.type === "ok"
-                        ? "text-green-600"
-                        : "text-red-600"
+                    className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                      STATUS_BADGE[job.status] ?? "bg-gray-100 text-gray-600"
                     }`}
                   >
-                    {saveMessage.text}
+                    {job.status}
                   </span>
+                  {job.interest_level && (
+                    <span className="text-xs text-gray-400 ml-1">
+                      {job.interest_level}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Section 2 — Interview rounds */}
+              <div className="mb-5">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
+                    Interview Rounds
+                  </h4>
+                  <button
+                    className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
+                    onClick={() => setRoundsEditMode((m) => !m)}
+                  >
+                    {roundsEditMode ? "done" : "✏ edit"}
+                  </button>
+                </div>
+
+                {!roundsEditMode ? (
+                  localRounds.length === 0 ? (
+                    <p className="text-xs text-gray-400">No rounds logged.</p>
+                  ) : (
+                    <div className="space-y-1">
+                      {localRounds.map((r) => (
+                        <div
+                          key={r.id ?? `new-${r.roundNumber}`}
+                          className="text-xs text-gray-600 flex flex-wrap gap-1 items-center"
+                        >
+                          <span className="font-medium">
+                            Round {r.roundNumber}
+                          </span>
+                          <span className="text-gray-300">·</span>
+                          <span>{r.type}</span>
+                          {r.date && (
+                            <>
+                              <span className="text-gray-300">·</span>
+                              <span>{formatDate(r.date)}</span>
+                            </>
+                          )}
+                          {r.contactName && (
+                            <>
+                              <span className="text-gray-300">·</span>
+                              <span>{r.contactName}</span>
+                            </>
+                          )}
+                          {r.done && (
+                            <>
+                              <span className="text-gray-300">·</span>
+                              <span className="text-green-600">Done ✓</span>
+                            </>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )
+                ) : (
+                  <div>
+                    {localRounds.map((round, idx) => (
+                      <div
+                        key={round.id ?? `new-${idx}`}
+                        className="border border-gray-200 rounded-lg p-3 mb-3"
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs font-semibold text-gray-400">
+                            Round {round.roundNumber}
+                          </span>
+                          <button
+                            onClick={() => void deleteLocalRound(idx)}
+                            disabled={round.deleting}
+                            className="text-xs text-red-500 hover:text-red-700 disabled:opacity-40"
+                          >
+                            {round.deleting ? "Removing…" : "Remove"}
+                          </button>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3 mb-3">
+                          {/* Row 1: Type + Date */}
+                          <div>
+                            <label className={labelCls}>Type</label>
+                            <select
+                              className={inputCls}
+                              value={round.type}
+                              onChange={(e) =>
+                                updateLocalRound(idx, "type", e.target.value)
+                              }
+                            >
+                              {INTERVIEW_TYPES.map(({ value, label }) => (
+                                <option
+                                  key={value}
+                                  className="text-gray-900 bg-white"
+                                  value={value}
+                                >
+                                  {label}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <label className={labelCls}>Date</label>
+                            <input
+                              type="date"
+                              className={inputCls}
+                              value={round.date}
+                              onChange={(e) =>
+                                updateLocalRound(idx, "date", e.target.value)
+                              }
+                            />
+                          </div>
+                          {/* Row 2: Contact name + Contact role */}
+                          <div>
+                            <label className={labelCls}>Contact name</label>
+                            <input
+                              className={inputCls}
+                              value={round.contactName}
+                              onChange={(e) =>
+                                updateLocalRound(idx, "contactName", e.target.value)
+                              }
+                            />
+                          </div>
+                          <div>
+                            <label className={labelCls}>Contact role</label>
+                            <input
+                              className={inputCls}
+                              value={round.contactRole}
+                              onChange={(e) =>
+                                updateLocalRound(idx, "contactRole", e.target.value)
+                              }
+                            />
+                          </div>
+                          {/* Row 3: Location + checkboxes */}
+                          <div>
+                            <label className={labelCls}>Location</label>
+                            <input
+                              className={inputCls}
+                              value={round.location}
+                              onChange={(e) =>
+                                updateLocalRound(idx, "location", e.target.value)
+                              }
+                            />
+                          </div>
+                          <div className="flex gap-4 items-center pt-5">
+                            <label className="flex items-center gap-1.5 text-sm text-gray-700 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                className="w-3.5 h-3.5"
+                                checked={round.done}
+                                onChange={(e) =>
+                                  updateLocalRound(idx, "done", e.target.checked)
+                                }
+                              />
+                              Done
+                            </label>
+                            <label className="flex items-center gap-1.5 text-sm text-gray-700 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                className="w-3.5 h-3.5"
+                                checked={round.followUpSent}
+                                onChange={(e) =>
+                                  updateLocalRound(idx, "followUpSent", e.target.checked)
+                                }
+                              />
+                              Follow-up sent
+                            </label>
+                          </div>
+                          {/* Row 4: Notes (full width) */}
+                          <div className="col-span-2">
+                            <label className={labelCls}>Notes</label>
+                            <textarea
+                              className={`${inputCls} resize-y`}
+                              rows={2}
+                              value={round.notes}
+                              onChange={(e) =>
+                                updateLocalRound(idx, "notes", e.target.value)
+                              }
+                            />
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => void saveLocalRound(idx)}
+                          disabled={round.saving}
+                          className="px-3 py-1 bg-blue-600 text-white text-xs font-semibold rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {round.saving
+                            ? "Saving…"
+                            : round.id
+                              ? "Save round"
+                              : "Add round"}
+                        </button>
+                      </div>
+                    ))}
+                    <button
+                      onClick={addLocalRound}
+                      className="px-3 py-1.5 border border-gray-300 text-xs font-medium rounded hover:bg-gray-50"
+                    >
+                      + Add round
+                    </button>
+                  </div>
                 )}
               </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={async (e) => {
-                    e.stopPropagation();
-                    await handleRejected();
-                    onSelect(null);
-                  }}
-                  className="px-3 py-1.5 bg-red-600 text-white text-xs font-semibold rounded hover:bg-red-700"
-                >
-                  ✕ Rejected
-                </button>
-                <button
-                  onClick={async (e) => {
-                    e.stopPropagation();
-                    await handleNextRound();
-                  }}
-                  className="px-3 py-1.5 bg-green-600 text-white text-xs font-semibold rounded hover:bg-green-700"
-                >
-                  → Next Round
-                </button>
+
+              {/* Section 3 — Action buttons */}
+              <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      const ok = await patchJob({ notes: job.notes });
+                      if (ok) {
+                        onSelect(null);
+                      } else {
+                        setSaveMessage({ type: "err", text: "Save failed" });
+                        setTimeout(() => setSaveMessage(null), 2000);
+                      }
+                    }}
+                    className="px-3 py-1.5 bg-blue-600 text-white text-xs font-semibold rounded hover:bg-blue-700"
+                  >
+                    Save changes
+                  </button>
+                  {saveMessage && (
+                    <span
+                      className={`text-xs ${
+                        saveMessage.type === "ok"
+                          ? "text-green-600"
+                          : "text-red-600"
+                      }`}
+                    >
+                      {saveMessage.text}
+                    </span>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      await handleRejected();
+                      onSelect(null);
+                    }}
+                    className="px-3 py-1.5 bg-red-600 text-white text-xs font-semibold rounded hover:bg-red-700"
+                  >
+                    ✕ Rejected
+                  </button>
+                  <button
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      await handleNextRound();
+                    }}
+                    className="px-3 py-1.5 bg-green-600 text-white text-xs font-semibold rounded hover:bg-green-700"
+                  >
+                    → Next Round
+                  </button>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+
+      {/* Round pill dropdown — rendered via portal to escape overflow/stacking context */}
+      {pillOpen && dropdownPos &&
+        createPortal(
+          <div
+            ref={dropdownRef}
+            style={{
+              position: "fixed",
+              top: dropdownPos.top,
+              left: dropdownPos.left,
+              transform: "translateX(-100%)",
+              zIndex: 9999,
+            }}
+            className="w-44 bg-white border border-gray-200 rounded-xl shadow-lg"
+          >
+            <div className="py-1">
+              {roundOptions.map((n) => (
+                <button
+                  key={n}
+                  className="w-full text-left px-3 py-1.5 text-sm text-gray-900 hover:bg-gray-50 flex items-center gap-2"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    void handleSelectRound(n);
+                  }}
+                >
+                  <span
+                    className={
+                      job.current_interview_round === n
+                        ? "text-blue-600"
+                        : "text-gray-300"
+                    }
+                  >
+                    {job.current_interview_round === n ? "✓" : "○"}
+                  </span>
+                  Round {n}
+                </button>
+              ))}
+              <div className="border-t border-gray-100 my-1" />
+              <button
+                className="w-full text-left px-3 py-1.5 text-sm text-blue-600 hover:bg-blue-50 flex items-center gap-1.5"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  void handleNextRound();
+                }}
+              >
+                → Next Round
+              </button>
+              <button
+                className="w-full text-left px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 flex items-center gap-1.5"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  void handleRejected();
+                }}
+              >
+                ✕ Rejected
+              </button>
+            </div>
+          </div>,
+          document.body,
+        )}
+    </>
   );
 }
