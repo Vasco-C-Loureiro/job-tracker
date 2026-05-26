@@ -54,6 +54,7 @@ export type JobApplication = {
   companyApplicationUrl?: string;
   isArchived: boolean;
   archivedAt?: string;
+  currentInterviewRound?: number;
 };
 
 export type JobApplicationListItem = Omit<JobApplication, "description">;
