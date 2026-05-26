@@ -293,42 +293,7 @@ function extractFromDom(): Partial<SaveJobPayload> | null {
   return Object.keys(result).length > 0 ? result : null;
 }
 
-// ─── Layer 3: Full description via DOM ──────────────────────────
-// Finds "Report job" as a landmark at the bottom of the job content area,
-// then extracts all text that appears above it in the same container.
-// Returns undefined if the landmark is not found (caller falls back to JSON-LD desc).
-
-function elementToText(node: Node): string {
-  if (node.nodeType === 3 /* TEXT_NODE */) return node.textContent ?? "";
-  const tag = node.nodeType === 1 ? (node as Element).tagName.toLowerCase() : "";
-  const isBlock = /^(div|p|li|h[1-6]|section|ul|ol|br|tr|td|th)$/.test(tag);
-  let text = "";
-  for (const child of node.childNodes) text += elementToText(child);
-  return isBlock ? `\n${text.trim()}\n` : text;
-}
-
-function cleanDescriptionText(raw: string): string {
-  return raw
-    .replace(/\n{3,}/g, "\n\n")
-    .replace(/^(apply now|save job|share)\s*$/gim, "")
-    .trim();
-}
-
-function extractDescriptionFromDom(): string | undefined {
-  const descEl = document.querySelector<HTMLElement>("#jobDescriptionText");
-  if (descEl) {
-    const text = descEl.innerText.trim().replace(/\n{3,}/g, "\n\n");
-    if (text) return text;
-  }
-
-  // Last-resort fallback: slice body text at the "Report job" footer landmark
-  const fullText = document.body.innerText;
-  const landmarkIdx = fullText.search(/report\s+job/i);
-  const raw = landmarkIdx !== -1 ? fullText.slice(0, landmarkIdx) : fullText;
-  return raw.trim().replace(/\n{3,}/g, "\n\n") || undefined;
-}
-
-// ─── Layer 4: DOM salary fallback ───────────────────────────────
+// ─── Layer 3: DOM salary fallback ───────────────────────────────
 // Called when neither JSON-LD nor the header DOM element yielded a salary.
 // Covers the "Pay" row in Indeed's structured Job Details panel, which is
 // further down the page and uses different selectors.
@@ -386,8 +351,10 @@ function extractJob(): SaveJobPayload | null {
 
   if (!merged.title || !merged.company) return null;
 
-  // Prefer full DOM description (via "Report job" landmark); fall back to JSON-LD/DOM desc
-  const description = extractDescriptionFromDom() ?? merged.description;
+  const descEl = document.querySelector<HTMLElement>("#jobDescriptionText");
+  const description = descEl
+    ? descEl.innerText.trim().replace(/\n{3,}/g, "\n\n")
+    : undefined;
 
   return {
     title: merged.title,
