@@ -438,11 +438,14 @@ export function JobTable({ jobs }: Props) {
   }, [jobs]);
 
   const maxSalary = useMemo(() => {
-    const parsed = jobs
-      .map((j) => parseSalary(j.salary))
-      .filter((r): r is { min: number; max: number } => r !== null);
-    if (parsed.length === 0) return 0;
-    return Math.ceil(Math.max(...parsed.map((r) => r.max)) / 10000) * 10000;
+    const maxVals = jobs
+      .map((j) => {
+        if (j.salaryMax != null) return j.salaryMax;
+        return parseSalary(j.salaryRaw)?.max ?? null;
+      })
+      .filter((v): v is number => v !== null);
+    if (maxVals.length === 0) return 0;
+    return Math.ceil(Math.max(...maxVals) / 10000) * 10000;
   }, [jobs]);
 
   const sliderMin = filters.salaryMin ?? 0;
@@ -516,15 +519,26 @@ export function JobTable({ jobs }: Props) {
 
     if (filters.salaryMin !== null || filters.salaryMax !== null) {
       result = result.filter((j) => {
-        const parsed = parseSalary(j.salary);
-        if (parsed === null) return filters.includeUnspecifiedSalary;
+        let jobMin: number | null = j.salaryMin ?? null;
+        let jobMax: number | null = j.salaryMax ?? null;
+        if (jobMin === null || jobMax === null) {
+          const parsed = parseSalary(j.salaryRaw);
+          if (parsed) {
+            if (jobMin === null) jobMin = parsed.min;
+            if (jobMax === null) jobMax = parsed.max;
+          }
+        }
+        if (jobMin === null || jobMax === null) return filters.includeUnspecifiedSalary;
         // Range overlap: job passes if job.max >= filterMin AND job.min <= filterMax
         const filterMin = filters.salaryMin ?? 0;
         const filterMax = filters.salaryMax ?? Infinity;
-        return parsed.max >= filterMin && parsed.min <= filterMax;
+        return jobMax >= filterMin && jobMin <= filterMax;
       });
     } else if (!filters.includeUnspecifiedSalary) {
-      result = result.filter((j) => parseSalary(j.salary) !== null);
+      result = result.filter((j) => {
+        if (j.salaryMin != null || j.salaryMax != null) return true;
+        return parseSalary(j.salaryRaw) !== null;
+      });
     }
 
     if (filters.savedDateFrom)
@@ -560,12 +574,18 @@ export function JobTable({ jobs }: Props) {
       else if (column === "location")
         cmp = (a.location ?? "").localeCompare(b.location ?? "");
       else if (column === "salary") {
-        const aVal = parseSalary(a.salary);
-        const bVal = parseSalary(b.salary);
-        if (aVal === null && bVal === null) cmp = 0;
-        else if (aVal === null) cmp = 1;
-        else if (bVal === null) cmp = -1;
-        else cmp = (aVal.min + aVal.max) / 2 - (bVal.min + bVal.max) / 2;
+        const getMid = (j: JobApplicationListItem) => {
+          const min = j.salaryMin ?? parseSalary(j.salaryRaw)?.min ?? null;
+          const max = j.salaryMax ?? parseSalary(j.salaryRaw)?.max ?? null;
+          if (min === null || max === null) return null;
+          return (min + max) / 2;
+        };
+        const aMid = getMid(a);
+        const bMid = getMid(b);
+        if (aMid === null && bMid === null) cmp = 0;
+        else if (aMid === null) cmp = 1;
+        else if (bMid === null) cmp = -1;
+        else cmp = aMid - bMid;
       } else if (column === "savedAt") cmp = a.savedAt.localeCompare(b.savedAt);
 
       return direction === "asc" ? cmp : -cmp;
@@ -863,7 +883,7 @@ export function JobTable({ jobs }: Props) {
                 <td className="py-2 pr-4">{job.company}</td>
                 <td className="py-2 pr-4">{job.location ?? "—"}</td>
                 <td className="py-2 pr-4">{job.remoteType ?? "—"}</td>
-                <td className="py-2 pr-4">{job.salary ?? "—"}</td>
+                <td className="py-2 pr-4">{job.salaryRaw ?? "—"}</td>
                 <td className="py-2 pr-4">{job.source}</td>
                 <td className="py-2 pr-4">{job.status}</td>
                 <td className="py-2 pr-4">
