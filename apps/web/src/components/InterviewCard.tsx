@@ -332,9 +332,9 @@ export default function InterviewCard({
 
   return (
     <div
-      className={`bg-white border rounded-lg overflow-hidden transition-all ${
+      className={`bg-white border rounded-lg overflow-hidden transition-all relative ${
         isSelected
-          ? "border-blue-400 shadow-md"
+          ? "z-20 border-blue-400 shadow-md"
           : "border-gray-200 hover:border-blue-300 hover:shadow-sm"
       }`}
       onClick={(e) => {
@@ -720,12 +720,12 @@ export default function InterviewCard({
                   onClick={async (e) => {
                     e.stopPropagation();
                     const ok = await patchJob({ notes: job.notes });
-                    setSaveMessage(
-                      ok
-                        ? { type: "ok", text: "Saved" }
-                        : { type: "err", text: "Save failed" },
-                    );
-                    setTimeout(() => setSaveMessage(null), 2000);
+                    if (ok) {
+                      onSelect(null);
+                    } else {
+                      setSaveMessage({ type: "err", text: "Save failed" });
+                      setTimeout(() => setSaveMessage(null), 2000);
+                    }
                   }}
                   className="px-3 py-1.5 bg-blue-600 text-white text-xs font-semibold rounded hover:bg-blue-700"
                 >
@@ -758,7 +758,6 @@ export default function InterviewCard({
                   onClick={async (e) => {
                     e.stopPropagation();
                     await handleNextRound();
-                    onSelect(null);
                   }}
                   className="px-3 py-1.5 bg-green-600 text-white text-xs font-semibold rounded hover:bg-green-700"
                 >

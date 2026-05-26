@@ -187,10 +187,40 @@ export default function InterviewKanban({
     [],
   );
 
+  async function handleSaveAndClose() {
+    const job = jobs.find((j) => j.id === selectedJobId);
+    setSelectedJobId(null);
+    if (!job) return;
+    const token = await getToken();
+    if (!token) return;
+    await fetch(`/api/jobs/${job.id}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ notes: job.notes }),
+    });
+  }
+
+  const activeCount = jobs.filter(
+    (j) => j.status === "interview" || j.status === "offer",
+  ).length;
+
   const anyRejected = jobs.some((j) => j.status === "rejected");
 
   return (
-    <div onClick={() => setSelectedJobId(null)}>
+    <>
+      {selectedJobId && (
+        <div
+          className="fixed inset-0 z-10"
+          onClick={() => void handleSaveAndClose()}
+        />
+      )}
+      <p className="text-sm text-gray-500 mb-6">
+        {activeCount} active application{activeCount !== 1 ? "s" : ""}
+      </p>
+      <div className="relative z-20">
       {/* Main kanban */}
       <div className="flex gap-4 overflow-x-auto pb-4 min-h-0">
         {/* Round columns */}
@@ -305,6 +335,7 @@ export default function InterviewKanban({
           </div>
         </div>
       )}
-    </div>
+      </div>{/* end relative z-20 */}
+    </>
   );
 }
