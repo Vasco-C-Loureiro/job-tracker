@@ -1,6 +1,17 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import {
+  DndContext,
+  DragEndEvent,
+  DragOverEvent,
+  DragStartEvent,
+  DragOverlay,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  useDroppable,
+} from "@dnd-kit/core";
 import { createSupabaseBrowserClient } from "@/lib/supabase";
 import InterviewCard from "./InterviewCard";
 
@@ -61,6 +72,28 @@ const DEFAULT_ROUND_COLUMNS: KanbanColumn[] = [
 const OFFER_COLUMN: KanbanColumn = { roundNumber: 0, label: "Offer", isOffer: true };
 const EXTRA_ROUNDS_KEY = "job-tracker-kanban-extra-rounds";
 
+function DroppableColumn({
+  id,
+  children,
+  isOver,
+}: {
+  id: string;
+  children: React.ReactNode;
+  isOver: boolean;
+}) {
+  const { setNodeRef } = useDroppable({ id });
+  return (
+    <div
+      ref={setNodeRef}
+      className={`transition-colors duration-150 rounded-lg ${
+        isOver ? "bg-blue-950/40 ring-1 ring-blue-500" : ""
+      }`}
+    >
+      {children}
+    </div>
+  );
+}
+
 export default function InterviewKanban({
   interviewJobs,
   offerJobs,
@@ -78,6 +111,14 @@ export default function InterviewKanban({
   const [advancingJobId, setAdvancingJobId] = useState<string | null>(null);
   const [isKanbanSliding, setIsKanbanSliding] = useState(false);
   const [rejectingJobId, setRejectingJobId] = useState<string | null>(null);
+  const [draggingJobId, setDraggingJobId] = useState<string | null>(null);
+  const [overColumnId, setOverColumnId] = useState<string | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 8 },
+    }),
+  );
 
   useEffect(() => {
     try {
@@ -279,14 +320,77 @@ export default function InterviewKanban({
     });
   }
 
+  function handleDragStart(event: DragStartEvent) {
+    setDraggingJobId(event.active.id as string);
+  }
+
+  function handleDragOver(event: DragOverEvent) {
+    setOverColumnId(event.over ? (event.over.id as string) : null);
+  }
+
+  async function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    setDraggingJobId(null);
+    setOverColumnId(null);
+
+    if (!over) return;
+
+    const jobId = active.id as string;
+    const overId = over.id as string;
+
+    const job = jobs.find(
+      (j) => j.id === jobId && (j.status === "interview" || j.status === "offer"),
+    );
+    if (!job) return;
+
+    if (overId === "offer") {
+      if (job.status === "offer") return;
+      handleStatusChange(jobId, "offer");
+      const token = await getToken();
+      if (!token) return;
+      await fetch(`/api/jobs/${jobId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ status: "offer" }),
+      });
+    } else if (overId.startsWith("round-")) {
+      const targetRound = parseInt(overId.replace("round-", ""), 10);
+      if (job.current_interview_round === targetRound && job.status === "interview") return;
+      handleRoundChange(jobId, targetRound);
+      const token = await getToken();
+      if (!token) return;
+      await fetch(`/api/jobs/${jobId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ currentInterviewRound: targetRound }),
+      });
+    }
+  }
+
   const activeCount = jobs.filter(
     (j) => j.status === "interview" || j.status === "offer",
   ).length;
 
   const anyRejected = jobs.some((j) => j.status === "rejected");
 
+  const draggingJob = draggingJobId
+    ? jobs.find(
+        (j) =>
+          j.id === draggingJobId &&
+          (j.status === "interview" || j.status === "offer"),
+      )
+    : null;
+  const draggingJobRounds = draggingJob
+    ? rounds.filter((r) => r.job_application_id === draggingJob.id)
+    : [];
+
   return (
-    <>
+    <DndContext
+      sensors={sensors}
+      onDragStart={handleDragStart}
+      onDragOver={handleDragOver}
+      onDragEnd={handleDragEnd}
+    >
       {/* Full-viewport backdrop — onMouseDown so it fires before any click handlers */}
       {selectedJobId && (
         <div
@@ -303,6 +407,8 @@ export default function InterviewKanban({
       <div className={`flex gap-4 overflow-x-auto pb-4 items-stretch${isKanbanSliding ? " animate-kanban-slide" : ""}`}>
         {/* Round columns */}
         {roundColumns.map((col) => {
+          const columnId = `round-${col.roundNumber}`;
+          const isOver = overColumnId === columnId;
           const isSelectedCol = getCardsForColumn(col).some(
             (j) => j.id === selectedJobId,
           );
@@ -327,28 +433,31 @@ export default function InterviewKanban({
                   </button>
                 )}
               </h3>
-              <div className="space-y-2">
-                {getCardsForColumn(col).map((job) => (
-                  <InterviewCard
-                    key={job.id}
-                    job={job}
-                    rounds={rounds.filter(
-                      (r) => r.job_application_id === job.id,
-                    )}
-                    isSelected={selectedJobId === job.id}
-                    onSelect={setSelectedJobId}
-                    onRoundChange={handleRoundChange}
-                    onStatusChange={handleStatusChange}
-                    maxRoundColumn={maxRoundColumn}
-                    getToken={getToken}
-                    onRoundsChange={handleRoundsChange}
-                    isAdvancing={advancingJobId === job.id}
-                    isRejecting={rejectingJobId === job.id}
-                    onNextRound={handleNextRoundAnimated}
-                    onReject={handleRejectAnimated}
-                  />
-                ))}
-              </div>
+              <DroppableColumn id={columnId} isOver={isOver}>
+                <div className="space-y-2">
+                  {getCardsForColumn(col).map((job) => (
+                    <InterviewCard
+                      key={job.id}
+                      job={job}
+                      rounds={rounds.filter(
+                        (r) => r.job_application_id === job.id,
+                      )}
+                      isSelected={selectedJobId === job.id}
+                      onSelect={setSelectedJobId}
+                      onRoundChange={handleRoundChange}
+                      onStatusChange={handleStatusChange}
+                      maxRoundColumn={maxRoundColumn}
+                      getToken={getToken}
+                      onRoundsChange={handleRoundsChange}
+                      isAdvancing={advancingJobId === job.id}
+                      isRejecting={rejectingJobId === job.id}
+                      onNextRound={handleNextRoundAnimated}
+                      onReject={handleRejectAnimated}
+                      isDraggable={true}
+                    />
+                  ))}
+                </div>
+              </DroppableColumn>
             </div>
           );
         })}
@@ -382,26 +491,29 @@ export default function InterviewKanban({
               {getCardsForColumn(OFFER_COLUMN).length}
             </span>
           </h3>
-          <div className="space-y-2">
-            {getCardsForColumn(OFFER_COLUMN).map((job) => (
-              <InterviewCard
-                key={job.id}
-                job={job}
-                rounds={rounds.filter((r) => r.job_application_id === job.id)}
-                isSelected={selectedJobId === job.id}
-                onSelect={setSelectedJobId}
-                onRoundChange={handleRoundChange}
-                onStatusChange={handleStatusChange}
-                maxRoundColumn={maxRoundColumn}
-                getToken={getToken}
-                onRoundsChange={handleRoundsChange}
-                isAdvancing={advancingJobId === job.id}
-                isRejecting={rejectingJobId === job.id}
-                onNextRound={handleNextRoundAnimated}
-                onReject={handleRejectAnimated}
-              />
-            ))}
-          </div>
+          <DroppableColumn id="offer" isOver={overColumnId === "offer"}>
+            <div className="space-y-2">
+              {getCardsForColumn(OFFER_COLUMN).map((job) => (
+                <InterviewCard
+                  key={job.id}
+                  job={job}
+                  rounds={rounds.filter((r) => r.job_application_id === job.id)}
+                  isSelected={selectedJobId === job.id}
+                  onSelect={setSelectedJobId}
+                  onRoundChange={handleRoundChange}
+                  onStatusChange={handleStatusChange}
+                  maxRoundColumn={maxRoundColumn}
+                  getToken={getToken}
+                  onRoundsChange={handleRoundsChange}
+                  isAdvancing={advancingJobId === job.id}
+                  isRejecting={rejectingJobId === job.id}
+                  onNextRound={handleNextRoundAnimated}
+                  onReject={handleRejectAnimated}
+                  isDraggable={true}
+                />
+              ))}
+            </div>
+          </DroppableColumn>
         </div>
       </div>
       </div>{/* end min-w-[75vw] */}
@@ -465,6 +577,28 @@ export default function InterviewKanban({
           </div>
         </div>
       )}
-    </>
+
+      <DragOverlay>
+        {draggingJob && (
+          <InterviewCard
+            job={draggingJob}
+            rounds={draggingJobRounds}
+            isSelected={false}
+            isDraggable={false}
+            onSelect={() => {}}
+            onRoundChange={() => {}}
+            onStatusChange={() => {}}
+            maxRoundColumn={maxRoundColumn}
+            getToken={() => Promise.resolve(null)}
+            onRoundsChange={() => {}}
+            isAdvancing={false}
+            isRejecting={false}
+            onNextRound={() => {}}
+            onReject={() => {}}
+            className="shadow-2xl rotate-1"
+          />
+        )}
+      </DragOverlay>
+    </DndContext>
   );
 }
