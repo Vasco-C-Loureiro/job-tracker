@@ -410,11 +410,14 @@ export default function InterviewKanban({
       {anyRejected && (
         <div className="mt-36">
           <h2 className="text-2xl font-bold text-gray-300 mb-4">
-            Rejected
+            Rejected from interview{" "}
+            <span className="text-lg font-normal text-gray-500">
+              ({jobs.filter((j) => j.status === "rejected").length})
+            </span>
           </h2>
           <div className="flex gap-4 overflow-x-auto pb-4">
             {roundColumns.map((col) => (
-              <div key={col.roundNumber} className="flex-shrink-0 w-[310px]">
+              <div key={col.roundNumber} className="flex-shrink-0 w-[310px] bg-white/5 rounded-lg p-2">
                 <h3 className="text-sm font-bold text-gray-300 uppercase tracking-widest mb-3 flex items-center gap-2">
                   {col.label}
                   <span className="bg-gray-700 text-gray-200 rounded-full px-2 py-0.5 text-xs font-bold">
@@ -423,10 +426,10 @@ export default function InterviewKanban({
                   {col.roundNumber >= 4 && isColumnEmpty(col) && (
                     <button
                       onClick={() => handleDeleteColumn(col.roundNumber)}
-                      className="ml-2 text-gray-500 hover:text-red-400 transition-colors text-sm leading-none"
+                      className="ml-1.5 p-1 text-base text-gray-500 hover:text-red-400 transition-colors leading-none"
                       title="Remove column"
                     >
-                      ×
+                      ✕
                     </button>
                   )}
                 </h3>
@@ -434,21 +437,26 @@ export default function InterviewKanban({
                   {getRejectedCardsForColumn(col).map((job) => (
                     <div
                       key={job.id}
-                      className="relative bg-gray-100 border border-gray-200 rounded-lg p-3 max-h-16 overflow-hidden"
+                      className="bg-gray-100 border border-gray-200 rounded-lg py-2 px-3"
                     >
-                      <p className="text-sm font-semibold text-gray-600 truncate pr-6">
-                        {job.title}
-                      </p>
-                      <p className="text-xs text-gray-400 truncate">
-                        {job.company}
-                      </p>
-                      <button
-                        onClick={() => void handleUnreject(job.id)}
-                        className="absolute top-2 right-2 text-sm text-gray-400 hover:text-gray-700 transition-colors"
-                        title="Undo rejection"
-                      >
-                        ↩
-                      </button>
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-sm font-semibold text-gray-600 truncate">
+                          {job.title}
+                        </p>
+                        <span className="text-xs text-gray-400 font-medium shrink-0">Rejected</span>
+                      </div>
+                      <div className="flex items-center justify-between gap-2 mt-0.5">
+                        <p className="text-xs text-gray-400 truncate">
+                          {job.company}
+                        </p>
+                        <button
+                          onClick={() => void handleUnreject(job.id)}
+                          className="text-sm text-gray-400 hover:text-gray-700 transition-colors shrink-0"
+                          title="Undo rejection"
+                        >
+                          ↩
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
