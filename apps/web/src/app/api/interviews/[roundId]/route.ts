@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createSupabaseServerClient } from "@/lib/supabase.server";
+import { createSupabaseServiceClient } from "@/lib/supabase.server";
 
 // Shared auth + ownership check used by both PATCH and DELETE
 async function authorise(req: NextRequest, roundId: string) {
   const token = req.headers.get("authorization")?.replace("Bearer ", "");
   if (!token) return { ok: false, status: 401, error: "Unauthorized" } as const;
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseServiceClient();
   const {
     data: { user },
   } = await supabase.auth.getUser(token);
