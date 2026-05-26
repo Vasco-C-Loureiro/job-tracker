@@ -315,32 +315,50 @@ function cleanDescriptionText(raw: string): string {
 }
 
 function extractDescriptionFromDom(): string | undefined {
-  // Locate the "Report job" leaf element — it marks the bottom of job content
+  // Strategy 1: target the well-known description container directly.
+  // "#jobDescriptionText" is a stable Indeed ID that wraps only the job body;
+  // the data-testid variants cover alternate page layouts.
+  const descEl = document.querySelector<HTMLElement>(
+    '#jobDescriptionText, [data-testid="jobDescriptionText"], [data-testid="jobsearch-JobComponent-description"]'
+  );
+  if (descEl) {
+    const text = cleanDescriptionText(elementToText(descEl));
+    if (text.length > 100) return text;
+  }
+
+  // Strategy 2: "Report job" / "Report this job" landmark.
+  // Search <a> and <button> only (the link is always one of these); skip
+  // childElementCount check since Indeed often nests an SVG icon inside the anchor.
+  // Use a length cap so we don't accidentally match a large container.
   let reportJobEl: HTMLElement | null = null;
-  for (const el of document.querySelectorAll<HTMLElement>("a, button, span")) {
-    if (/^report\s+job$/i.test(el.textContent?.trim() ?? "") && el.childElementCount === 0) {
+  for (const el of document.querySelectorAll<HTMLElement>("a, button")) {
+    const text = (el.textContent ?? "").trim();
+    if (/report\s+(this\s+)?job/i.test(text) && text.length < 50) {
       reportJobEl = el;
       break;
     }
   }
-  if (!reportJobEl) return undefined;
 
-  // Walk up from the landmark to find the first ancestor with substantial content
-  let container: HTMLElement | null = reportJobEl.parentElement;
-  while (container && container !== document.body) {
-    if ((container.textContent?.length ?? 0) > 500) break;
-    container = container.parentElement;
+  if (reportJobEl) {
+    let container: HTMLElement | null = reportJobEl.parentElement;
+    while (container && container !== document.body) {
+      if ((container.textContent?.length ?? 0) > 500) break;
+      container = container.parentElement;
+    }
+    if (container && container !== document.body) {
+      try {
+        const range = document.createRange();
+        range.setStart(container, 0);
+        range.setEndBefore(reportJobEl);
+        const text = cleanDescriptionText(elementToText(range.cloneContents()));
+        if (text.length > 100) return text;
+      } catch {
+        // fall through — caller will use JSON-LD description
+      }
+    }
   }
-  if (!container || container === document.body) return undefined;
 
-  try {
-    const range = document.createRange();
-    range.setStart(container, 0);
-    range.setEndBefore(reportJobEl);
-    return cleanDescriptionText(elementToText(range.cloneContents())) || undefined;
-  } catch {
-    return undefined;
-  }
+  return undefined;
 }
 
 // ─── Layer 4: DOM salary fallback ───────────────────────────────
