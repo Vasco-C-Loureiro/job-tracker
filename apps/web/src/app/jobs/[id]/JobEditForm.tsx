@@ -12,7 +12,8 @@ type FormState = {
   location: string;
   remoteType: string;
   jobType: string;
-  salary: string;
+  salaryRaw: string;
+  salaryRequested: string;
   description: string;
   status: string;
   interestLevel: string;
@@ -31,7 +32,8 @@ function jobToFormState(job: JobApplication): FormState {
     location: job.location ?? "",
     remoteType: job.remoteType ?? "",
     jobType: job.jobType ?? "",
-    salary: job.salary ?? "",
+    salaryRaw: job.salaryRaw ?? "",
+    salaryRequested: job.salaryRequested ?? "",
     description: job.description ?? "",
     status: job.status,
     interestLevel: job.interestLevel ?? "",
@@ -93,7 +95,8 @@ export default function JobEditForm({ job }: { job: JobApplication }) {
         location: form.location || null,
         remoteType: form.remoteType || null,
         jobType: form.jobType || null,
-        salary: form.salary || null,
+        salaryRaw: form.salaryRaw || null,
+        salaryRequested: form.salaryRequested || null,
         description: form.description || null,
         status: form.status,
         interestLevel: form.interestLevel || null,
@@ -204,8 +207,8 @@ export default function JobEditForm({ job }: { job: JobApplication }) {
             <label className={labelCls}>Salary</label>
             <input
               className={inputCls}
-              value={form.salary}
-              onChange={(e) => set("salary", e.target.value)}
+              value={form.salaryRaw}
+              onChange={(e) => set("salaryRaw", e.target.value)}
             />
           </div>
         </div>
@@ -309,6 +312,16 @@ export default function JobEditForm({ job }: { job: JobApplication }) {
             value={form.tags}
             placeholder="e.g. fintech, senior, remote-friendly"
             onChange={(e) => set("tags", e.target.value)}
+          />
+        </div>
+
+        <div className={fieldCls}>
+          <label className={labelCls}>Salary Requested</label>
+          <input
+            className={inputCls}
+            value={form.salaryRequested}
+            placeholder="What you told them you were expecting"
+            onChange={(e) => set("salaryRequested", e.target.value)}
           />
         </div>
 
