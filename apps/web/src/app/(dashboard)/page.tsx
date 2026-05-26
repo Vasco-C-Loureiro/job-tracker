@@ -1,7 +1,6 @@
 import type { JobApplicationListItem, JobType, RemoteType } from "@job-tracker/shared";
 import { createSupabaseServerClient } from "@/lib/supabase.server";
 import { redirect } from "next/navigation";
-import SignOutButton from "@/app/_components/sign-out-button";
 import { JobTable } from "@/components/JobTable";
 
 type JobApplicationRow = {
@@ -89,7 +88,7 @@ export default async function Home() {
   if (error) {
     console.error("Supabase select error:", error);
     return (
-      <main className="min-h-screen p-8 font-sans">
+      <main className="p-8 font-sans">
         <h1 className="text-3xl font-bold mb-6">Job Tracker</h1>
         <p className="text-red-700">Failed to load jobs.</p>
       </main>
@@ -99,10 +98,9 @@ export default async function Home() {
   const jobs = (data ?? []).map(rowToListItem);
 
   return (
-    <main className="min-h-screen p-8 font-sans">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold">Job Tracker</h1>
-        <SignOutButton />
+    <main className="p-8 font-sans">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">Applications</h1>
       </div>
       <JobTable jobs={jobs} />
     </main>
