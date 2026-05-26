@@ -1,6 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServiceClient } from "@/lib/supabase.server";
 import type { ApplicationStatus, RemoteType, JobType } from "@job-tracker/shared";
+import { parseSalary } from "@job-tracker/shared";
+
+function inferCurrency(salaryRaw: string | undefined): string | null {
+  if (!salaryRaw) return null;
+  if (salaryRaw.includes("£")) return "GBP";
+  if (salaryRaw.includes("$")) return "USD";
+  if (salaryRaw.includes("€")) return "EUR";
+  if (/kr/i.test(salaryRaw)) return "SEK";
+  return null;
+}
 
 type InterestLevel = "low" | "medium" | "high" | "very-high";
 
@@ -100,9 +110,33 @@ export async function PATCH(
     update.job_type = b.jobType ?? null;
   }
 
-  if (has("salary")) {
-    update.salary =
-      typeof b.salary === "string" && b.salary.trim() ? b.salary.trim() : null;
+  if (has("salaryRaw")) {
+    update.salary_raw =
+      typeof b.salaryRaw === "string" && (b.salaryRaw as string).trim()
+        ? (b.salaryRaw as string).trim()
+        : null;
+  }
+
+  if (has("salaryMin")) {
+    update.salary_min = typeof b.salaryMin === "number" ? b.salaryMin : null;
+  }
+
+  if (has("salaryMax")) {
+    update.salary_max = typeof b.salaryMax === "number" ? b.salaryMax : null;
+  }
+
+  if (has("salaryCurrency")) {
+    update.salary_currency =
+      typeof b.salaryCurrency === "string" && (b.salaryCurrency as string).trim()
+        ? (b.salaryCurrency as string).trim()
+        : null;
+  }
+
+  if (has("salaryRequested")) {
+    update.salary_requested =
+      typeof b.salaryRequested === "string" && (b.salaryRequested as string).trim()
+        ? (b.salaryRequested as string).trim()
+        : null;
   }
 
   if (has("description")) {
@@ -173,6 +207,21 @@ export async function PATCH(
       typeof b.companyApplicationUrl === "string" && b.companyApplicationUrl.trim()
         ? b.companyApplicationUrl.trim()
         : null;
+  }
+
+  // Auto-derive salary_min/max from salary_raw when not explicitly provided
+  if (!has("salaryMin") && !has("salaryMax") && has("salaryRaw") && update.salary_raw) {
+    const parsed = parseSalary(update.salary_raw as string);
+    if (parsed) {
+      update.salary_min = parsed.min;
+      update.salary_max = parsed.max;
+    }
+  }
+
+  // Auto-infer currency from symbol in salary_raw when not explicitly provided
+  if (!has("salaryCurrency") && has("salaryRaw") && update.salary_raw) {
+    const inferred = inferCurrency(update.salary_raw as string);
+    if (inferred) update.salary_currency = inferred;
   }
 
   if (Object.keys(update).length === 0) {
