@@ -169,6 +169,16 @@ export default function InterviewKanban({
     localStorage.setItem(EXTRA_ROUNDS_KEY, JSON.stringify(updated));
   }
 
+  function isColumnEmpty(col: KanbanColumn): boolean {
+    return !jobs.some((j) => j.current_interview_round === col.roundNumber);
+  }
+
+  function handleDeleteColumn(roundNumber: number) {
+    const updated = extraRounds.filter((n) => n !== roundNumber);
+    setExtraRounds(updated);
+    localStorage.setItem(EXTRA_ROUNDS_KEY, JSON.stringify(updated));
+  }
+
   async function getToken(): Promise<string | null> {
     const supabase = createSupabaseBrowserClient();
     const {
@@ -240,7 +250,7 @@ export default function InterviewKanban({
 
       {/* Main kanban — each column gets z-20 only when it holds the selected card */}
       <div className="min-w-[75vw]">
-      <div className="flex gap-4 overflow-x-auto pb-4 min-h-0">
+      <div className="flex gap-4 overflow-x-auto pb-4 items-stretch">
         {/* Round columns */}
         {roundColumns.map((col) => {
           const isSelectedCol = getCardsForColumn(col).some(
@@ -257,6 +267,15 @@ export default function InterviewKanban({
                 <span className="bg-gray-700 text-gray-200 rounded-full px-2 py-0.5 text-xs font-bold">
                   {getCardsForColumn(col).length}
                 </span>
+                {col.roundNumber >= 4 && isColumnEmpty(col) && (
+                  <button
+                    onClick={() => handleDeleteColumn(col.roundNumber)}
+                    className="ml-2 text-gray-500 hover:text-red-400 transition-colors text-sm leading-none"
+                    title="Remove column"
+                  >
+                    ×
+                  </button>
+                )}
               </h3>
               <div className="space-y-2">
                 {getCardsForColumn(col).map((job) => (
@@ -282,14 +301,15 @@ export default function InterviewKanban({
 
         {/* Add round button */}
         <div
-          className="flex-shrink-0 w-16 flex flex-col items-center justify-center h-full"
+          className="flex flex-col items-center justify-center flex-shrink-0 w-16 border-l border-r border-dashed border-gray-600"
+          style={{ paddingLeft: "8px", paddingRight: "8px" }}
           onClick={(e) => e.stopPropagation()}
         >
           <div className="flex flex-col items-center gap-2">
             <button
               onClick={handleAddRound}
               title={`Add Round ${maxRoundColumn + 1} column`}
-              className="w-12 h-12 rounded-full border-2 border-dashed border-gray-500 hover:border-gray-300 flex items-center justify-center text-gray-500 hover:text-gray-300 text-xl transition-colors"
+              className="w-12 h-12 rounded-full border-2 border-dashed border-gray-500 hover:border-gray-300 flex items-center justify-center text-gray-500 hover:text-gray-300 text-2xl transition-colors"
             >
               +
             </button>
@@ -330,15 +350,27 @@ export default function InterviewKanban({
 
       {/* Rejected section — mirrors the exact same column structure as the main kanban */}
       {anyRejected && (
-        <div className="mt-24">
-          <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-4">
+        <div className="mt-36">
+          <h2 className="text-2xl font-bold text-gray-300 mb-4">
             Rejected
           </h2>
           <div className="flex gap-4 overflow-x-auto pb-4">
             {roundColumns.map((col) => (
               <div key={col.roundNumber} className="flex-shrink-0 w-[310px]">
-                <h3 className="text-xs font-semibold text-gray-300 uppercase tracking-wide mb-3">
+                <h3 className="text-sm font-bold text-gray-300 uppercase tracking-widest mb-3 flex items-center gap-2">
                   {col.label}
+                  <span className="bg-gray-700 text-gray-200 rounded-full px-2 py-0.5 text-xs font-bold">
+                    {getRejectedCardsForColumn(col).length}
+                  </span>
+                  {col.roundNumber >= 4 && isColumnEmpty(col) && (
+                    <button
+                      onClick={() => handleDeleteColumn(col.roundNumber)}
+                      className="ml-2 text-gray-500 hover:text-red-400 transition-colors text-sm leading-none"
+                      title="Remove column"
+                    >
+                      ×
+                    </button>
+                  )}
                 </h3>
                 <div className="space-y-2">
                   {getRejectedCardsForColumn(col).map((job) => (
