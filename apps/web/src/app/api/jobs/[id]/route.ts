@@ -209,6 +209,21 @@ export async function PATCH(
         : null;
   }
 
+  if (has("currentInterviewRound")) {
+    if (
+      b.currentInterviewRound !== null &&
+      (typeof b.currentInterviewRound !== "number" ||
+        !Number.isInteger(b.currentInterviewRound) ||
+        b.currentInterviewRound < 1)
+    ) {
+      return NextResponse.json(
+        { error: "currentInterviewRound must be a positive integer" },
+        { status: 400 },
+      );
+    }
+    update.current_interview_round = b.currentInterviewRound ?? null;
+  }
+
   // Auto-derive salary_min/max from salary_raw when not explicitly provided
   if (!has("salaryMin") && !has("salaryMax") && has("salaryRaw") && update.salary_raw) {
     const parsed = parseSalary(update.salary_raw as string);
@@ -222,6 +237,19 @@ export async function PATCH(
   if (!has("salaryCurrency") && has("salaryRaw") && update.salary_raw) {
     const inferred = inferCurrency(update.salary_raw as string);
     if (inferred) update.salary_currency = inferred;
+  }
+
+  // When status is set to "interview" and currentInterviewRound wasn't
+  // explicitly provided, auto-bump from 0 → 1 so the job appears on the kanban.
+  if (update.status === "interview" && !has("currentInterviewRound")) {
+    const { data: existing } = await supabase
+      .from("job_applications")
+      .select("current_interview_round")
+      .eq("id", id)
+      .single();
+    if ((existing?.current_interview_round ?? 0) === 0) {
+      update.current_interview_round = 1;
+    }
   }
 
   if (Object.keys(update).length === 0) {
