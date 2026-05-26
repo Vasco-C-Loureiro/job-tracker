@@ -35,7 +35,11 @@ export type JobApplication = {
   location?: string;
   remoteType?: RemoteType;
   jobType?: JobType;
-  salary?: string;
+  salaryRaw?: string;
+  salaryMin?: number;
+  salaryMax?: number;
+  salaryCurrency?: string;
+  salaryRequested?: string;
   description?: string;
 
   savedAt: string;   // ISO 8601
@@ -65,7 +69,11 @@ export type SaveJobPayload = Pick<
   | "location"
   | "remoteType"
   | "jobType"
-  | "salary"
+  | "salaryRaw"
+  | "salaryMin"
+  | "salaryMax"
+  | "salaryCurrency"
+  | "salaryRequested"
   | "description"
 >;
 
