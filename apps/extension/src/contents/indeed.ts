@@ -246,7 +246,57 @@ function extractFromDom(): Partial<SaveJobPayload> | null {
   return Object.keys(result).length > 0 ? result : null;
 }
 
-// ─── Layer 3: DOM salary fallback ───────────────────────────────
+// ─── Layer 3: Full description via DOM ──────────────────────────
+// Finds "Report job" as a landmark at the bottom of the job content area,
+// then extracts all text that appears above it in the same container.
+// Returns undefined if the landmark is not found (caller falls back to JSON-LD desc).
+
+function elementToText(node: Node): string {
+  if (node.nodeType === 3 /* TEXT_NODE */) return node.textContent ?? "";
+  const tag = node.nodeType === 1 ? (node as Element).tagName.toLowerCase() : "";
+  const isBlock = /^(div|p|li|h[1-6]|section|ul|ol|br|tr|td|th)$/.test(tag);
+  let text = "";
+  for (const child of node.childNodes) text += elementToText(child);
+  return isBlock ? `\n${text.trim()}\n` : text;
+}
+
+function cleanDescriptionText(raw: string): string {
+  return raw
+    .replace(/\n{3,}/g, "\n\n")
+    .replace(/^(apply now|save job|share)\s*$/gim, "")
+    .trim();
+}
+
+function extractDescriptionFromDom(): string | undefined {
+  // Locate the "Report job" leaf element — it marks the bottom of job content
+  let reportJobEl: HTMLElement | null = null;
+  for (const el of document.querySelectorAll<HTMLElement>("a, button, span")) {
+    if (/^report\s+job$/i.test(el.textContent?.trim() ?? "") && el.childElementCount === 0) {
+      reportJobEl = el;
+      break;
+    }
+  }
+  if (!reportJobEl) return undefined;
+
+  // Walk up from the landmark to find the first ancestor with substantial content
+  let container: HTMLElement | null = reportJobEl.parentElement;
+  while (container && container !== document.body) {
+    if ((container.textContent?.length ?? 0) > 500) break;
+    container = container.parentElement;
+  }
+  if (!container || container === document.body) return undefined;
+
+  try {
+    const range = document.createRange();
+    range.setStart(container, 0);
+    range.setEndBefore(reportJobEl);
+    return cleanDescriptionText(elementToText(range.cloneContents())) || undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+// ─── Layer 4: DOM salary fallback ───────────────────────────────
 // Called when neither JSON-LD nor the header DOM element yielded a salary.
 // Covers the "Pay" row in Indeed's structured Job Details panel, which is
 // further down the page and uses different selectors.
@@ -299,6 +349,9 @@ function extractJob(): SaveJobPayload | null {
 
   if (!merged.title || !merged.company) return null;
 
+  // Prefer full DOM description (via "Report job" landmark); fall back to JSON-LD/DOM desc
+  const description = extractDescriptionFromDom() ?? merged.description;
+
   return {
     title: merged.title,
     company: merged.company,
@@ -308,7 +361,7 @@ function extractJob(): SaveJobPayload | null {
     remoteType: merged.remoteType,
     jobType: merged.jobType,
     salaryRaw: merged.salaryRaw,
-    description: merged.description
+    description
   };
 }
 
