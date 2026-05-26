@@ -351,10 +351,9 @@ function extractJob(): SaveJobPayload | null {
 
   if (!merged.title || !merged.company) return null;
 
-  const descEl = document.querySelector<HTMLElement>("#jobDescriptionText");
-  const description = descEl
-    ? descEl.innerText.trim().replace(/\n{3,}/g, "\n\n")
-    : undefined;
+  const description = document.body.innerText
+    .trim()
+    .replace(/\n{3,}/g, "\n\n");
 
   return {
     title: merged.title,
