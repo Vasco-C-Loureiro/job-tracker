@@ -100,7 +100,7 @@ export function extractFromJsonLd(): Partial<SaveJobPayload> | null {
           typeof item.description === "string" ? item.description : undefined;
         const description = rawDesc ? stripHtml(rawDesc) || undefined : undefined;
 
-        return { title, company, location, remoteType, jobType, salary, description };
+        return { title, company, location, remoteType, jobType, salaryRaw: salary, description };
       }
     } catch {
       // Malformed JSON in this script tag — try the next one
