@@ -246,6 +246,40 @@ function extractFromDom(): Partial<SaveJobPayload> | null {
   return Object.keys(result).length > 0 ? result : null;
 }
 
+// ─── Layer 3: DOM salary fallback ───────────────────────────────
+// Called when neither JSON-LD nor the header DOM element yielded a salary.
+// Covers the "Pay" row in Indeed's structured Job Details panel, which is
+// further down the page and uses different selectors.
+
+function extractSalaryFromDom(): string | undefined {
+  // 1. Header salary element (same selectors as extractFromDom, belt-and-suspenders)
+  const headerEl = document.querySelector<HTMLElement>(
+    '[data-testid="jobsearch-SalaryInfoAndJobType"], #salaryInfoAndJobType'
+  );
+  if (headerEl?.textContent?.trim()) return headerEl.textContent.trim();
+
+  // 2. Job Details panel "Pay" row — data-testid variations Indeed has used
+  const payItemEl = document.querySelector<HTMLElement>(
+    '[data-testid="JobInfoItem-pay"], [data-testid="salaryInfoItem"], [data-testid*="salary"]'
+  );
+  if (payItemEl?.textContent?.trim()) {
+    // Strip the "Pay" label that Indeed prepends inside this element
+    return payItemEl.textContent.replace(/^pay[\s:]+/i, "").trim() || payItemEl.textContent.trim();
+  }
+
+  // 3. Find a leaf element labelled "Pay" and read its adjacent value element
+  for (const leaf of document.querySelectorAll<HTMLElement>("span, div, p")) {
+    if (leaf.childElementCount !== 0) continue;
+    if (!/^pay\s*:?\s*$/i.test(leaf.textContent?.trim() ?? "")) continue;
+    const sibling = leaf.nextElementSibling as HTMLElement | null;
+    if (sibling?.textContent?.trim()) return sibling.textContent.trim();
+    const parentSibling = leaf.parentElement?.nextElementSibling as HTMLElement | null;
+    if (parentSibling?.textContent?.trim()) return parentSibling.textContent.trim();
+  }
+
+  return undefined;
+}
+
 // ─── Orchestrator ────────────────────────────────────────────────
 // Field-level merge: JSON-LD runs first and wins on any field it populates;
 // DOM fills in only the gaps.
@@ -254,6 +288,14 @@ function extractJob(): SaveJobPayload | null {
   const fromJsonLd = extractFromJsonLd() ?? {};
   const fromDom = extractFromDom() ?? {};
   const merged = { ...fromDom, ...fromJsonLd }; // JSON-LD wins on overlap
+
+  // JSON-LD may spread salaryRaw: undefined which silently overwrites a DOM
+  // salary. If salary is still missing after the merge, run the full DOM
+  // salary search (covers both the header element and the Job Details panel).
+  if (!merged.salaryRaw) {
+    const fallback = extractSalaryFromDom();
+    if (fallback) merged.salaryRaw = fallback;
+  }
 
   if (!merged.title || !merged.company) return null;
 
