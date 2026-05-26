@@ -382,7 +382,7 @@ export default function InterviewCard({
           isSelected
             ? "z-20 border-blue-400 shadow-md"
             : "border-gray-200 hover:border-blue-300 hover:shadow-sm"
-        }${isAdvancing ? " animate-round-advance pointer-events-none" : ""}${isRejecting ? " animate-card-reject pointer-events-none" : ""}${isDragging ? " opacity-50 shadow-2xl scale-[1.02] z-50" : ""}${className ? ` ${className}` : ""}`}
+        }${isAdvancing ? " animate-round-advance pointer-events-none" : ""}${isRejecting ? " animate-card-reject pointer-events-none" : ""}${isDragging ? " opacity-0" : ""}${className ? ` ${className}` : ""}`}
         onClick={(e) => {
           e.stopPropagation();
           onSelect(isSelected ? null : job.id);
