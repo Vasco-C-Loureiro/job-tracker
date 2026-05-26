@@ -203,6 +203,22 @@ export default function InterviewKanban({
     });
   }
 
+  async function handleUnreject(jobId: string) {
+    setJobs((prev) =>
+      prev.map((j) => (j.id === jobId ? { ...j, status: "interview" } : j)),
+    );
+    const token = await getToken();
+    if (!token) return;
+    await fetch(`/api/jobs/${jobId}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ status: "interview" }),
+    });
+  }
+
   const activeCount = jobs.filter(
     (j) => j.status === "interview" || j.status === "offer",
   ).length;
@@ -211,51 +227,57 @@ export default function InterviewKanban({
 
   return (
     <>
+      {/* Full-viewport backdrop — onMouseDown so it fires before any click handlers */}
       {selectedJobId && (
         <div
           className="fixed inset-0 z-10"
-          onClick={() => void handleSaveAndClose()}
+          onMouseDown={() => void handleSaveAndClose()}
         />
       )}
       <p className="text-sm text-gray-500 mb-6">
         {activeCount} active application{activeCount !== 1 ? "s" : ""}
       </p>
-      <div className="relative z-20">
-      {/* Main kanban */}
+
+      {/* Main kanban — each column gets z-20 only when it holds the selected card */}
       <div className="flex gap-4 overflow-x-auto pb-4 min-h-0">
         {/* Round columns */}
-        {roundColumns.map((col) => (
-          <div
-            key={col.roundNumber}
-            className={`flex-shrink-0 ${getColumnWidth(col)} transition-[width] duration-300 ease-in-out`}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3 flex items-center gap-1.5">
-              {col.label}
-              <span className="font-normal text-gray-300">
-                ({getCardsForColumn(col).length})
-              </span>
-            </h3>
-            <div className="space-y-2">
-              {getCardsForColumn(col).map((job) => (
-                <InterviewCard
-                  key={job.id}
-                  job={job}
-                  rounds={rounds.filter(
-                    (r) => r.job_application_id === job.id,
-                  )}
-                  isSelected={selectedJobId === job.id}
-                  onSelect={setSelectedJobId}
-                  onRoundChange={handleRoundChange}
-                  onStatusChange={handleStatusChange}
-                  maxRoundColumn={maxRoundColumn}
-                  getToken={getToken}
-                  onRoundsChange={handleRoundsChange}
-                />
-              ))}
+        {roundColumns.map((col) => {
+          const isSelectedCol = getCardsForColumn(col).some(
+            (j) => j.id === selectedJobId,
+          );
+          return (
+            <div
+              key={col.roundNumber}
+              className={`flex-shrink-0 ${getColumnWidth(col)} transition-[width] duration-300 ease-in-out${isSelectedCol ? " relative z-20" : ""}`}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3 flex items-center gap-1.5">
+                {col.label}
+                <span className="font-normal text-gray-300">
+                  ({getCardsForColumn(col).length})
+                </span>
+              </h3>
+              <div className="space-y-2">
+                {getCardsForColumn(col).map((job) => (
+                  <InterviewCard
+                    key={job.id}
+                    job={job}
+                    rounds={rounds.filter(
+                      (r) => r.job_application_id === job.id,
+                    )}
+                    isSelected={selectedJobId === job.id}
+                    onSelect={setSelectedJobId}
+                    onRoundChange={handleRoundChange}
+                    onStatusChange={handleStatusChange}
+                    maxRoundColumn={maxRoundColumn}
+                    getToken={getToken}
+                    onRoundsChange={handleRoundsChange}
+                  />
+                ))}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
 
         {/* Add round button */}
         <div
@@ -273,7 +295,7 @@ export default function InterviewKanban({
 
         {/* Offer column */}
         <div
-          className="flex-shrink-0 w-64"
+          className={`flex-shrink-0 w-64${getCardsForColumn(OFFER_COLUMN).some((j) => j.id === selectedJobId) ? " relative z-20" : ""}`}
           onClick={(e) => e.stopPropagation()}
         >
           <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3 flex items-center gap-1.5">
@@ -301,41 +323,45 @@ export default function InterviewKanban({
         </div>
       </div>
 
-      {/* Rejected section */}
+      {/* Rejected section — mirrors the exact same column structure as the main kanban */}
       {anyRejected && (
         <div className="mt-12">
           <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-4">
             Rejected
           </h2>
           <div className="flex gap-4 overflow-x-auto pb-4">
-            {roundColumns
-              .filter((col) => getRejectedCardsForColumn(col).length > 0)
-              .map((col) => (
-                <div key={col.roundNumber} className="flex-shrink-0 w-64">
-                  <h3 className="text-xs font-semibold text-gray-300 uppercase tracking-wide mb-3">
-                    {col.label}
-                  </h3>
-                  <div className="space-y-2">
-                    {getRejectedCardsForColumn(col).map((job) => (
-                      <div
-                        key={job.id}
-                        className="bg-gray-100 border border-gray-200 rounded-lg p-3 max-h-16 overflow-hidden"
+            {roundColumns.map((col) => (
+              <div key={col.roundNumber} className="flex-shrink-0 w-64">
+                <h3 className="text-xs font-semibold text-gray-300 uppercase tracking-wide mb-3">
+                  {col.label}
+                </h3>
+                <div className="space-y-2">
+                  {getRejectedCardsForColumn(col).map((job) => (
+                    <div
+                      key={job.id}
+                      className="relative bg-gray-100 border border-gray-200 rounded-lg p-3 max-h-16 overflow-hidden"
+                    >
+                      <p className="text-sm font-semibold text-gray-600 truncate pr-6">
+                        {job.title}
+                      </p>
+                      <p className="text-xs text-gray-400 truncate">
+                        {job.company}
+                      </p>
+                      <button
+                        onClick={() => void handleUnreject(job.id)}
+                        className="absolute top-2 right-2 text-sm text-gray-400 hover:text-gray-700 transition-colors"
+                        title="Undo rejection"
                       >
-                        <p className="text-sm font-semibold text-gray-600 truncate">
-                          {job.title}
-                        </p>
-                        <p className="text-xs text-gray-400 truncate">
-                          {job.company}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
+                        ↩
+                      </button>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </div>
+            ))}
           </div>
         </div>
       )}
-      </div>{/* end relative z-20 */}
     </>
   );
 }
