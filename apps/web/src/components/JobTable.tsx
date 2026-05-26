@@ -12,7 +12,13 @@ import { parseSalary } from "@job-tracker/shared";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-type SortColumn = "company" | "title" | "status" | "location" | "salary" | "savedAt";
+type SortColumn =
+  | "company"
+  | "title"
+  | "status"
+  | "location"
+  | "salary"
+  | "savedAt";
 type SortDirection = "asc" | "desc";
 type SortState = { column: SortColumn; direction: SortDirection };
 
@@ -140,7 +146,8 @@ function MultiDropdown<T extends string>({
   useEffect(() => {
     if (!open) return;
     function handleClickOutside(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      if (ref.current && !ref.current.contains(e.target as Node))
+        setOpen(false);
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
@@ -247,7 +254,9 @@ function SalarySlider({
   if (max === 0) {
     return (
       <div>
-        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Salary</p>
+        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+          Salary
+        </p>
         <p className="text-sm text-gray-400">No salary data in your jobs</p>
       </div>
     );
@@ -259,7 +268,9 @@ function SalarySlider({
 
   return (
     <div>
-      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Salary</p>
+      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+        Salary
+      </p>
       <div className="relative h-5 mt-8 mb-3">
         {/* Min value bubble — floats above the min thumb */}
         <div
@@ -351,7 +362,10 @@ function SalarySlider({
             step={step}
             value={minVal}
             onChange={(e) => {
-              const v = Math.max(0, Math.min(Number(e.target.value), maxVal - step));
+              const v = Math.max(
+                0,
+                Math.min(Number(e.target.value), maxVal - step),
+              );
               onMinChange(isNaN(v) ? 0 : v);
             }}
             className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm text-gray-900 focus:outline-none focus:border-blue-400"
@@ -366,7 +380,10 @@ function SalarySlider({
             step={step}
             value={maxVal}
             onChange={(e) => {
-              const v = Math.min(max, Math.max(Number(e.target.value), minVal + step));
+              const v = Math.min(
+                max,
+                Math.max(Number(e.target.value), minVal + step),
+              );
               onMaxChange(isNaN(v) ? max : v);
             }}
             className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm text-gray-900 focus:outline-none focus:border-blue-400"
@@ -392,7 +409,10 @@ type Props = { jobs: JobApplicationListItem[] };
 
 export function JobTable({ jobs }: Props) {
   const router = useRouter();
-  const [sort, setSort] = useState<SortState>({ column: "savedAt", direction: "desc" });
+  const [sort, setSort] = useState<SortState>({
+    column: "savedAt",
+    direction: "desc",
+  });
   const [search, setSearch] = useState("");
   const searchRef = useRef<HTMLInputElement>(null);
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
@@ -401,14 +421,20 @@ export function JobTable({ jobs }: Props) {
   // Dynamic options built from the data
   const allSources = useMemo(() => {
     const set = new Set<string>();
-    jobs.forEach((j) => { if (j.source) set.add(j.source); });
-    return Array.from(set).sort().map((s) => ({ value: s, label: s }));
+    jobs.forEach((j) => {
+      if (j.source) set.add(j.source);
+    });
+    return Array.from(set)
+      .sort()
+      .map((s) => ({ value: s, label: s }));
   }, [jobs]);
 
   const allTags = useMemo(() => {
     const set = new Set<string>();
     jobs.forEach((j) => j.tags?.forEach((t) => set.add(t)));
-    return Array.from(set).sort().map((t) => ({ value: t, label: t }));
+    return Array.from(set)
+      .sort()
+      .map((t) => ({ value: t, label: t }));
   }, [jobs]);
 
   const maxSalary = useMemo(() => {
@@ -422,13 +448,20 @@ export function JobTable({ jobs }: Props) {
   const sliderMin = filters.salaryMin ?? 0;
   const sliderMax = filters.salaryMax ?? maxSalary;
 
-  const activeFilterCount = useMemo(() => countActiveFilters(filters), [filters]);
+  const activeFilterCount = useMemo(
+    () => countActiveFilters(filters),
+    [filters],
+  );
 
   const handleSort = (column: SortColumn) => {
     setSort((prev) => ({
       column,
       direction:
-        prev.column === column ? (prev.direction === "asc" ? "desc" : "asc") : "asc",
+        prev.column === column
+          ? prev.direction === "asc"
+            ? "desc"
+            : "asc"
+          : "asc",
     }));
   };
 
@@ -461,13 +494,19 @@ export function JobTable({ jobs }: Props) {
       result = result.filter((j) => filters.status.has(j.status));
 
     if (filters.interestLevel.size > 0)
-      result = result.filter((j) => j.interestLevel && filters.interestLevel.has(j.interestLevel));
+      result = result.filter(
+        (j) => j.interestLevel && filters.interestLevel.has(j.interestLevel),
+      );
 
     if (filters.remoteType.size > 0)
-      result = result.filter((j) => j.remoteType && filters.remoteType.has(j.remoteType));
+      result = result.filter(
+        (j) => j.remoteType && filters.remoteType.has(j.remoteType),
+      );
 
     if (filters.jobType.size > 0)
-      result = result.filter((j) => j.jobType && filters.jobType.has(j.jobType));
+      result = result.filter(
+        (j) => j.jobType && filters.jobType.has(j.jobType),
+      );
 
     if (filters.source.size > 0)
       result = result.filter((j) => filters.source.has(j.source));
@@ -492,17 +531,21 @@ export function JobTable({ jobs }: Props) {
       result = result.filter((j) => j.savedAt >= filters.savedDateFrom!);
 
     if (filters.savedDateTo)
-      result = result.filter((j) => j.savedAt.slice(0, 10) <= filters.savedDateTo!);
+      result = result.filter(
+        (j) => j.savedAt.slice(0, 10) <= filters.savedDateTo!,
+      );
 
     if (filters.resumeSubmitted !== "either")
       result = result.filter(
-        (j) => (j.resumeSubmitted ?? false) === (filters.resumeSubmitted === "yes"),
+        (j) =>
+          (j.resumeSubmitted ?? false) === (filters.resumeSubmitted === "yes"),
       );
 
     if (filters.coverLetterSubmitted !== "either")
       result = result.filter(
         (j) =>
-          (j.coverLetterSubmitted ?? false) === (filters.coverLetterSubmitted === "yes"),
+          (j.coverLetterSubmitted ?? false) ===
+          (filters.coverLetterSubmitted === "yes"),
       );
 
     // Sort
@@ -512,7 +555,8 @@ export function JobTable({ jobs }: Props) {
 
       if (column === "company") cmp = a.company.localeCompare(b.company);
       else if (column === "title") cmp = a.title.localeCompare(b.title);
-      else if (column === "status") cmp = STATUS_ORDER[a.status] - STATUS_ORDER[b.status];
+      else if (column === "status")
+        cmp = STATUS_ORDER[a.status] - STATUS_ORDER[b.status];
       else if (column === "location")
         cmp = (a.location ?? "").localeCompare(b.location ?? "");
       else if (column === "salary") {
@@ -539,14 +583,18 @@ export function JobTable({ jobs }: Props) {
     return (
       <th
         className={`py-2 pr-4 cursor-pointer select-none whitespace-nowrap group transition-colors ${
-          isActive ? "font-medium border-b-2 border-blue-400" : "font-semibold hover:bg-white/5"
+          isActive
+            ? "font-medium border-b-2 border-blue-400"
+            : "font-semibold hover:bg-white/5"
         }`}
         onClick={() => handleSort(column)}
       >
         {children}
         <span
           className={`ml-1 text-xs transition-colors ${
-            isActive ? "text-blue-400" : "text-gray-500 group-hover:text-gray-300"
+            isActive
+              ? "text-blue-400"
+              : "text-gray-500 group-hover:text-gray-300"
           }`}
         >
           {isActive ? (sort.direction === "asc" ? "▲" : "▼") : "⇅"}
@@ -569,12 +617,15 @@ export function JobTable({ jobs }: Props) {
             placeholder="Search company, title, location, or tags…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className={`w-full pl-9 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:border-blue-400 ${search ? "pr-[50%]" : "pr-3"}`}
+            className="w-full pl-9 pr-8 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:border-blue-400"
           />
           {search && (
             <button
-              onClick={() => { setSearch(""); searchRef.current?.focus(); }}
-              className="absolute right-0 top-0 bottom-0 w-1/2 flex items-center justify-center text-gray-400 hover:text-gray-200 text-xl"
+              onClick={() => {
+                setSearch("");
+                searchRef.current?.focus();
+              }}
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-200 text-lg leading-none"
               aria-label="Clear search"
             >
               ×
@@ -746,21 +797,26 @@ export function JobTable({ jobs }: Props) {
               <ThreeWayToggle
                 label="Resume Submitted"
                 value={filters.resumeSubmitted}
-                onChange={(v) => setFilters((f) => ({ ...f, resumeSubmitted: v }))}
+                onChange={(v) =>
+                  setFilters((f) => ({ ...f, resumeSubmitted: v }))
+                }
               />
 
               {/* Cover letter submitted */}
               <ThreeWayToggle
                 label="Cover Letter"
                 value={filters.coverLetterSubmitted}
-                onChange={(v) => setFilters((f) => ({ ...f, coverLetterSubmitted: v }))}
+                onChange={(v) =>
+                  setFilters((f) => ({ ...f, coverLetterSubmitted: v }))
+                }
               />
             </div>
 
             {/* Panel footer */}
             <div className="mt-5 pt-4 border-t border-gray-200 flex items-center justify-between">
               <span className="text-sm text-gray-500">
-                {displayedJobs.length} of {jobs.length} job{jobs.length !== 1 ? "s" : ""}
+                {displayedJobs.length} of {jobs.length} job
+                {jobs.length !== 1 ? "s" : ""}
               </span>
               <button
                 onClick={() => setFilters(DEFAULT_FILTERS)}
@@ -776,7 +832,9 @@ export function JobTable({ jobs }: Props) {
 
       {/* Table */}
       {jobs.length === 0 ? (
-        <p className="text-gray-600">No jobs saved yet. Use the extension to save a job.</p>
+        <p className="text-gray-600">
+          No jobs saved yet. Use the extension to save a job.
+        </p>
       ) : displayedJobs.length === 0 ? (
         <p className="text-gray-500">No jobs match your search or filters.</p>
       ) : (
