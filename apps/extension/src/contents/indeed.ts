@@ -315,50 +315,17 @@ function cleanDescriptionText(raw: string): string {
 }
 
 function extractDescriptionFromDom(): string | undefined {
-  // Strategy 1: target the well-known description container directly.
-  // "#jobDescriptionText" is a stable Indeed ID that wraps only the job body;
-  // the data-testid variants cover alternate page layouts.
-  const descEl = document.querySelector<HTMLElement>(
-    '#jobDescriptionText, [data-testid="jobDescriptionText"], [data-testid="jobsearch-JobComponent-description"]'
-  );
+  const descEl = document.querySelector<HTMLElement>("#jobDescriptionText");
   if (descEl) {
-    const text = cleanDescriptionText(elementToText(descEl));
-    if (text.length > 100) return text;
+    const text = descEl.innerText.trim().replace(/\n{3,}/g, "\n\n");
+    if (text) return text;
   }
 
-  // Strategy 2: "Report job" / "Report this job" landmark.
-  // Search <a> and <button> only (the link is always one of these); skip
-  // childElementCount check since Indeed often nests an SVG icon inside the anchor.
-  // Use a length cap so we don't accidentally match a large container.
-  let reportJobEl: HTMLElement | null = null;
-  for (const el of document.querySelectorAll<HTMLElement>("a, button")) {
-    const text = (el.textContent ?? "").trim();
-    if (/report\s+(this\s+)?job/i.test(text) && text.length < 50) {
-      reportJobEl = el;
-      break;
-    }
-  }
-
-  if (reportJobEl) {
-    let container: HTMLElement | null = reportJobEl.parentElement;
-    while (container && container !== document.body) {
-      if ((container.textContent?.length ?? 0) > 500) break;
-      container = container.parentElement;
-    }
-    if (container && container !== document.body) {
-      try {
-        const range = document.createRange();
-        range.setStart(container, 0);
-        range.setEndBefore(reportJobEl);
-        const text = cleanDescriptionText(elementToText(range.cloneContents()));
-        if (text.length > 100) return text;
-      } catch {
-        // fall through — caller will use JSON-LD description
-      }
-    }
-  }
-
-  return undefined;
+  // Last-resort fallback: slice body text at the "Report job" footer landmark
+  const fullText = document.body.innerText;
+  const landmarkIdx = fullText.search(/report\s+job/i);
+  const raw = landmarkIdx !== -1 ? fullText.slice(0, landmarkIdx) : fullText;
+  return raw.trim().replace(/\n{3,}/g, "\n\n") || undefined;
 }
 
 // ─── Layer 4: DOM salary fallback ───────────────────────────────
