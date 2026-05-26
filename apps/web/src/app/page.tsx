@@ -17,7 +17,10 @@ type JobApplicationRow = {
   location?: string | null;
   remote_type?: string | null;
   job_type?: string | null;
-  salary?: string | null;
+  salary_raw?: string | null;
+  salary_min?: number | null;
+  salary_max?: number | null;
+  salary_currency?: string | null;
   notes?: string | null;
   applied_at?: string | null;
   interest_level?: string | null;
@@ -43,7 +46,10 @@ function rowToListItem(row: JobApplicationRow): JobApplicationListItem {
     location: row.location ?? undefined,
     remoteType: (row.remote_type as RemoteType) ?? undefined,
     jobType: (row.job_type as JobType) ?? undefined,
-    salary: row.salary ?? undefined,
+    salaryRaw: row.salary_raw ?? undefined,
+    salaryMin: row.salary_min ?? undefined,
+    salaryMax: row.salary_max ?? undefined,
+    salaryCurrency: row.salary_currency ?? undefined,
     notes: row.notes ?? undefined,
     appliedAt: row.applied_at ?? undefined,
     interestLevel:
@@ -71,7 +77,7 @@ export default async function Home() {
     .from("job_applications")
     .select(
       "id, user_id, company, title, source_url, source, status, saved_at, updated_at, " +
-        "location, remote_type, job_type, salary, notes, applied_at, " +
+        "location, remote_type, job_type, salary_raw, salary_min, salary_max, salary_currency, notes, applied_at, " +
         "interest_level, tags, resume_submitted, cover_letter_submitted, " +
         "company_application_url, is_archived, archived_at",
     )
