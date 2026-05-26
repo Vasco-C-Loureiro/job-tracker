@@ -93,7 +93,7 @@ export default function InterviewCard({
 }: Props) {
   const [pillOpen, setPillOpen] = useState(false);
   const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number } | null>(null);
-  const [roundsEditMode, setRoundsEditMode] = useState(false);
+  const [editingRoundIdx, setEditingRoundIdx] = useState<number | null>(null);
   const [localRounds, setLocalRounds] = useState<RoundState[]>(() =>
     initialRounds.map(rowToRoundState),
   );
@@ -174,7 +174,7 @@ export default function InterviewCard({
     await patchJob({ status: "rejected" });
   }
 
-  // ── Round editing (mirrors JobEditForm) ──────────────────────────
+  // ── Round editing ────────────────────────────────────────────────
 
   function updateLocalRound<K extends keyof RoundState>(
     index: number,
@@ -186,11 +186,16 @@ export default function InterviewCard({
     );
   }
 
-  function addLocalRound() {
+  async function handleAddRoundButton() {
+    if (editingRoundIdx !== null) {
+      await saveLocalRound(editingRoundIdx);
+      setEditingRoundIdx(null);
+    }
     const nextNum =
       localRounds.length > 0
         ? Math.max(...localRounds.map((r) => r.roundNumber)) + 1
         : 1;
+    const newIdx = localRounds.length;
     setLocalRounds((prev) => [
       ...prev,
       {
@@ -208,6 +213,7 @@ export default function InterviewCard({
         deleting: false,
       },
     ]);
+    setEditingRoundIdx(newIdx);
   }
 
   async function saveLocalRound(index: number) {
@@ -501,75 +507,48 @@ export default function InterviewCard({
 
               {/* Section 2 — Interview rounds */}
               <div className="mb-5">
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
-                    Interview Rounds
-                  </h4>
-                  <button
-                    className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
-                    onClick={() => setRoundsEditMode((m) => !m)}
-                  >
-                    {roundsEditMode ? "done" : "✏ edit"}
-                  </button>
-                </div>
+                <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
+                  Interview Rounds
+                </h4>
 
-                {!roundsEditMode ? (
-                  localRounds.length === 0 ? (
+                <div className="space-y-1 mb-2">
+                  {localRounds.length === 0 && (
                     <p className="text-xs text-gray-400">No rounds logged.</p>
-                  ) : (
-                    <div className="space-y-1">
-                      {localRounds.map((r) => (
-                        <div
-                          key={r.id ?? `new-${r.roundNumber}`}
-                          className="text-xs text-gray-600 flex flex-wrap gap-1 items-center"
-                        >
-                          <span className="font-medium">
-                            Round {r.roundNumber}
-                          </span>
-                          <span className="text-gray-300">·</span>
-                          <span>{r.type}</span>
-                          {r.date && (
-                            <>
-                              <span className="text-gray-300">·</span>
-                              <span>{formatDate(r.date)}</span>
-                            </>
-                          )}
-                          {r.contactName && (
-                            <>
-                              <span className="text-gray-300">·</span>
-                              <span>{r.contactName}</span>
-                            </>
-                          )}
-                          {r.done && (
-                            <>
-                              <span className="text-gray-300">·</span>
-                              <span className="text-green-600">Done ✓</span>
-                            </>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )
-                ) : (
-                  <div>
-                    {localRounds.map((round, idx) => (
+                  )}
+                  {localRounds.map((round, idx) =>
+                    editingRoundIdx === idx ? (
                       <div
                         key={round.id ?? `new-${idx}`}
-                        className="border border-gray-200 rounded-lg p-3 mb-3"
+                        className="border border-gray-200 rounded-lg p-3 mb-1"
                       >
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-xs font-semibold text-gray-400">
                             Round {round.roundNumber}
                           </span>
-                          <button
-                            onClick={() => void deleteLocalRound(idx)}
-                            disabled={round.deleting}
-                            className="text-xs text-red-500 hover:text-red-700 disabled:opacity-40"
-                          >
-                            {round.deleting ? "Removing…" : "Remove"}
-                          </button>
+                          <div className="flex items-center gap-3">
+                            <button
+                              onClick={async () => {
+                                await deleteLocalRound(idx);
+                                setEditingRoundIdx(null);
+                              }}
+                              disabled={round.deleting}
+                              className="text-xs text-red-500 hover:text-red-700 disabled:opacity-40"
+                            >
+                              {round.deleting ? "Removing…" : "Remove"}
+                            </button>
+                            <button
+                              onClick={async () => {
+                                await saveLocalRound(idx);
+                                setEditingRoundIdx(null);
+                              }}
+                              disabled={round.saving}
+                              className="text-xs text-blue-600 hover:text-blue-800 font-medium disabled:opacity-50"
+                            >
+                              {round.saving ? "Saving…" : "done"}
+                            </button>
+                          </div>
                         </div>
-                        <div className="grid grid-cols-2 gap-3 mb-3">
+                        <div className="grid grid-cols-2 gap-3">
                           {/* Row 1: Type + Date */}
                           <div>
                             <label className={labelCls}>Type</label>
@@ -671,27 +650,51 @@ export default function InterviewCard({
                             />
                           </div>
                         </div>
+                      </div>
+                    ) : (
+                      <div
+                        key={round.id ?? `new-${idx}`}
+                        className="text-xs text-gray-600 flex flex-wrap gap-1 items-center"
+                      >
+                        <span className="font-medium">Round {round.roundNumber}</span>
+                        <span className="text-gray-300">·</span>
+                        <span>{round.type}</span>
+                        {round.date && (
+                          <>
+                            <span className="text-gray-300">·</span>
+                            <span>{formatDate(round.date)}</span>
+                          </>
+                        )}
+                        {round.contactName && (
+                          <>
+                            <span className="text-gray-300">·</span>
+                            <span>{round.contactName}</span>
+                          </>
+                        )}
+                        {round.done && (
+                          <>
+                            <span className="text-gray-300">·</span>
+                            <span className="text-green-600">Done ✓</span>
+                          </>
+                        )}
                         <button
-                          onClick={() => void saveLocalRound(idx)}
-                          disabled={round.saving}
-                          className="px-3 py-1 bg-blue-600 text-white text-xs font-semibold rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                          onClick={() => setEditingRoundIdx(idx)}
+                          className="ml-1 text-gray-300 hover:text-gray-500 transition-colors"
+                          title="Edit round"
                         >
-                          {round.saving
-                            ? "Saving…"
-                            : round.id
-                              ? "Save round"
-                              : "Add round"}
+                          ✏
                         </button>
                       </div>
-                    ))}
-                    <button
-                      onClick={addLocalRound}
-                      className="px-3 py-1.5 border border-gray-300 text-xs font-medium rounded hover:bg-gray-50"
-                    >
-                      + Add round
-                    </button>
-                  </div>
-                )}
+                    ),
+                  )}
+                </div>
+
+                <button
+                  onClick={() => void handleAddRoundButton()}
+                  className="px-3 py-1.5 border border-gray-300 text-xs font-medium rounded hover:bg-gray-50"
+                >
+                  + Add round
+                </button>
               </div>
 
               {/* Section 3 — Action buttons */}
