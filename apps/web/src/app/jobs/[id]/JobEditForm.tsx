@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import type { JobApplication, InterviewRound, InterviewType } from "@job-tracker/shared";
 import { createSupabaseBrowserClient } from "@/lib/supabase";
 
@@ -308,9 +307,12 @@ export default function JobEditForm({
 
   return (
     <div>
-      <Link href="/" className="text-sm text-blue-700 hover:underline mb-6 block">
-        ← Back to dashboard
-      </Link>
+      <button
+        onClick={() => router.back()}
+        className="text-sm text-blue-700 hover:underline mb-6 block"
+      >
+        ← Back
+      </button>
 
       <h1 className="text-2xl font-bold mb-1">{job.title}</h1>
       <p className="text-gray-500 text-sm mb-6">{job.company} · {job.source} · saved {new Date(job.savedAt).toLocaleDateString("en-GB")}</p>
