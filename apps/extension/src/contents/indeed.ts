@@ -64,6 +64,53 @@ function stripHtml(html: string): string {
   return html.replace(/<[^>]+>/g, "").trim();
 }
 
+// Extracts just the numeric salary portion from a raw DOM string that may
+// include trailing text like "a year - Permanent, Full-time".
+// Handles symbol-prefix (£/$/ €) and symbol-suffix (kr/SEK) currencies,
+// and correctly identifies ranges when the separator is "-" or "to" followed
+// by another currency value — not by plain text.
+function parseSalaryValue(raw: string): string | undefined {
+  // Symbol-prefix currencies — try longer prefixes first (CA$ before $)
+  const prefixRe = /(CA\$|A\$|[£$€])([\d,]+)/g;
+  const prefixMatches: RegExpExecArray[] = [];
+  let m: RegExpExecArray | null;
+  while ((m = prefixRe.exec(raw)) !== null) prefixMatches.push(m);
+
+  if (prefixMatches.length > 0) {
+    const first = prefixMatches[0];
+    const firstVal = `${first[1]}${first[2]}`;
+    if (prefixMatches.length >= 2) {
+      const between = raw.slice(first.index + first[0].length, prefixMatches[1].index);
+      // Range only when separator is purely "-" / "–" / "to" — not when followed by words
+      if (/^\s*[-–]\s*$/.test(between) || /^\s+to\s+$/i.test(between)) {
+        const second = prefixMatches[1];
+        return `${firstVal} - ${second[1]}${second[2]}`;
+      }
+    }
+    return firstVal;
+  }
+
+  // Symbol-suffix currencies: "450,000 kr", "300,000 SEK", etc.
+  const suffixRe = /([\d,]+)\s*(kr|SEK|DKK|NOK)\b/gi;
+  const suffixMatches: RegExpExecArray[] = [];
+  while ((m = suffixRe.exec(raw)) !== null) suffixMatches.push(m);
+
+  if (suffixMatches.length > 0) {
+    const first = suffixMatches[0];
+    const firstVal = `${first[1]} ${first[2]}`;
+    if (suffixMatches.length >= 2) {
+      const between = raw.slice(first.index + first[0].length, suffixMatches[1].index);
+      if (/^\s*[-–]\s*$/.test(between) || /^\s+to\s+$/i.test(between)) {
+        const second = suffixMatches[1];
+        return `${firstVal} - ${second[1]} ${second[2]}`;
+      }
+    }
+    return firstVal;
+  }
+
+  return undefined;
+}
+
 // ─── Layer 1: JSON-LD ────────────────────────────────────────────
 // Indeed exposes a schema.org JobPosting on viewjob pages for Google
 // Jobs SEO. Most stable extraction strategy when present.
@@ -339,12 +386,17 @@ function extractJob(): SaveJobPayload | null {
   const fromDom = extractFromDom() ?? {};
   const merged = { ...fromDom, ...fromJsonLd }; // JSON-LD wins on overlap
 
-  // JSON-LD may spread salaryRaw: undefined which silently overwrites a DOM
-  // salary. If salary is still missing after the merge, run the full DOM
-  // salary search (covers both the header element and the Job Details panel).
+  // Clean DOM-sourced salary: strips trailing "a year - Permanent, Full-time" etc.
+  // Only applied when JSON-LD did not supply its own already-structured salary.
+  if (!fromJsonLd.salaryRaw && merged.salaryRaw) {
+    merged.salaryRaw = parseSalaryValue(merged.salaryRaw) ?? merged.salaryRaw;
+  }
+
+  // Post-merge fallback: JSON-LD may have spread salaryRaw: undefined over a valid
+  // DOM salary. Search the full DOM (header + Job Details panel) and clean the result.
   if (!merged.salaryRaw) {
     const fallback = extractSalaryFromDom();
-    if (fallback) merged.salaryRaw = fallback;
+    if (fallback) merged.salaryRaw = parseSalaryValue(fallback) ?? fallback;
   }
 
   if (!merged.title || !merged.company) return null;
