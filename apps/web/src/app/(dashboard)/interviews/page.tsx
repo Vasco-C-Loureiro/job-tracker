@@ -91,18 +91,13 @@ export default async function InterviewsPage() {
     allRounds = (rounds ?? []) as InterviewRoundRow[];
   }
 
-  const totalActive = interviewJobs.length + offerJobs.length;
-
   return (
     <main className="p-8 font-sans">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Interviews</h1>
-        <p className="text-sm text-gray-500 mt-1">
-          {totalActive} active application{totalActive !== 1 ? "s" : ""}
-        </p>
       </div>
 
-      {totalActive === 0 && rejectedJobs.length === 0 ? (
+      {interviewJobs.length + offerJobs.length === 0 && rejectedJobs.length === 0 ? (
         <div className="text-center py-20 text-gray-400">
           <p className="text-base font-medium mb-1">No interviews yet</p>
           <p className="text-sm">
