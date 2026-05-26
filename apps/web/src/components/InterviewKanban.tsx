@@ -132,7 +132,7 @@ export default function InterviewKanban({
     const hasSelected = getCardsForColumn(col).some(
       (j) => j.id === selectedJobId,
     );
-    return hasSelected ? "w-[520px]" : "w-64";
+    return hasSelected ? "w-[620px]" : "w-[310px]";
   }
 
   const handleRoundChange = useCallback(
@@ -234,11 +234,12 @@ export default function InterviewKanban({
           onMouseDown={() => void handleSaveAndClose()}
         />
       )}
-      <p className="text-sm text-gray-500 mb-6">
+      <p className="text-base font-semibold text-gray-400 mb-6">
         {activeCount} active application{activeCount !== 1 ? "s" : ""}
       </p>
 
       {/* Main kanban — each column gets z-20 only when it holds the selected card */}
+      <div className="min-w-[75vw]">
       <div className="flex gap-4 overflow-x-auto pb-4 min-h-0">
         {/* Round columns */}
         {roundColumns.map((col) => {
@@ -251,10 +252,10 @@ export default function InterviewKanban({
               className={`flex-shrink-0 ${getColumnWidth(col)} transition-[width] duration-300 ease-in-out${isSelectedCol ? " relative z-20" : ""}`}
               onClick={(e) => e.stopPropagation()}
             >
-              <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3 flex items-center gap-1.5">
+              <h3 className="text-sm font-bold text-gray-300 uppercase tracking-widest mb-3 flex items-center gap-2">
                 {col.label}
-                <span className="font-normal text-gray-300">
-                  ({getCardsForColumn(col).length})
+                <span className="bg-gray-700 text-gray-200 rounded-full px-2 py-0.5 text-xs font-bold">
+                  {getCardsForColumn(col).length}
                 </span>
               </h3>
               <div className="space-y-2">
@@ -281,27 +282,30 @@ export default function InterviewKanban({
 
         {/* Add round button */}
         <div
-          className="flex-shrink-0 w-10 flex flex-col items-center pt-5"
+          className="flex-shrink-0 w-16 flex flex-col items-center justify-center h-full"
           onClick={(e) => e.stopPropagation()}
         >
-          <button
-            onClick={handleAddRound}
-            title={`Add Round ${maxRoundColumn + 1} column`}
-            className="w-8 h-8 rounded-full border-2 border-dashed border-gray-300 text-gray-400 hover:border-blue-400 hover:text-blue-500 flex items-center justify-center text-lg font-light transition-colors"
-          >
-            +
-          </button>
+          <div className="flex flex-col items-center gap-2">
+            <button
+              onClick={handleAddRound}
+              title={`Add Round ${maxRoundColumn + 1} column`}
+              className="w-12 h-12 rounded-full border-2 border-dashed border-gray-500 hover:border-gray-300 flex items-center justify-center text-gray-500 hover:text-gray-300 text-xl transition-colors"
+            >
+              +
+            </button>
+            <span className="text-xs text-gray-500 text-center">Add round</span>
+          </div>
         </div>
 
         {/* Offer column */}
         <div
-          className={`flex-shrink-0 w-64${getCardsForColumn(OFFER_COLUMN).some((j) => j.id === selectedJobId) ? " relative z-20" : ""}`}
+          className={`flex-shrink-0 w-[310px]${getCardsForColumn(OFFER_COLUMN).some((j) => j.id === selectedJobId) ? " relative z-20" : ""}`}
           onClick={(e) => e.stopPropagation()}
         >
-          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3 flex items-center gap-1.5">
+          <h3 className="text-sm font-bold text-gray-300 uppercase tracking-widest mb-3 flex items-center gap-2">
             Offer
-            <span className="font-normal text-gray-300">
-              ({getCardsForColumn(OFFER_COLUMN).length})
+            <span className="bg-gray-700 text-gray-200 rounded-full px-2 py-0.5 text-xs font-bold">
+              {getCardsForColumn(OFFER_COLUMN).length}
             </span>
           </h3>
           <div className="space-y-2">
@@ -322,16 +326,17 @@ export default function InterviewKanban({
           </div>
         </div>
       </div>
+      </div>{/* end min-w-[75vw] */}
 
       {/* Rejected section — mirrors the exact same column structure as the main kanban */}
       {anyRejected && (
-        <div className="mt-12">
+        <div className="mt-24">
           <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-4">
             Rejected
           </h2>
           <div className="flex gap-4 overflow-x-auto pb-4">
             {roundColumns.map((col) => (
-              <div key={col.roundNumber} className="flex-shrink-0 w-64">
+              <div key={col.roundNumber} className="flex-shrink-0 w-[310px]">
                 <h3 className="text-xs font-semibold text-gray-300 uppercase tracking-wide mb-3">
                   {col.label}
                 </h3>

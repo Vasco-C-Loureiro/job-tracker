@@ -94,7 +94,7 @@ export default async function InterviewsPage() {
   return (
     <main className="p-8 font-sans">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Interviews</h1>
+        <h1 className="text-5xl font-bold text-gray-900">Interviews</h1>
       </div>
 
       {interviewJobs.length + offerJobs.length === 0 && rejectedJobs.length === 0 ? (
