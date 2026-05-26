@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase.server";
 import { redirect } from "next/navigation";
-import type { JobApplication, JobType, RemoteType } from "@job-tracker/shared";
+import type { JobApplication, JobType, RemoteType, InterviewRound, InterviewType } from "@job-tracker/shared";
 import JobEditForm from "./JobEditForm";
 
 type JobApplicationRow = {
@@ -67,6 +67,40 @@ function rowToJobApplication(row: JobApplicationRow): JobApplication {
   };
 }
 
+type InterviewRoundRow = {
+  id: string;
+  job_application_id: string;
+  round_number: number;
+  type: string;
+  date?: string | null;
+  location?: string | null;
+  contact_name?: string | null;
+  contact_role?: string | null;
+  done: boolean;
+  follow_up_sent: boolean;
+  notes?: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+function rowToInterviewRound(row: InterviewRoundRow): InterviewRound {
+  return {
+    id: row.id,
+    jobApplicationId: row.job_application_id,
+    roundNumber: row.round_number,
+    type: row.type as InterviewType,
+    date: row.date ?? undefined,
+    location: row.location ?? undefined,
+    contactName: row.contact_name ?? undefined,
+    contactRole: row.contact_role ?? undefined,
+    done: row.done,
+    followUpSent: row.follow_up_sent,
+    notes: row.notes ?? undefined,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
 export default async function JobDetailPage({
   params,
 }: {
@@ -101,9 +135,21 @@ export default async function JobDetailPage({
 
   const job = rowToJobApplication(data);
 
+  const { data: roundsData } = await supabase
+    .from("interview_rounds")
+    .select(
+      "id, job_application_id, round_number, type, date, location, " +
+      "contact_name, contact_role, done, follow_up_sent, notes, created_at, updated_at",
+    )
+    .eq("job_application_id", id)
+    .order("round_number", { ascending: true })
+    .returns<InterviewRoundRow[]>();
+
+  const rounds = (roundsData ?? []).map(rowToInterviewRound);
+
   return (
     <main className="min-h-screen p-8 font-sans max-w-2xl mx-auto">
-      <JobEditForm job={job} />
+      <JobEditForm job={job} initialRounds={rounds} />
     </main>
   );
 }
