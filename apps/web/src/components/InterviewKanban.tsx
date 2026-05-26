@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   DndContext,
   DragEndEvent,
@@ -71,6 +71,7 @@ const DEFAULT_ROUND_COLUMNS: KanbanColumn[] = [
 ];
 const OFFER_COLUMN: KanbanColumn = { roundNumber: 0, label: "Offer", isOffer: true };
 const EXTRA_ROUNDS_KEY = "job-tracker-kanban-extra-rounds";
+const COLUMN_WIDTH = 388;
 
 function DroppableColumn({
   id,
@@ -109,10 +110,12 @@ export default function InterviewKanban({
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [extraRounds, setExtraRounds] = useState<number[]>([]);
   const [advancingJobId, setAdvancingJobId] = useState<string | null>(null);
-  const [isKanbanSliding, setIsKanbanSliding] = useState(false);
   const [rejectingJobId, setRejectingJobId] = useState<string | null>(null);
   const [draggingJobId, setDraggingJobId] = useState<string | null>(null);
   const [overColumnId, setOverColumnId] = useState<string | null>(null);
+
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const columnRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -147,6 +150,28 @@ export default function InterviewKanban({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Scroll the selected card's column to the centre of the viewport on selection
+  useEffect(() => {
+    if (!selectedJobId || !scrollContainerRef.current) return;
+
+    const selectedJob = jobs.find((j) => j.id === selectedJobId);
+    if (!selectedJob) return;
+
+    const colKey =
+      selectedJob.status === "offer"
+        ? "offer"
+        : `round-${selectedJob.current_interview_round}`;
+
+    const colEl = columnRefs.current.get(colKey);
+    if (!colEl || !scrollContainerRef.current) return;
+
+    const container = scrollContainerRef.current;
+    const targetScrollLeft =
+      colEl.offsetLeft - container.clientWidth / 2 + colEl.offsetWidth / 2;
+    container.scrollTo({ left: targetScrollLeft, behavior: "smooth" });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedJobId]);
+
   const roundColumns: KanbanColumn[] = [
     ...DEFAULT_ROUND_COLUMNS,
     ...extraRounds
@@ -176,7 +201,7 @@ export default function InterviewKanban({
     const hasSelected = getCardsForColumn(col).some(
       (j) => j.id === selectedJobId,
     );
-    return hasSelected ? "w-[620px]" : "w-[310px]";
+    return hasSelected ? "w-[775px]" : "w-[388px]";
   }
 
   const handleRoundChange = useCallback(
@@ -218,10 +243,18 @@ export default function InterviewKanban({
     if (!job) return;
 
     setAdvancingJobId(jobId);
-    setIsKanbanSliding(true);
+
+    // Smooth-scroll the kanban one column to the left while the card pulses
+    const container = scrollContainerRef.current;
+    if (container) {
+      container.scrollTo({
+        left: container.scrollLeft + COLUMN_WIDTH,
+        behavior: "smooth",
+      });
+    }
+
     await new Promise<void>((resolve) => setTimeout(resolve, 500));
     setAdvancingJobId(null);
-    setIsKanbanSliding(false);
 
     const next = (job.current_interview_round ?? 0) + 1;
     const token = await getToken();
@@ -404,136 +437,31 @@ export default function InterviewKanban({
 
       {/* Main kanban — each column gets z-20 only when it holds the selected card */}
       <div className="min-w-[75vw]">
-      <div className={`flex gap-4 overflow-x-auto pb-4 items-stretch${isKanbanSliding ? " animate-kanban-slide" : ""}`}>
-        {/* Round columns */}
-        {roundColumns.map((col) => {
-          const columnId = `round-${col.roundNumber}`;
-          const isOver = overColumnId === columnId;
-          const isSelectedCol = getCardsForColumn(col).some(
-            (j) => j.id === selectedJobId,
-          );
-          return (
-            <div
-              key={col.roundNumber}
-              className={`flex-shrink-0 ${getColumnWidth(col)} transition-[width] duration-300 ease-in-out${isSelectedCol ? " relative z-20" : ""}`}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <h3 className="text-sm font-bold text-gray-300 uppercase tracking-widest mb-3 flex items-center gap-2">
-                {col.label}
-                <span className="bg-gray-700 text-gray-200 rounded-full px-2 py-0.5 text-xs font-bold">
-                  {getCardsForColumn(col).length}
-                </span>
-                {col.roundNumber >= 4 && isColumnEmpty(col) && (
-                  <button
-                    onClick={() => handleDeleteColumn(col.roundNumber)}
-                    className="ml-1.5 p-1 text-base text-gray-500 hover:text-red-400 transition-colors leading-none"
-                    title="Remove column"
-                  >
-                    ✕
-                  </button>
-                )}
-              </h3>
-              <DroppableColumn id={columnId} isOver={isOver}>
-                <div className="space-y-2">
-                  {getCardsForColumn(col).map((job) => (
-                    <InterviewCard
-                      key={job.id}
-                      job={job}
-                      rounds={rounds.filter(
-                        (r) => r.job_application_id === job.id,
-                      )}
-                      isSelected={selectedJobId === job.id}
-                      onSelect={setSelectedJobId}
-                      onRoundChange={handleRoundChange}
-                      onStatusChange={handleStatusChange}
-                      maxRoundColumn={maxRoundColumn}
-                      getToken={getToken}
-                      onRoundsChange={handleRoundsChange}
-                      isAdvancing={advancingJobId === job.id}
-                      isRejecting={rejectingJobId === job.id}
-                      onNextRound={handleNextRoundAnimated}
-                      onReject={handleRejectAnimated}
-                      isDraggable={true}
-                    />
-                  ))}
-                </div>
-              </DroppableColumn>
-            </div>
-          );
-        })}
-
-        {/* Add round button */}
         <div
-          className="flex flex-col items-center justify-center flex-shrink-0 w-16 border-l border-r border-dashed border-gray-600"
-          style={{ paddingLeft: "8px", paddingRight: "8px" }}
-          onClick={(e) => e.stopPropagation()}
+          ref={scrollContainerRef}
+          className="flex gap-4 overflow-x-auto pb-4 items-stretch"
         >
-          <div className="flex flex-col items-center gap-2">
-            <button
-              onClick={handleAddRound}
-              title={`Add Round ${maxRoundColumn + 1} column`}
-              className="w-12 h-12 rounded-full border-2 border-dashed border-gray-500 hover:border-gray-300 flex items-center justify-center text-gray-500 hover:text-gray-300 text-2xl transition-colors"
-            >
-              +
-            </button>
-            <span className="text-xs text-gray-900 text-center">Add round</span>
-          </div>
-        </div>
-
-        {/* Offer column */}
-        <div
-          className={`flex-shrink-0 w-[310px]${getCardsForColumn(OFFER_COLUMN).some((j) => j.id === selectedJobId) ? " relative z-20" : ""}`}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <h3 className="text-sm font-bold text-gray-300 uppercase tracking-widest mb-3 flex items-center gap-2">
-            Offer
-            <span className="bg-gray-700 text-gray-200 rounded-full px-2 py-0.5 text-xs font-bold">
-              {getCardsForColumn(OFFER_COLUMN).length}
-            </span>
-          </h3>
-          <DroppableColumn id="offer" isOver={overColumnId === "offer"}>
-            <div className="space-y-2">
-              {getCardsForColumn(OFFER_COLUMN).map((job) => (
-                <InterviewCard
-                  key={job.id}
-                  job={job}
-                  rounds={rounds.filter((r) => r.job_application_id === job.id)}
-                  isSelected={selectedJobId === job.id}
-                  onSelect={setSelectedJobId}
-                  onRoundChange={handleRoundChange}
-                  onStatusChange={handleStatusChange}
-                  maxRoundColumn={maxRoundColumn}
-                  getToken={getToken}
-                  onRoundsChange={handleRoundsChange}
-                  isAdvancing={advancingJobId === job.id}
-                  isRejecting={rejectingJobId === job.id}
-                  onNextRound={handleNextRoundAnimated}
-                  onReject={handleRejectAnimated}
-                  isDraggable={true}
-                />
-              ))}
-            </div>
-          </DroppableColumn>
-        </div>
-      </div>
-      </div>{/* end min-w-[75vw] */}
-
-      {/* Rejected section — mirrors the exact same column structure as the main kanban */}
-      {anyRejected && (
-        <div className="mt-36">
-          <h2 className="text-2xl font-bold text-gray-300 mb-4">
-            Rejected from interview{" "}
-            <span className="text-lg font-normal text-gray-500">
-              ({jobs.filter((j) => j.status === "rejected").length})
-            </span>
-          </h2>
-          <div className="flex gap-4 overflow-x-auto pb-4">
-            {roundColumns.map((col) => (
-              <div key={col.roundNumber} className="flex-shrink-0 w-[310px] bg-white/5 rounded-lg p-2">
+          {/* Round columns */}
+          {roundColumns.map((col) => {
+            const columnId = `round-${col.roundNumber}`;
+            const isOver = overColumnId === columnId;
+            const isSelectedCol = getCardsForColumn(col).some(
+              (j) => j.id === selectedJobId,
+            );
+            return (
+              <div
+                key={col.roundNumber}
+                ref={(el) => {
+                  if (el) columnRefs.current.set(columnId, el);
+                  else columnRefs.current.delete(columnId);
+                }}
+                className={`flex-shrink-0 ${getColumnWidth(col)} transition-[width] duration-300 ease-in-out${isSelectedCol ? " relative z-20" : ""}`}
+                onClick={(e) => e.stopPropagation()}
+              >
                 <h3 className="text-sm font-bold text-gray-300 uppercase tracking-widest mb-3 flex items-center gap-2">
                   {col.label}
                   <span className="bg-gray-700 text-gray-200 rounded-full px-2 py-0.5 text-xs font-bold">
-                    {getRejectedCardsForColumn(col).length}
+                    {getCardsForColumn(col).length}
                   </span>
                   {col.roundNumber >= 4 && isColumnEmpty(col) && (
                     <button
@@ -544,6 +472,113 @@ export default function InterviewKanban({
                       ✕
                     </button>
                   )}
+                </h3>
+                <DroppableColumn id={columnId} isOver={isOver}>
+                  <div className="space-y-2">
+                    {getCardsForColumn(col).map((job) => (
+                      <InterviewCard
+                        key={job.id}
+                        job={job}
+                        rounds={rounds.filter(
+                          (r) => r.job_application_id === job.id,
+                        )}
+                        isSelected={selectedJobId === job.id}
+                        onSelect={setSelectedJobId}
+                        onRoundChange={handleRoundChange}
+                        onStatusChange={handleStatusChange}
+                        maxRoundColumn={maxRoundColumn}
+                        getToken={getToken}
+                        onRoundsChange={handleRoundsChange}
+                        isAdvancing={advancingJobId === job.id}
+                        isRejecting={rejectingJobId === job.id}
+                        onNextRound={handleNextRoundAnimated}
+                        onReject={handleRejectAnimated}
+                        isDraggable={true}
+                      />
+                    ))}
+                  </div>
+                </DroppableColumn>
+              </div>
+            );
+          })}
+
+          {/* Add round button */}
+          <div
+            className="flex flex-col items-center justify-center flex-shrink-0 w-16 border-l border-r border-dashed border-gray-600"
+            style={{ paddingLeft: "8px", paddingRight: "8px" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex flex-col items-center gap-2">
+              <button
+                onClick={handleAddRound}
+                title={`Add Round ${maxRoundColumn + 1} column`}
+                className="w-12 h-12 rounded-full border-2 border-dashed border-gray-900 hover:border-blue-500 flex items-center justify-center text-gray-900 hover:text-blue-500 text-2xl transition-colors"
+              >
+                +
+              </button>
+              <span className="text-xs text-gray-900 text-center">Add round</span>
+            </div>
+          </div>
+
+          {/* Offer column */}
+          <div
+            ref={(el) => {
+              if (el) columnRefs.current.set("offer", el);
+              else columnRefs.current.delete("offer");
+            }}
+            className={`flex-shrink-0 w-[388px]${getCardsForColumn(OFFER_COLUMN).some((j) => j.id === selectedJobId) ? " relative z-20" : ""}`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-sm font-bold text-gray-300 uppercase tracking-widest mb-3 flex items-center gap-2">
+              Offer
+              <span className="bg-gray-700 text-gray-200 rounded-full px-2 py-0.5 text-xs font-bold">
+                {getCardsForColumn(OFFER_COLUMN).length}
+              </span>
+            </h3>
+            <DroppableColumn id="offer" isOver={overColumnId === "offer"}>
+              <div className="space-y-2">
+                {getCardsForColumn(OFFER_COLUMN).map((job) => (
+                  <InterviewCard
+                    key={job.id}
+                    job={job}
+                    rounds={rounds.filter((r) => r.job_application_id === job.id)}
+                    isSelected={selectedJobId === job.id}
+                    onSelect={setSelectedJobId}
+                    onRoundChange={handleRoundChange}
+                    onStatusChange={handleStatusChange}
+                    maxRoundColumn={maxRoundColumn}
+                    getToken={getToken}
+                    onRoundsChange={handleRoundsChange}
+                    isAdvancing={advancingJobId === job.id}
+                    isRejecting={rejectingJobId === job.id}
+                    onNextRound={handleNextRoundAnimated}
+                    onReject={handleRejectAnimated}
+                    isDraggable={true}
+                  />
+                ))}
+              </div>
+            </DroppableColumn>
+          </div>
+        </div>
+      </div>
+
+      {/* Rejected section — mirrors the same column structure as the main kanban */}
+      {anyRejected && (
+        <div className="mt-36">
+          <h2 className="text-2xl font-bold text-gray-300 mb-4">
+            Rejected from interview{" "}
+            <span className="text-lg font-normal text-gray-500">
+              ({jobs.filter((j) => j.status === "rejected").length})
+            </span>
+          </h2>
+          <div className="flex gap-4 overflow-x-auto pb-4">
+            {roundColumns.map((col) => (
+              <div key={col.roundNumber} className="flex-shrink-0 w-[388px] bg-white/5 rounded-lg p-2">
+                <h3 className="text-sm font-bold text-gray-300 uppercase tracking-widest mb-3 flex items-center gap-2">
+                  {col.label}
+                  <span className="bg-gray-700 text-gray-200 rounded-full px-2 py-0.5 text-xs font-bold">
+                    {getRejectedCardsForColumn(col).length}
+                  </span>
                 </h3>
                 <div className="space-y-2">
                   {getRejectedCardsForColumn(col).map((job) => (
