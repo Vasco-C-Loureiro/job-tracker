@@ -316,8 +316,10 @@ export default function InterviewCard({
     onRoundsChange(job.id, asRows);
   }
 
-  const currentRound = localRounds.find(
-    (r) => r.roundNumber === job.current_interview_round,
+  // Derived from the prop (InterviewRoundRow) for collapsed-face display;
+  // localRounds drives the edit form.
+  const currentRound = initialRounds.find(
+    (r) => r.round_number === job.current_interview_round,
   );
   const roundOptions = Array.from(
     { length: maxRoundColumn },
@@ -327,7 +329,6 @@ export default function InterviewCard({
   const inputCls =
     "w-full border border-gray-200 rounded px-2.5 py-1.5 text-sm focus:outline-none focus:border-blue-500";
   const labelCls = "block text-xs text-gray-500 mb-1";
-  const fieldCls = "mb-3";
 
   return (
     <div
@@ -345,10 +346,10 @@ export default function InterviewCard({
       <div className="p-3">
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
-            <p className="font-semibold text-gray-900 text-sm truncate">
+            <p className="font-semibold text-gray-900 text-sm line-clamp-2">
               {job.title}
             </p>
-            <p className="text-xs text-gray-500 mt-0.5 truncate">
+            <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">
               {job.company}
             </p>
             {job.location && (
@@ -396,7 +397,7 @@ export default function InterviewCard({
                     {roundOptions.map((n) => (
                       <button
                         key={n}
-                        className="w-full text-left px-3 py-1.5 text-sm hover:bg-gray-50 flex items-center gap-2"
+                        className="w-full text-left px-3 py-1.5 text-sm text-gray-900 hover:bg-gray-50 flex items-center gap-2"
                         onClick={(e) => {
                           e.stopPropagation();
                           void handleSelectRound(n);
@@ -440,7 +441,7 @@ export default function InterviewCard({
 
             {currentRound?.date && (
               <p className="text-xs text-gray-400 mt-1">
-                {formatDate(currentRound.date)}
+                {new Date(currentRound.date).toLocaleDateString("en-GB")}
               </p>
             )}
             {currentRound?.location && (
@@ -587,8 +588,9 @@ export default function InterviewCard({
                           {round.deleting ? "Removing…" : "Remove"}
                         </button>
                       </div>
-                      <div className="flex gap-3 mb-2">
-                        <div className="flex-1">
+                      <div className="grid grid-cols-2 gap-3 mb-3">
+                        {/* Row 1: Type + Date */}
+                        <div>
                           <label className={labelCls}>Type</label>
                           <select
                             className={inputCls}
@@ -608,7 +610,7 @@ export default function InterviewCard({
                             ))}
                           </select>
                         </div>
-                        <div className="flex-1">
+                        <div>
                           <label className={labelCls}>Date</label>
                           <input
                             type="date"
@@ -619,85 +621,74 @@ export default function InterviewCard({
                             }
                           />
                         </div>
-                      </div>
-                      <div className="flex gap-3 mb-2">
-                        <div className="flex-1">
+                        {/* Row 2: Contact name + Contact role */}
+                        <div>
                           <label className={labelCls}>Contact name</label>
                           <input
                             className={inputCls}
                             value={round.contactName}
                             onChange={(e) =>
-                              updateLocalRound(
-                                idx,
-                                "contactName",
-                                e.target.value,
-                              )
+                              updateLocalRound(idx, "contactName", e.target.value)
                             }
                           />
                         </div>
-                        <div className="flex-1">
+                        <div>
                           <label className={labelCls}>Contact role</label>
                           <input
                             className={inputCls}
                             value={round.contactRole}
                             onChange={(e) =>
-                              updateLocalRound(
-                                idx,
-                                "contactRole",
-                                e.target.value,
-                              )
+                              updateLocalRound(idx, "contactRole", e.target.value)
                             }
                           />
                         </div>
-                      </div>
-                      <div className={fieldCls}>
-                        <label className={labelCls}>Location</label>
-                        <input
-                          className={inputCls}
-                          value={round.location}
-                          onChange={(e) =>
-                            updateLocalRound(idx, "location", e.target.value)
-                          }
-                        />
-                      </div>
-                      <div className="flex gap-4 mb-2">
-                        <label className="flex items-center gap-1.5 text-xs cursor-pointer">
+                        {/* Row 3: Location + checkboxes */}
+                        <div>
+                          <label className={labelCls}>Location</label>
                           <input
-                            type="checkbox"
-                            className="w-3.5 h-3.5"
-                            checked={round.done}
+                            className={inputCls}
+                            value={round.location}
                             onChange={(e) =>
-                              updateLocalRound(idx, "done", e.target.checked)
+                              updateLocalRound(idx, "location", e.target.value)
                             }
                           />
-                          Done
-                        </label>
-                        <label className="flex items-center gap-1.5 text-xs cursor-pointer">
-                          <input
-                            type="checkbox"
-                            className="w-3.5 h-3.5"
-                            checked={round.followUpSent}
+                        </div>
+                        <div className="flex gap-4 items-center pt-5">
+                          <label className="flex items-center gap-1.5 text-sm text-gray-700 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              className="w-3.5 h-3.5"
+                              checked={round.done}
+                              onChange={(e) =>
+                                updateLocalRound(idx, "done", e.target.checked)
+                              }
+                            />
+                            Done
+                          </label>
+                          <label className="flex items-center gap-1.5 text-sm text-gray-700 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              className="w-3.5 h-3.5"
+                              checked={round.followUpSent}
+                              onChange={(e) =>
+                                updateLocalRound(idx, "followUpSent", e.target.checked)
+                              }
+                            />
+                            Follow-up sent
+                          </label>
+                        </div>
+                        {/* Row 4: Notes (full width) */}
+                        <div className="col-span-2">
+                          <label className={labelCls}>Notes</label>
+                          <textarea
+                            className={`${inputCls} resize-y`}
+                            rows={2}
+                            value={round.notes}
                             onChange={(e) =>
-                              updateLocalRound(
-                                idx,
-                                "followUpSent",
-                                e.target.checked,
-                              )
+                              updateLocalRound(idx, "notes", e.target.value)
                             }
                           />
-                          Follow-up sent
-                        </label>
-                      </div>
-                      <div className={fieldCls}>
-                        <label className={labelCls}>Notes</label>
-                        <textarea
-                          className={`${inputCls} resize-y`}
-                          rows={2}
-                          value={round.notes}
-                          onChange={(e) =>
-                            updateLocalRound(idx, "notes", e.target.value)
-                          }
-                        />
+                        </div>
                       </div>
                       <button
                         onClick={() => void saveLocalRound(idx)}
@@ -756,22 +747,22 @@ export default function InterviewCard({
                 <button
                   onClick={async (e) => {
                     e.stopPropagation();
-                    await handleNextRound();
-                    onSelect(null);
-                  }}
-                  className="px-3 py-1.5 bg-green-600 text-white text-xs font-semibold rounded hover:bg-green-700"
-                >
-                  → Next Round
-                </button>
-                <button
-                  onClick={async (e) => {
-                    e.stopPropagation();
                     await handleRejected();
                     onSelect(null);
                   }}
                   className="px-3 py-1.5 bg-red-600 text-white text-xs font-semibold rounded hover:bg-red-700"
                 >
                   ✕ Rejected
+                </button>
+                <button
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    await handleNextRound();
+                    onSelect(null);
+                  }}
+                  className="px-3 py-1.5 bg-green-600 text-white text-xs font-semibold rounded hover:bg-green-700"
+                >
+                  → Next Round
                 </button>
               </div>
             </div>
