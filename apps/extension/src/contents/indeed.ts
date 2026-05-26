@@ -351,9 +351,22 @@ function extractJob(): SaveJobPayload | null {
 
   if (!merged.title || !merged.company) return null;
 
-  const description = document.body.innerText
-    .trim()
-    .replace(/\n{3,}/g, "\n\n");
+  const descEl = document.querySelector<HTMLElement>("#jobDescriptionText");
+  let description: string | undefined;
+
+  if (descEl) {
+    let text = descEl.innerText.trim();
+    const reportJobIdx = text.toLowerCase().indexOf("report job");
+    if (reportJobIdx > -1) text = text.substring(0, reportJobIdx).trim();
+    description = text.replace(/\n{3,}/g, "\n\n");
+  } else {
+    const bodyText = document.body.innerText;
+    const reportJobIdx = bodyText.toLowerCase().indexOf("report job");
+    description = (reportJobIdx > -1
+      ? bodyText.substring(0, reportJobIdx)
+      : bodyText
+    ).trim().replace(/\n{3,}/g, "\n\n");
+  }
 
   return {
     title: merged.title,
