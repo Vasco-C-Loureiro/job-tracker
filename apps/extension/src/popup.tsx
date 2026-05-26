@@ -194,7 +194,7 @@ function IndexPopup() {
     // Transition to preview — token check and POST happen on confirm
     const payload: SaveJobPayload = {
       ...response.payload,
-      description: response.payload.description?.slice(0, 300)
+      description: response.payload.description
     }
     const displayFields: Array<keyof SaveJobPayload> = ["title", "company", "location", "remoteType", "jobType", "salaryRaw"]
     setInitiallyMissingFields(new Set(displayFields.filter((k) => !payload[k])))
