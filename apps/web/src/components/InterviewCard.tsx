@@ -2,6 +2,8 @@
 
 import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
+import { useDraggable } from "@dnd-kit/core";
+import { CSS } from "@dnd-kit/utilities";
 import type { JobApplicationRow, InterviewRoundRow } from "./InterviewKanban";
 
 type RoundState = {
@@ -82,6 +84,8 @@ type Props = {
   isRejecting: boolean;
   onNextRound: (jobId: string) => void;
   onReject: (jobId: string) => void;
+  isDraggable?: boolean;
+  className?: string;
 };
 
 export default function InterviewCard({
@@ -98,7 +102,18 @@ export default function InterviewCard({
   isRejecting,
   onNextRound,
   onReject,
+  isDraggable = true,
+  className,
 }: Props) {
+  const { attributes, listeners, setNodeRef, transform, isDragging } =
+    useDraggable({
+      id: job.id,
+      disabled: !isDraggable,
+    });
+
+  const dragStyle = transform
+    ? { transform: CSS.Translate.toString(transform) }
+    : undefined;
   const [pillOpen, setPillOpen] = useState(false);
   const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number } | null>(null);
   const [editingRoundIdx, setEditingRoundIdx] = useState<number | null>(null);
@@ -359,11 +374,15 @@ export default function InterviewCard({
   return (
     <>
       <div
+        ref={setNodeRef}
+        style={dragStyle}
+        {...listeners}
+        {...attributes}
         className={`bg-white border rounded-lg overflow-hidden transition-all relative ${
           isSelected
             ? "z-20 border-blue-400 shadow-md"
             : "border-gray-200 hover:border-blue-300 hover:shadow-sm"
-        }${isAdvancing ? " animate-round-advance pointer-events-none" : ""}${isRejecting ? " animate-card-reject pointer-events-none" : ""}`}
+        }${isAdvancing ? " animate-round-advance pointer-events-none" : ""}${isRejecting ? " animate-card-reject pointer-events-none" : ""}${isDragging ? " opacity-50 shadow-2xl scale-[1.02] z-50" : ""}${className ? ` ${className}` : ""}`}
         onClick={(e) => {
           e.stopPropagation();
           onSelect(isSelected ? null : job.id);
