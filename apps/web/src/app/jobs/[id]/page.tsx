@@ -17,7 +17,11 @@ type JobApplicationRow = {
   location?: string | null;
   remote_type?: string | null;
   job_type?: string | null;
-  salary?: string | null;
+  salary_raw?: string | null;
+  salary_min?: number | null;
+  salary_max?: number | null;
+  salary_currency?: string | null;
+  salary_requested?: string | null;
   description?: string | null;
   notes?: string | null;
   applied_at?: string | null;
@@ -44,7 +48,11 @@ function rowToJobApplication(row: JobApplicationRow): JobApplication {
     location: row.location ?? undefined,
     remoteType: (row.remote_type as RemoteType) ?? undefined,
     jobType: (row.job_type as JobType) ?? undefined,
-    salary: row.salary ?? undefined,
+    salaryRaw: row.salary_raw ?? undefined,
+    salaryMin: row.salary_min ?? undefined,
+    salaryMax: row.salary_max ?? undefined,
+    salaryCurrency: row.salary_currency ?? undefined,
+    salaryRequested: row.salary_requested ?? undefined,
     description: row.description ?? undefined,
     notes: row.notes ?? undefined,
     appliedAt: row.applied_at ?? undefined,
@@ -79,7 +87,7 @@ export default async function JobDetailPage({
     .from("job_applications")
     .select(
       "id, user_id, company, title, source_url, source, status, saved_at, updated_at, " +
-        "location, remote_type, job_type, salary, description, " +
+        "location, remote_type, job_type, salary_raw, salary_min, salary_max, salary_currency, salary_requested, description, " +
         "notes, applied_at, interest_level, tags, resume_submitted, cover_letter_submitted, company_application_url",
     )
     .eq("id", id)
