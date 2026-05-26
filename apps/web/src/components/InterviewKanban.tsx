@@ -270,10 +270,10 @@ export default function InterviewKanban({
                 {col.roundNumber >= 4 && isColumnEmpty(col) && (
                   <button
                     onClick={() => handleDeleteColumn(col.roundNumber)}
-                    className="ml-2 text-gray-500 hover:text-red-400 transition-colors text-sm leading-none"
+                    className="ml-1.5 p-1 text-base text-gray-500 hover:text-red-400 transition-colors leading-none"
                     title="Remove column"
                   >
-                    ×
+                    ✕
                   </button>
                 )}
               </h3>
@@ -313,7 +313,7 @@ export default function InterviewKanban({
             >
               +
             </button>
-            <span className="text-xs text-gray-500 text-center">Add round</span>
+            <span className="text-xs text-gray-900 text-center">Add round</span>
           </div>
         </div>
 

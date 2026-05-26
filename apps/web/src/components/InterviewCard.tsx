@@ -351,7 +351,7 @@ export default function InterviewCard({
   );
 
   const inputCls =
-    "w-full border border-gray-200 rounded px-2.5 py-1.5 text-sm focus:outline-none focus:border-blue-500";
+    "w-full border border-gray-200 rounded px-2.5 py-1.5 text-sm text-gray-900 focus:outline-none focus:border-blue-500";
   const labelCls = "block text-xs text-gray-500 mb-1";
 
   return (
@@ -679,10 +679,10 @@ export default function InterviewCard({
                         )}
                         <button
                           onClick={() => setEditingRoundIdx(idx)}
-                          className="ml-1 text-gray-300 hover:text-gray-500 transition-colors"
+                          className="p-2 text-gray-400 hover:text-gray-700 transition-colors text-base"
                           title="Edit round"
                         >
-                          ✏
+                          ✏️
                         </button>
                       </div>
                     ),
@@ -705,6 +705,7 @@ export default function InterviewCard({
                       e.stopPropagation();
                       const ok = await patchJob({ notes: job.notes });
                       if (ok) {
+                        setEditingRoundIdx(null);
                         onSelect(null);
                       } else {
                         setSaveMessage({ type: "err", text: "Save failed" });
