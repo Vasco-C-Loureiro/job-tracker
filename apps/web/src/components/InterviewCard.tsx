@@ -78,6 +78,10 @@ type Props = {
   maxRoundColumn: number;
   getToken: () => Promise<string | null>;
   onRoundsChange: (jobId: string, newRounds: InterviewRoundRow[]) => void;
+  isAdvancing: boolean;
+  isRejecting: boolean;
+  onNextRound: (jobId: string) => void;
+  onReject: (jobId: string) => void;
 };
 
 export default function InterviewCard({
@@ -90,6 +94,10 @@ export default function InterviewCard({
   maxRoundColumn,
   getToken,
   onRoundsChange,
+  isAdvancing,
+  isRejecting,
+  onNextRound,
+  onReject,
 }: Props) {
   const [pillOpen, setPillOpen] = useState(false);
   const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number } | null>(null);
@@ -156,22 +164,16 @@ export default function InterviewCard({
     await patchJob({ currentInterviewRound: n });
   }
 
-  async function handleNextRound() {
+  function handleNextRound() {
     setPillOpen(false);
-    const next = (job.current_interview_round ?? 0) + 1;
-    if (next > maxRoundColumn) {
-      onStatusChange(job.id, "offer");
-      await patchJob({ status: "offer" });
-    } else {
-      onRoundChange(job.id, next);
-      await patchJob({ currentInterviewRound: next });
-    }
+    setDropdownPos(null);
+    onNextRound(job.id);
   }
 
-  async function handleRejected() {
+  function handleRejected() {
     setPillOpen(false);
-    onStatusChange(job.id, "rejected");
-    await patchJob({ status: "rejected" });
+    setDropdownPos(null);
+    onReject(job.id);
   }
 
   // ── Round editing ────────────────────────────────────────────────
@@ -361,7 +363,7 @@ export default function InterviewCard({
           isSelected
             ? "z-20 border-blue-400 shadow-md"
             : "border-gray-200 hover:border-blue-300 hover:shadow-sm"
-        }`}
+        }${isAdvancing ? " animate-round-advance pointer-events-none" : ""}${isRejecting ? " animate-card-reject pointer-events-none" : ""}`}
         onClick={(e) => {
           e.stopPropagation();
           onSelect(isSelected ? null : job.id);
@@ -730,19 +732,19 @@ export default function InterviewCard({
                 </div>
                 <div className="flex gap-2">
                   <button
-                    onClick={async (e) => {
+                    onClick={(e) => {
                       e.stopPropagation();
-                      await handleRejected();
                       onSelect(null);
+                      handleRejected();
                     }}
                     className="px-3 py-1.5 bg-red-600 text-white text-xs font-semibold rounded hover:bg-red-700"
                   >
                     ✕ Rejected
                   </button>
                   <button
-                    onClick={async (e) => {
+                    onClick={(e) => {
                       e.stopPropagation();
-                      await handleNextRound();
+                      handleNextRound();
                     }}
                     className="px-3 py-1.5 bg-green-600 text-white text-xs font-semibold rounded hover:bg-green-700"
                   >
@@ -796,7 +798,7 @@ export default function InterviewCard({
                 className="w-full text-left px-3 py-1.5 text-sm text-blue-600 hover:bg-blue-50 flex items-center gap-1.5"
                 onClick={(e) => {
                   e.stopPropagation();
-                  void handleNextRound();
+                  handleNextRound();
                 }}
               >
                 → Next Round
@@ -805,7 +807,7 @@ export default function InterviewCard({
                 className="w-full text-left px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 flex items-center gap-1.5"
                 onClick={(e) => {
                   e.stopPropagation();
-                  void handleRejected();
+                  handleRejected();
                 }}
               >
                 ✕ Rejected

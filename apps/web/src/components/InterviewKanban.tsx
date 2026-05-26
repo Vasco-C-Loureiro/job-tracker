@@ -75,6 +75,9 @@ export default function InterviewKanban({
   const [rounds, setRounds] = useState<InterviewRoundRow[]>(initialRounds);
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [extraRounds, setExtraRounds] = useState<number[]>([]);
+  const [advancingJobId, setAdvancingJobId] = useState<string | null>(null);
+  const [isKanbanSliding, setIsKanbanSliding] = useState(false);
+  const [rejectingJobId, setRejectingJobId] = useState<string | null>(null);
 
   useEffect(() => {
     try {
@@ -169,6 +172,53 @@ export default function InterviewKanban({
     localStorage.setItem(EXTRA_ROUNDS_KEY, JSON.stringify(updated));
   }
 
+  async function handleNextRoundAnimated(jobId: string) {
+    const job = jobs.find((j) => j.id === jobId);
+    if (!job) return;
+
+    setAdvancingJobId(jobId);
+    setIsKanbanSliding(true);
+    await new Promise<void>((resolve) => setTimeout(resolve, 500));
+    setAdvancingJobId(null);
+    setIsKanbanSliding(false);
+
+    const next = (job.current_interview_round ?? 0) + 1;
+    const token = await getToken();
+    if (!token) return;
+
+    if (next > maxRoundColumn) {
+      handleStatusChange(jobId, "offer");
+      await fetch(`/api/jobs/${jobId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ status: "offer" }),
+      });
+    } else {
+      handleRoundChange(jobId, next);
+      await fetch(`/api/jobs/${jobId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ currentInterviewRound: next }),
+      });
+    }
+  }
+
+  async function handleRejectAnimated(jobId: string) {
+    setRejectingJobId(jobId);
+    await new Promise<void>((resolve) => setTimeout(resolve, 500));
+    setRejectingJobId(null);
+
+    const token = await getToken();
+    if (!token) return;
+
+    handleStatusChange(jobId, "rejected");
+    await fetch(`/api/jobs/${jobId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ status: "rejected" }),
+    });
+  }
+
   function isColumnEmpty(col: KanbanColumn): boolean {
     return !jobs.some((j) => j.current_interview_round === col.roundNumber);
   }
@@ -250,7 +300,7 @@ export default function InterviewKanban({
 
       {/* Main kanban — each column gets z-20 only when it holds the selected card */}
       <div className="min-w-[75vw]">
-      <div className="flex gap-4 overflow-x-auto pb-4 items-stretch">
+      <div className={`flex gap-4 overflow-x-auto pb-4 items-stretch${isKanbanSliding ? " animate-kanban-slide" : ""}`}>
         {/* Round columns */}
         {roundColumns.map((col) => {
           const isSelectedCol = getCardsForColumn(col).some(
@@ -292,6 +342,10 @@ export default function InterviewKanban({
                     maxRoundColumn={maxRoundColumn}
                     getToken={getToken}
                     onRoundsChange={handleRoundsChange}
+                    isAdvancing={advancingJobId === job.id}
+                    isRejecting={rejectingJobId === job.id}
+                    onNextRound={handleNextRoundAnimated}
+                    onReject={handleRejectAnimated}
                   />
                 ))}
               </div>
@@ -341,6 +395,10 @@ export default function InterviewKanban({
                 maxRoundColumn={maxRoundColumn}
                 getToken={getToken}
                 onRoundsChange={handleRoundsChange}
+                isAdvancing={advancingJobId === job.id}
+                isRejecting={rejectingJobId === job.id}
+                onNextRound={handleNextRoundAnimated}
+                onReject={handleRejectAnimated}
               />
             ))}
           </div>

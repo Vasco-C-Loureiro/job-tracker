@@ -71,3 +71,34 @@ body {
   height: 4px;
   background: transparent;
 }
+
+/* ── Interview kanban card animations ────────────────────────── */
+
+@keyframes round-advance-pulse {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.06); }
+  100% { transform: scale(1); }
+}
+
+@keyframes kanban-slide-left {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-318px); }
+}
+
+@keyframes card-reject {
+  0%   { transform: scale(1) translateY(0);      opacity: 1;   filter: brightness(1);    }
+  40%  { transform: scale(0.92) translateY(0);   opacity: 0.8; filter: brightness(0.85); }
+  100% { transform: scale(0.92) translateY(40px); opacity: 0;   filter: brightness(0.85); }
+}
+
+.animate-round-advance {
+  animation: round-advance-pulse 0.5s ease-in-out;
+}
+
+.animate-kanban-slide {
+  animation: kanban-slide-left 0.5s ease-in-out;
+}
+
+.animate-card-reject {
+  animation: card-reject 0.5s ease-in forwards;
+}
