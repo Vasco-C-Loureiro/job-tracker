@@ -9,6 +9,7 @@ import type {
   JobType,
 } from "@job-tracker/shared";
 import { parseSalary } from "@job-tracker/shared";
+import { createSupabaseBrowserClient } from "@/lib/supabase";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -51,6 +52,46 @@ const STATUS_ORDER: Record<ApplicationStatus, number> = {
   rejected: 5,
   ghosted: 6,
 };
+
+const STATUS_LABELS: Record<ApplicationStatus, string> = {
+  saved:     "Saved",
+  applied:   "Applied",
+  oa:        "OA",
+  interview: "Interview",
+  offer:     "Offer",
+  rejected:  "Rejected",
+  ghosted:   "Ghosted",
+};
+
+const STATUS_BADGE: Record<ApplicationStatus, string> = {
+  saved:     "bg-gray-100 text-gray-600",
+  applied:   "bg-blue-100 text-blue-700",
+  oa:        "bg-violet-100 text-violet-700",
+  interview: "bg-amber-100 text-amber-700",
+  offer:     "bg-green-100 text-green-700",
+  rejected:  "bg-red-100 text-red-600",
+  ghosted:   "bg-gray-100 text-gray-400",
+};
+
+const STATUS_DOT: Record<ApplicationStatus, string> = {
+  saved:     "bg-gray-400",
+  applied:   "bg-blue-400",
+  oa:        "bg-violet-400",
+  interview: "bg-amber-400",
+  offer:     "bg-green-400",
+  rejected:  "bg-red-400",
+  ghosted:   "bg-gray-300",
+};
+
+const STATUS_OPTIONS: { value: ApplicationStatus; label: string }[] = [
+  { value: "saved",     label: "Saved"     },
+  { value: "applied",   label: "Applied"   },
+  { value: "oa",        label: "OA"        },
+  { value: "interview", label: "Interview" },
+  { value: "offer",     label: "Offer"     },
+  { value: "rejected",  label: "Rejected"  },
+  { value: "ghosted",   label: "Ghosted"   },
+];
 
 const DEFAULT_FILTERS: FilterState = {
   status: new Set(),
@@ -403,6 +444,66 @@ function SalarySlider({
   );
 }
 
+// ─── StatusCell ───────────────────────────────────────────────────────────────
+
+type StatusCellProps = {
+  jobId: string;
+  status: ApplicationStatus;
+  onStatusChange: (jobId: string, newStatus: ApplicationStatus) => Promise<void>;
+  saving: boolean;
+};
+
+function StatusCell({ jobId, status, onStatusChange, saving }: StatusCellProps) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function handleOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handleOutside);
+    return () => document.removeEventListener("mousedown", handleOutside);
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative" onClick={(e) => e.stopPropagation()}>
+      <button
+        onClick={() => !saving && setOpen((o) => !o)}
+        className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium transition-opacity whitespace-nowrap ${
+          STATUS_BADGE[status]
+        } ${saving ? "opacity-50 cursor-wait" : "cursor-pointer hover:ring-2 hover:ring-offset-1 hover:ring-gray-300"}`}
+      >
+        {STATUS_LABELS[status]}
+      </button>
+
+      {open && (
+        <div className="absolute top-full left-0 mt-1.5 z-30 bg-white rounded-lg border border-gray-200 shadow-lg py-1 min-w-[140px]">
+          {STATUS_OPTIONS.map((opt) => {
+            const isSelected = opt.value === status;
+            return (
+              <button
+                key={opt.value}
+                className={`w-full flex items-center gap-2.5 px-3 py-1.5 text-xs text-left hover:bg-gray-50 transition-colors ${
+                  isSelected ? "font-medium" : ""
+                }`}
+                onClick={() => {
+                  void onStatusChange(jobId, opt.value);
+                  setOpen(false);
+                }}
+              >
+                <span className={`w-2 h-2 rounded-full shrink-0 ${STATUS_DOT[opt.value]}`} />
+                <span className="text-gray-700">{opt.label}</span>
+                {isSelected && <span className="ml-auto text-gray-400 text-[10px]">✓</span>}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
 
 type Props = { jobs: JobApplicationListItem[] };
@@ -417,6 +518,38 @@ export function JobTable({ jobs }: Props) {
   const searchRef = useRef<HTMLInputElement>(null);
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
   const [filterOpen, setFilterOpen] = useState(false);
+
+  // Inline status editing
+  const [statusPatch, setStatusPatch] = useState<Record<string, ApplicationStatus>>({});
+  const [patchingId, setPatchingId] = useState<string | null>(null);
+
+  async function handleStatusChange(jobId: string, newStatus: ApplicationStatus) {
+    setStatusPatch((prev) => ({ ...prev, [jobId]: newStatus }));
+    setPatchingId(jobId);
+    try {
+      const supabase = createSupabaseBrowserClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error("Not authenticated");
+      const res = await fetch(`/api/jobs/${jobId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (!res.ok) throw new Error(`Patch failed: ${res.status}`);
+    } catch {
+      // Revert optimistic update on failure
+      setStatusPatch((prev) => {
+        const next = { ...prev };
+        delete next[jobId];
+        return next;
+      });
+    } finally {
+      setPatchingId(null);
+    }
+  }
 
   // Dynamic options built from the data
   const allSources = useMemo(() => {
@@ -478,6 +611,9 @@ export function JobTable({ jobs }: Props) {
   }
 
   const displayedJobs = useMemo(() => {
+    const effectiveStatus = (j: JobApplicationListItem): ApplicationStatus =>
+      statusPatch[j.id] ?? j.status;
+
     let result = [...jobs];
 
     // Search
@@ -494,7 +630,7 @@ export function JobTable({ jobs }: Props) {
 
     // Filters
     if (filters.status.size > 0)
-      result = result.filter((j) => filters.status.has(j.status));
+      result = result.filter((j) => filters.status.has(effectiveStatus(j)));
 
     if (filters.interestLevel.size > 0)
       result = result.filter(
@@ -570,7 +706,7 @@ export function JobTable({ jobs }: Props) {
       if (column === "company") cmp = a.company.localeCompare(b.company);
       else if (column === "title") cmp = a.title.localeCompare(b.title);
       else if (column === "status")
-        cmp = STATUS_ORDER[a.status] - STATUS_ORDER[b.status];
+        cmp = STATUS_ORDER[effectiveStatus(a)] - STATUS_ORDER[effectiveStatus(b)];
       else if (column === "location")
         cmp = (a.location ?? "").localeCompare(b.location ?? "");
       else if (column === "salary") {
@@ -590,7 +726,7 @@ export function JobTable({ jobs }: Props) {
 
       return direction === "asc" ? cmp : -cmp;
     });
-  }, [jobs, search, filters, sort]);
+  }, [jobs, search, filters, sort, statusPatch]);
 
   function SortHeader({
     column,
@@ -861,13 +997,13 @@ export function JobTable({ jobs }: Props) {
         <table className="w-full border-collapse text-sm">
           <thead>
             <tr className="border-b-2 border-gray-300 text-left">
+              <SortHeader column="status">Status</SortHeader>
               <SortHeader column="title">Title</SortHeader>
               <SortHeader column="company">Company</SortHeader>
               <SortHeader column="location">Location</SortHeader>
               <th className="py-2 pr-4 font-semibold">Remote</th>
               <SortHeader column="salary">Salary</SortHeader>
               <th className="py-2 pr-4 font-semibold">Source</th>
-              <SortHeader column="status">Status</SortHeader>
               <SortHeader column="savedAt">Saved at</SortHeader>
               <th className="py-2 font-semibold">URL</th>
             </tr>
@@ -879,13 +1015,20 @@ export function JobTable({ jobs }: Props) {
                 className="border-b border-gray-200 hover:bg-gray-50 cursor-pointer"
                 onClick={() => router.push(`/jobs/${job.id}`)}
               >
+                <td className="py-2 pr-4" onClick={(e) => e.stopPropagation()}>
+                  <StatusCell
+                    jobId={job.id}
+                    status={statusPatch[job.id] ?? job.status}
+                    onStatusChange={handleStatusChange}
+                    saving={patchingId === job.id}
+                  />
+                </td>
                 <td className="py-2 pr-4 text-blue-700">{job.title}</td>
                 <td className="py-2 pr-4">{job.company}</td>
                 <td className="py-2 pr-4">{job.location ?? "—"}</td>
                 <td className="py-2 pr-4">{job.remoteType ?? "—"}</td>
                 <td className="py-2 pr-4">{job.salaryRaw ?? "—"}</td>
                 <td className="py-2 pr-4">{job.source}</td>
-                <td className="py-2 pr-4">{job.status}</td>
                 <td className="py-2 pr-4">
                   {new Date(job.savedAt).toLocaleString("en-GB")}
                 </td>
