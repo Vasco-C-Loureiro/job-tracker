@@ -38,6 +38,17 @@ function rowToRoundState(r: InterviewRoundRow): RoundState {
   };
 }
 
+function getNextAvailableRoundNumber(
+  existingRounds: RoundState[],
+  maxRound: number,
+): number {
+  const usedNumbers = new Set(existingRounds.map((r) => r.roundNumber));
+  for (let i = 1; i <= maxRound; i++) {
+    if (!usedNumbers.has(i)) return i;
+  }
+  return maxRound;
+}
+
 const INTERVIEW_TYPES: { value: string; label: string }[] = [
   { value: "screening",           label: "Screening"           },
   { value: "technical-phone",     label: "Technical phone"     },
@@ -106,33 +117,42 @@ export default function InterviewCard({
   className,
 }: Props) {
   const { attributes, listeners, setNodeRef, transform, isDragging } =
-    useDraggable({
-      id: job.id,
-      disabled: !isDraggable,
-    });
+    useDraggable({ id: job.id, disabled: !isDraggable });
 
   const dragStyle = transform
     ? { transform: CSS.Translate.toString(transform) }
     : undefined;
+
   const [pillOpen, setPillOpen] = useState(false);
   const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number } | null>(null);
   const [editingRoundIdx, setEditingRoundIdx] = useState<number | null>(null);
   const [localRounds, setLocalRounds] = useState<RoundState[]>(() =>
-    initialRounds.map(rowToRoundState),
+    initialRounds.map(rowToRoundState).sort((a, b) => a.roundNumber - b.roundNumber),
   );
-  const [saveMessage, setSaveMessage] = useState<{ type: "ok" | "err"; text: string } | null>(
-    null,
-  );
+  const [saveMessage, setSaveMessage] = useState<{ type: "ok" | "err"; text: string } | null>(null);
+  const [roundPillOpen, setRoundPillOpen] = useState(false);
+  const [roundPillPos, setRoundPillPos] = useState<{ top: number; left: number } | null>(null);
+
   const pillRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const roundPillBtnRef = useRef<HTMLButtonElement>(null);
+  const roundPillDropdownRef = useRef<HTMLDivElement>(null);
 
   // Sync when parent rounds change (e.g. after add/delete elsewhere)
   useEffect(() => {
-    setLocalRounds(initialRounds.map(rowToRoundState));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    setLocalRounds(
+      initialRounds.map(rowToRoundState).sort((a, b) => a.roundNumber - b.roundNumber),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialRounds.length]);
 
-  // Close pill on outside click
+  // Close round pill dropdown when editing round changes
+  useEffect(() => {
+    setRoundPillOpen(false);
+    setRoundPillPos(null);
+  }, [editingRoundIdx]);
+
+  // Close main pill on outside click
   useEffect(() => {
     if (!pillOpen) return;
     function handleDown(e: MouseEvent) {
@@ -148,7 +168,7 @@ export default function InterviewCard({
     return () => document.removeEventListener("mousedown", handleDown);
   }, [pillOpen]);
 
-  // Close pill on scroll
+  // Close main pill on scroll
   useEffect(() => {
     if (!pillOpen) return;
     function handleScroll() {
@@ -159,15 +179,39 @@ export default function InterviewCard({
     return () => window.removeEventListener("scroll", handleScroll, true);
   }, [pillOpen]);
 
+  // Close round number pill on outside click
+  useEffect(() => {
+    if (!roundPillOpen) return;
+    function handleDown(e: MouseEvent) {
+      if (
+        !(roundPillBtnRef.current?.contains(e.target as Node)) &&
+        !(roundPillDropdownRef.current?.contains(e.target as Node))
+      ) {
+        setRoundPillOpen(false);
+        setRoundPillPos(null);
+      }
+    }
+    document.addEventListener("mousedown", handleDown);
+    return () => document.removeEventListener("mousedown", handleDown);
+  }, [roundPillOpen]);
+
+  // Close round number pill on scroll
+  useEffect(() => {
+    if (!roundPillOpen) return;
+    function handleScroll() {
+      setRoundPillOpen(false);
+      setRoundPillPos(null);
+    }
+    window.addEventListener("scroll", handleScroll, true);
+    return () => window.removeEventListener("scroll", handleScroll, true);
+  }, [roundPillOpen]);
+
   async function patchJob(payload: Record<string, unknown>): Promise<boolean> {
     const token = await getToken();
     if (!token) return false;
     const res = await fetch(`/api/jobs/${job.id}`, {
       method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify(payload),
     });
     return res.ok;
@@ -208,14 +252,11 @@ export default function InterviewCard({
       await saveLocalRound(editingRoundIdx);
       setEditingRoundIdx(null);
     }
-    const nextNum =
-      localRounds.length > 0
-        ? Math.max(...localRounds.map((r) => r.roundNumber)) + 1
-        : 1;
-    const newIdx = localRounds.length;
-    setLocalRounds((prev) => [
-      ...prev,
-      {
+    const nextNum = getNextAvailableRoundNumber(localRounds, job.current_interview_round);
+    // Position in the sorted array where the new round will land
+    const insertIdx = localRounds.filter((r) => r.roundNumber < nextNum).length;
+    setLocalRounds((prev) => {
+      const newRound: RoundState = {
         id: null,
         roundNumber: nextNum,
         type: "screening",
@@ -228,9 +269,42 @@ export default function InterviewCard({
         notes: "",
         saving: false,
         deleting: false,
-      },
-    ]);
+      };
+      return [...prev, newRound].sort((a, b) => a.roundNumber - b.roundNumber);
+    });
+    setEditingRoundIdx(insertIdx);
+  }
+
+  function getAvailableRoundNumbers(currentIdx: number): number[] {
+    const currentNum = localRounds[currentIdx].roundNumber;
+    const usedNumbers = new Set(localRounds.map((r) => r.roundNumber));
+    usedNumbers.delete(currentNum);
+    const available: number[] = [];
+    for (let i = 1; i <= job.current_interview_round; i++) {
+      if (!usedNumbers.has(i)) available.push(i);
+    }
+    return available;
+  }
+
+  async function handleRoundNumberChange(currentIdx: number, newRoundNumber: number) {
+    setRoundPillOpen(false);
+    setRoundPillPos(null);
+    const editedRound = { ...localRounds[currentIdx], roundNumber: newRoundNumber };
+    const newList = localRounds
+      .map((r, i) => (i === currentIdx ? editedRound : r))
+      .sort((a, b) => a.roundNumber - b.roundNumber);
+    const newIdx = newList.indexOf(editedRound);
+    setLocalRounds(newList);
     setEditingRoundIdx(newIdx);
+    if (editedRound.id) {
+      const token = await getToken();
+      if (!token) return;
+      await fetch(`/api/interviews/${editedRound.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ roundNumber: newRoundNumber }),
+      });
+    }
   }
 
   async function saveLocalRound(index: number) {
@@ -260,10 +334,7 @@ export default function InterviewCard({
     if (round.id === null) {
       const res = await fetch(`/api/jobs/${job.id}/interviews`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(payload),
       });
       if (res.ok) {
@@ -283,10 +354,7 @@ export default function InterviewCard({
     } else {
       await fetch(`/api/interviews/${round.id}`, {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(payload),
       });
       setLocalRounds((prev) => {
@@ -362,10 +430,15 @@ export default function InterviewCard({
   const currentRound = initialRounds.find(
     (r) => r.round_number === job.current_interview_round,
   );
-  const roundOptions = Array.from(
-    { length: maxRoundColumn },
-    (_, i) => i + 1,
-  );
+  const roundOptions = Array.from({ length: maxRoundColumn }, (_, i) => i + 1);
+
+  const allRoundsFilled = (() => {
+    const usedNumbers = new Set(localRounds.map((r) => r.roundNumber));
+    for (let i = 1; i <= job.current_interview_round; i++) {
+      if (!usedNumbers.has(i)) return false;
+    }
+    return true;
+  })();
 
   const inputCls =
     "w-full border border-gray-200 rounded px-2.5 py-1.5 text-sm text-gray-900 focus:outline-none focus:border-blue-500";
@@ -431,18 +504,8 @@ export default function InterviewCard({
                   {job.status === "offer"
                     ? "Offer"
                     : `Round ${job.current_interview_round}`}
-                  <svg
-                    className="w-3 h-3"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 9l-7 7-7-7"
-                    />
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
                 </button>
               </div>
@@ -504,9 +567,7 @@ export default function InterviewCard({
                 {job.applied_at && (
                   <div className="flex gap-2">
                     <span className="text-gray-400 w-20 shrink-0">Applied</span>
-                    <span className="text-gray-900">
-                      {formatDate(job.applied_at)}
-                    </span>
+                    <span className="text-gray-900">{formatDate(job.applied_at)}</span>
                   </div>
                 )}
                 <div className="flex gap-2 items-center">
@@ -519,9 +580,7 @@ export default function InterviewCard({
                     {job.status}
                   </span>
                   {job.interest_level && (
-                    <span className="text-xs text-gray-400 ml-1">
-                      {job.interest_level}
-                    </span>
+                    <span className="text-xs text-gray-400 ml-1">{job.interest_level}</span>
                   )}
                 </div>
               </div>
@@ -543,9 +602,34 @@ export default function InterviewCard({
                         className="border border-gray-200 rounded-lg p-3 mb-1"
                       >
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-xs font-semibold text-gray-400">
+                          {/* Round number pill — opens dropdown to change the round number */}
+                          <button
+                            ref={roundPillBtnRef}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border border-gray-300 text-gray-700 bg-transparent hover:border-gray-500 transition-colors"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (roundPillOpen) {
+                                setRoundPillOpen(false);
+                                setRoundPillPos(null);
+                              } else {
+                                const rect = roundPillBtnRef.current?.getBoundingClientRect();
+                                if (rect) {
+                                  setRoundPillPos({ top: rect.bottom + 4, left: rect.left });
+                                }
+                                setRoundPillOpen(true);
+                              }
+                            }}
+                          >
                             Round {round.roundNumber}
-                          </span>
+                            <svg className="w-3 h-3" viewBox="0 0 12 12" fill="none">
+                              <path
+                                d="M2 4l4 4 4-4"
+                                stroke="currentColor"
+                                strokeWidth="1.5"
+                                strokeLinecap="round"
+                              />
+                            </svg>
+                          </button>
                           <div className="flex items-center gap-3">
                             <button
                               onClick={async () => {
@@ -576,16 +660,10 @@ export default function InterviewCard({
                             <select
                               className={inputCls}
                               value={round.type}
-                              onChange={(e) =>
-                                updateLocalRound(idx, "type", e.target.value)
-                              }
+                              onChange={(e) => updateLocalRound(idx, "type", e.target.value)}
                             >
                               {INTERVIEW_TYPES.map(({ value, label }) => (
-                                <option
-                                  key={value}
-                                  className="text-gray-900 bg-white"
-                                  value={value}
-                                >
+                                <option key={value} className="text-gray-900 bg-white" value={value}>
                                   {label}
                                 </option>
                               ))}
@@ -597,9 +675,7 @@ export default function InterviewCard({
                               type="date"
                               className={inputCls}
                               value={round.date}
-                              onChange={(e) =>
-                                updateLocalRound(idx, "date", e.target.value)
-                              }
+                              onChange={(e) => updateLocalRound(idx, "date", e.target.value)}
                             />
                           </div>
                           {/* Row 2: Contact name + Contact role */}
@@ -608,9 +684,7 @@ export default function InterviewCard({
                             <input
                               className={inputCls}
                               value={round.contactName}
-                              onChange={(e) =>
-                                updateLocalRound(idx, "contactName", e.target.value)
-                              }
+                              onChange={(e) => updateLocalRound(idx, "contactName", e.target.value)}
                             />
                           </div>
                           <div>
@@ -618,9 +692,7 @@ export default function InterviewCard({
                             <input
                               className={inputCls}
                               value={round.contactRole}
-                              onChange={(e) =>
-                                updateLocalRound(idx, "contactRole", e.target.value)
-                              }
+                              onChange={(e) => updateLocalRound(idx, "contactRole", e.target.value)}
                             />
                           </div>
                           {/* Row 3: Location + checkboxes */}
@@ -629,9 +701,7 @@ export default function InterviewCard({
                             <input
                               className={inputCls}
                               value={round.location}
-                              onChange={(e) =>
-                                updateLocalRound(idx, "location", e.target.value)
-                              }
+                              onChange={(e) => updateLocalRound(idx, "location", e.target.value)}
                             />
                           </div>
                           <div className="flex gap-4 items-center pt-5">
@@ -640,9 +710,7 @@ export default function InterviewCard({
                                 type="checkbox"
                                 className="w-3.5 h-3.5"
                                 checked={round.done}
-                                onChange={(e) =>
-                                  updateLocalRound(idx, "done", e.target.checked)
-                                }
+                                onChange={(e) => updateLocalRound(idx, "done", e.target.checked)}
                               />
                               Done
                             </label>
@@ -665,9 +733,7 @@ export default function InterviewCard({
                               className={`${inputCls} resize-y`}
                               rows={2}
                               value={round.notes}
-                              onChange={(e) =>
-                                updateLocalRound(idx, "notes", e.target.value)
-                              }
+                              onChange={(e) => updateLocalRound(idx, "notes", e.target.value)}
                             />
                           </div>
                         </div>
@@ -710,12 +776,14 @@ export default function InterviewCard({
                   )}
                 </div>
 
-                <button
-                  onClick={() => void handleAddRoundButton()}
-                  className="px-3 py-1.5 border border-gray-300 text-xs font-medium rounded hover:bg-gray-50"
-                >
-                  + Add round
-                </button>
+                {!allRoundsFilled && (
+                  <button
+                    onClick={() => void handleAddRoundButton()}
+                    className="px-3 py-1.5 border border-gray-300 text-xs font-medium rounded hover:bg-gray-50"
+                  >
+                    + Add round
+                  </button>
+                )}
               </div>
 
               {/* Section 3 — Action buttons */}
@@ -724,7 +792,6 @@ export default function InterviewCard({
                   <button
                     onClick={async (e) => {
                       e.stopPropagation();
-                      // Save any open round edit form before closing
                       if (editingRoundIdx !== null) {
                         await saveLocalRound(editingRoundIdx);
                         setEditingRoundIdx(null);
@@ -745,9 +812,7 @@ export default function InterviewCard({
                   {saveMessage && (
                     <span
                       className={`text-xs ${
-                        saveMessage.type === "ok"
-                          ? "text-green-600"
-                          : "text-red-600"
+                        saveMessage.type === "ok" ? "text-green-600" : "text-red-600"
                       }`}
                     >
                       {saveMessage.text}
@@ -782,7 +847,8 @@ export default function InterviewCard({
       </div>
 
       {/* Round pill dropdown — rendered via portal to escape overflow/stacking context */}
-      {pillOpen && dropdownPos &&
+      {pillOpen &&
+        dropdownPos &&
         createPortal(
           <div
             ref={dropdownRef}
@@ -807,9 +873,7 @@ export default function InterviewCard({
                 >
                   <span
                     className={
-                      job.current_interview_round === n
-                        ? "text-blue-600"
-                        : "text-gray-300"
+                      job.current_interview_round === n ? "text-blue-600" : "text-gray-300"
                     }
                   >
                     {job.current_interview_round === n ? "✓" : "○"}
@@ -836,6 +900,48 @@ export default function InterviewCard({
               >
                 ✕ Rejected
               </button>
+            </div>
+          </div>,
+          document.body,
+        )}
+
+      {/* Round number pill dropdown — changes the round number label in the edit form */}
+      {roundPillOpen &&
+        roundPillPos &&
+        editingRoundIdx !== null &&
+        createPortal(
+          <div
+            ref={roundPillDropdownRef}
+            style={{
+              position: "fixed",
+              top: roundPillPos.top,
+              left: roundPillPos.left,
+              zIndex: 9999,
+            }}
+            className="w-36 bg-white border border-gray-200 rounded-xl shadow-lg"
+          >
+            <div className="py-1">
+              {getAvailableRoundNumbers(editingRoundIdx).map((n) => (
+                <button
+                  key={n}
+                  className="w-full text-left px-3 py-1.5 text-sm text-gray-900 hover:bg-gray-50 flex items-center gap-2"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    void handleRoundNumberChange(editingRoundIdx, n);
+                  }}
+                >
+                  <span
+                    className={
+                      localRounds[editingRoundIdx].roundNumber === n
+                        ? "text-blue-600"
+                        : "text-gray-300"
+                    }
+                  >
+                    {localRounds[editingRoundIdx].roundNumber === n ? "✓" : "○"}
+                  </span>
+                  Round {n}
+                </button>
+              ))}
             </div>
           </div>,
           document.body,
