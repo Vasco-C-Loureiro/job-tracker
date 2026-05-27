@@ -724,6 +724,11 @@ export default function InterviewCard({
                   <button
                     onClick={async (e) => {
                       e.stopPropagation();
+                      // Save any open round edit form before closing
+                      if (editingRoundIdx !== null) {
+                        await saveLocalRound(editingRoundIdx);
+                        setEditingRoundIdx(null);
+                      }
                       const ok = await patchJob({ notes: job.notes });
                       if (ok) {
                         setEditingRoundIdx(null);

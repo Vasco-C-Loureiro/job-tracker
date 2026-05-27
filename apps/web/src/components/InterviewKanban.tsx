@@ -385,8 +385,8 @@ export default function InterviewKanban({
   function handleDragStart(event: DragStartEvent) {
     const jobId = event.active.id as string;
 
-    if (selectedJobId === jobId) {
-      saveJobSilently(jobId);
+    if (selectedJobId) {
+      saveJobSilently(selectedJobId);
       setSelectedJobId(null);
     }
 
@@ -492,7 +492,7 @@ export default function InterviewKanban({
                     if (el) columnRefs.current.set(columnId, el);
                     else columnRefs.current.delete(columnId);
                   }}
-                  className={`flex-shrink-0 ${getColumnWidth(col)} transition-[width] duration-300 ease-in-out${isSelectedCol ? " relative z-20" : ""}`}
+                  className={`flex-shrink-0 ${getColumnWidth(col)} transition-[width] duration-150 ease-in-out${isSelectedCol ? " relative z-20" : ""}`}
                   onClick={(e) => e.stopPropagation()}
                 >
                   <h3 className="text-sm font-bold text-gray-300 uppercase tracking-widest mb-3 flex items-center gap-2">
