@@ -201,6 +201,7 @@ export default function InterviewKanban({
   }
 
   function getColumnWidth(col: KanbanColumn): string {
+    if (draggingJobId) return "w-[388px]";
     const hasSelected = getCardsForColumn(col).some(
       (j) => j.id === selectedJobId,
     );
@@ -492,7 +493,7 @@ export default function InterviewKanban({
                     if (el) columnRefs.current.set(columnId, el);
                     else columnRefs.current.delete(columnId);
                   }}
-                  className={`flex-shrink-0 ${getColumnWidth(col)} transition-[width] duration-150 ease-in-out${isSelectedCol ? " relative z-20" : ""}`}
+                  className={`flex-shrink-0 ${getColumnWidth(col)} ${draggingJobId ? "" : "transition-[width] duration-150 ease-in-out"}${isSelectedCol ? " relative z-20" : ""}`}
                   onClick={(e) => e.stopPropagation()}
                 >
                   <h3 className="text-sm font-bold text-gray-300 uppercase tracking-widest mb-3 flex items-center gap-2">
