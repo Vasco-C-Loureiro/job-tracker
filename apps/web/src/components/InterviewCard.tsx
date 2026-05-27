@@ -138,6 +138,11 @@ export default function InterviewCard({
   const roundPillBtnRef = useRef<HTMLButtonElement>(null);
   const roundPillDropdownRef = useRef<HTMLDivElement>(null);
 
+  // Always-current ref so the deselection effect can read the latest editingRoundIdx
+  // without needing it in the effect's dependency array.
+  const editingRoundIdxRef = useRef(editingRoundIdx);
+  editingRoundIdxRef.current = editingRoundIdx;
+
   // Sync when parent rounds change (e.g. after add/delete elsewhere)
   useEffect(() => {
     setLocalRounds(
@@ -145,6 +150,17 @@ export default function InterviewCard({
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialRounds.length]);
+
+  // Auto-save open round form on every deselection path:
+  // backdrop click, switching to another card, or drag start.
+  useEffect(() => {
+    if (!isSelected && editingRoundIdxRef.current !== null) {
+      void saveLocalRound(editingRoundIdxRef.current).then(() => {
+        setEditingRoundIdx(null);
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isSelected]);
 
   // Close round pill dropdown when editing round changes
   useEffect(() => {
@@ -524,8 +540,10 @@ export default function InterviewCard({
 
         {/* ── Expandable section ─────────────────────────────────────── */}
         <div
-          className={`grid transition-all duration-300 ease-out ${
-            isSelected ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+          className={`grid ${
+            isSelected && !isDragging
+              ? "grid-rows-[1fr] transition-all duration-300 ease-out"
+              : "grid-rows-[0fr]"
           }`}
         >
           <div className="min-h-0 overflow-hidden">
