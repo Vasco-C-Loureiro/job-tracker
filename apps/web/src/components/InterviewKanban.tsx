@@ -13,6 +13,7 @@ import {
   useSensors,
   useDroppable,
 } from "@dnd-kit/core";
+import { snapCenterToCursor } from "@dnd-kit/modifiers";
 import { createSupabaseBrowserClient } from "@/lib/supabase";
 import InterviewCard from "./InterviewCard";
 
@@ -653,7 +654,7 @@ export default function InterviewKanban({
         </div>
       </div>
 
-      <DragOverlay>
+      <DragOverlay modifiers={[snapCenterToCursor]}>
         {draggingJob && (
           <InterviewCard
             job={draggingJob}
