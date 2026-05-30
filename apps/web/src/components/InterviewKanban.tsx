@@ -140,6 +140,8 @@ export default function InterviewKanban({
   const [draggingJobId, setDraggingJobId] = useState<string | null>(null);
   const [overColumnId, setOverColumnId] = useState<string | null>(null);
 
+  const dragWasExpanded = useRef(false);
+
   // Single scroll container for both kanban and rejected section (Fix 4)
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const columnRefs = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -408,6 +410,10 @@ export default function InterviewKanban({
 
   function handleDragStart(event: DragStartEvent) {
     const jobId = event.active.id as string;
+
+    // Capture BEFORE selectedJobId is cleared — this info is lost after setSelectedJobId(null)
+    dragWasExpanded.current = selectedJobId === jobId;
+
     if (selectedJobId) {
       saveJobSilently(selectedJobId);
       setSelectedJobId(null);
@@ -420,6 +426,7 @@ export default function InterviewKanban({
   }
 
   async function handleDragEnd(event: DragEndEvent) {
+    dragWasExpanded.current = false;
     const { active, over } = event;
     setDraggingJobId(null);
     setOverColumnId(null);
@@ -691,7 +698,7 @@ export default function InterviewKanban({
             isRejecting={false}
             onNextRound={() => {}}
             onReject={() => {}}
-            className="shadow-2xl rotate-1 animate-drag-lift"
+            className={`shadow-2xl rotate-1${dragWasExpanded.current ? " animate-drag-lift" : ""}`}
           />
         )}
       </DragOverlay>
