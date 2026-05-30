@@ -5,6 +5,7 @@ export const initialState: ImportWizardState = {
   file: null,
   csvHeaders: [],
   rawRows: [],
+  headerRowIndex: 0,
   enabledFields: new Set([
     "location",
     "remoteType",

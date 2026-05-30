@@ -38,7 +38,8 @@ export type ImportWizardState = {
   step: WizardStep;
   file: File | null;
   csvHeaders: string[];
-  rawRows: Record<string, string>[];
+  rawRows: string[][];
+  headerRowIndex: number;
 
   enabledFields: Set<FieldKey>;
 
