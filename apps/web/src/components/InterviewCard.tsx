@@ -96,6 +96,7 @@ type Props = {
   onNextRound: (jobId: string) => void;
   onReject: (jobId: string) => void;
   isDraggable?: boolean;
+  isBeingDragged?: boolean;
   className?: string;
 };
 
@@ -114,6 +115,7 @@ export default function InterviewCard({
   onNextRound,
   onReject,
   isDraggable = true,
+  isBeingDragged,
   className,
 }: Props) {
   const { attributes, listeners, setNodeRef, transform, isDragging } =
@@ -471,7 +473,7 @@ export default function InterviewCard({
           isSelected
             ? "z-20 border-blue-400 shadow-md"
             : "border-gray-200 hover:border-blue-300 hover:shadow-sm"
-        }${isAdvancing ? " animate-round-advance pointer-events-none" : ""}${isRejecting ? " animate-card-reject pointer-events-none" : ""}${isDragging ? " opacity-0" : ""}${className ? ` ${className}` : ""}`}
+        }${isAdvancing ? " animate-round-advance pointer-events-none" : ""}${isRejecting ? " animate-card-reject pointer-events-none" : ""}${isDragging || isBeingDragged ? " opacity-0" : ""}${className ? ` ${className}` : ""}`}
         onClick={(e) => {
           e.stopPropagation();
           onSelect(isSelected ? null : job.id);
