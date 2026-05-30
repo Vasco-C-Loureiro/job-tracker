@@ -16,14 +16,11 @@ export type EnumFieldKey = "status" | "remoteType" | "jobType" | "interestLevel"
 // company and title are always required — tracked in columnMap but not toggleable
 export type ColumnMapKey = FieldKey | "company" | "title";
 
-export type AliasGroup = {
-  primary: string;
-  aliases: string[];
-};
-
 export type EnumMap = {
-  userValues: AliasGroup[];
-  mappedTo: Record<string, string>;
+  // key = our enum value (e.g. "rejected")
+  mappings: Record<string, { primary: string; aliases: string[] }>;
+  // user-added rows where the same ourValue can appear multiple times
+  extraRows: { ourValue: string; primary: string; aliases: string[] }[];
 };
 
 export type WizardStep =

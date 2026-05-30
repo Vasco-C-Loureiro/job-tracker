@@ -38,15 +38,14 @@ export function translateEnumValue(
   enumMap: EnumMap | undefined,
 ): string | null {
   if (!enumMap) return null;
-  for (const group of enumMap.userValues) {
-    const candidates = [group.primary, ...group.aliases];
-    if (
-      candidates.some(
-        (c) => c.trim().toLowerCase() === rawValue.trim().toLowerCase()
-      )
-    ) {
-      return enumMap.mappedTo[group.primary] ?? null;
-    }
+  const lc = rawValue.trim().toLowerCase();
+  for (const [ourVal, mapping] of Object.entries(enumMap.mappings)) {
+    const candidates = [mapping.primary, ...mapping.aliases];
+    if (candidates.some((c) => c.trim().toLowerCase() === lc)) return ourVal;
+  }
+  for (const extra of enumMap.extraRows) {
+    const candidates = [extra.primary, ...extra.aliases];
+    if (candidates.some((c) => c.trim().toLowerCase() === lc)) return extra.ourValue;
   }
   return null;
 }
