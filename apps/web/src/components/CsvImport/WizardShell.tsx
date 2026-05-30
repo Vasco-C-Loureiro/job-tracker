@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import type {
   ImportWizardState,
   WizardStep,
@@ -140,6 +140,20 @@ function computePreviewRows(
 }
 
 export function WizardShell({ state, onUpdate }: WizardShellProps) {
+  const [sidebarLeft, setSidebarLeft] = useState("208px");
+
+  useEffect(() => {
+    const sidebar = document.querySelector("aside");
+    if (!sidebar) return;
+    setSidebarLeft(`${sidebar.getBoundingClientRect().width}px`);
+    const ro = new ResizeObserver((entries) => {
+      const w = entries[0]?.contentRect.width;
+      if (w != null) setSidebarLeft(`${Math.round(w)}px`);
+    });
+    ro.observe(sidebar);
+    return () => ro.disconnect();
+  }, []);
+
   function goNext() {
     const next = getNextStep(state.step, state);
     onUpdate((s) => ({ ...s, step: next }));
@@ -176,12 +190,12 @@ export function WizardShell({ state, onUpdate }: WizardShellProps) {
   const showPreview = !NO_PREVIEW_STEPS.includes(state.step);
 
   return (
-    <div className="flex flex-col min-h-0">
-      <div className="flex-1 overflow-y-auto">
+    <div className="flex flex-col min-h-full">
+      <div className={`flex-1 ${showNav ? "pb-24" : ""}`}>
         {renderStep()}
 
         {showPreview && (
-          <div className="mt-6 mb-20 max-w-2xl mx-auto px-4">
+          <div className="mt-6 mb-6 px-4">
             <PreviewTable
               columns={computePreviewColumns(state)}
               rows={computePreviewRows(state)}
@@ -192,7 +206,10 @@ export function WizardShell({ state, onUpdate }: WizardShellProps) {
       </div>
 
       {showNav && (
-        <div className="sticky bottom-0 bg-white border-t border-gray-200 px-6 py-4 flex items-center justify-between">
+        <div
+          className="fixed bottom-0 right-0 z-20 bg-white border-t border-gray-200 px-6 py-4 flex items-center justify-end gap-3"
+          style={{ left: sidebarLeft }}
+        >
           <button
             onClick={goBack}
             className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
