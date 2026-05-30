@@ -1,13 +1,14 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Lock, X } from "lucide-react";
+import { X } from "lucide-react";
 import type { ImportWizardState, FieldKey, ColumnMapKey } from "../types";
 import { detectHeaderRow } from "../utils";
 
 type Props = {
   state: ImportWizardState;
   onUpdate: React.Dispatch<React.SetStateAction<ImportWizardState>>;
+  showRequiredError?: boolean;
 };
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -44,6 +45,7 @@ export const FIELD_LABELS: Record<ColumnMapKey, string> = {
   tags:          "Tags",
 };
 
+// Border color for field boxes and header cell bottom-border
 const FIELD_COLORS: Record<string, string> = {
   company:       "border-violet-500",
   title:         "border-blue-500",
@@ -58,6 +60,40 @@ const FIELD_COLORS: Record<string, string> = {
   appliedAt:     "border-lime-500",
   interestLevel: "border-amber-500",
   tags:          "border-rose-500",
+};
+
+// Pastel background for mapped field boxes and mapped header cells
+const FIELD_BG_COLORS: Record<string, string> = {
+  company:       "bg-violet-100",
+  title:         "bg-blue-100",
+  location:      "bg-green-100",
+  remoteType:    "bg-orange-100",
+  jobType:       "bg-pink-100",
+  salaryRaw:     "bg-yellow-100",
+  sourceUrl:     "bg-teal-100",
+  source:        "bg-cyan-100",
+  status:        "bg-red-100",
+  notes:         "bg-indigo-100",
+  appliedAt:     "bg-lime-100",
+  interestLevel: "bg-amber-100",
+  tags:          "bg-rose-100",
+};
+
+// Ring color for the selected (active) field box
+const FIELD_RING_COLORS: Record<string, string> = {
+  company:       "ring-violet-400",
+  title:         "ring-blue-400",
+  location:      "ring-green-400",
+  remoteType:    "ring-orange-400",
+  jobType:       "ring-pink-400",
+  salaryRaw:     "ring-yellow-400",
+  sourceUrl:     "ring-teal-400",
+  source:        "ring-cyan-400",
+  status:        "ring-red-400",
+  notes:         "ring-indigo-400",
+  appliedAt:     "ring-lime-400",
+  interestLevel: "ring-amber-400",
+  tags:          "ring-rose-400",
 };
 
 const PAGE_SIZE = 30;
@@ -83,12 +119,11 @@ function autoMap(headers: string[], enabledFields: Set<FieldKey>): Partial<Recor
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export function MapColumns({ state, onUpdate }: Props) {
+export function MapColumns({ state, onUpdate, showRequiredError }: Props) {
   const { rawRows, csvHeaders, columnMap, enabledFields, headerRowIndex } = state;
   const [selectedField, setSelectedField] = useState<ColumnMapKey | null>(null);
   const [page, setPage] = useState(0);
 
-  // Auto-map on mount if columnMap is empty
   useEffect(() => {
     if (Object.keys(columnMap).length > 0) return;
     const mapped = autoMap(csvHeaders, enabledFields);
@@ -96,14 +131,12 @@ export function MapColumns({ state, onUpdate }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // All field keys to show (locked + toggleable)
   const allFieldKeys: ColumnMapKey[] = [
     "company",
     "title",
     ...(Array.from(enabledFields) as FieldKey[]),
   ];
 
-  // Map from header value → which field it's assigned to
   const headerToField = new Map<string, ColumnMapKey>();
   for (const key of allFieldKeys) {
     const h = columnMap[key];
@@ -121,10 +154,8 @@ export function MapColumns({ state, onUpdate }: Props) {
 
   function linkHeaderToField(header: string) {
     if (!selectedField) return;
-    // Unlink any field previously mapped to this header
     onUpdate((s) => {
       const next = { ...s.columnMap };
-      // Remove existing binding of this header from any other field
       for (const k of Object.keys(next) as ColumnMapKey[]) {
         if (next[k] === header) delete next[k];
       }
@@ -160,37 +191,43 @@ export function MapColumns({ state, onUpdate }: Props) {
       {/* ── Field boxes ────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-7 gap-2 mb-4">
         {allFieldKeys.map((key) => {
-          const isLocked = key === "company" || key === "title";
+          const isRequired = key === "company" || key === "title";
           const mappedHeader = columnMap[key];
           const isMapped = !!mappedHeader;
           const isSelected = selectedField === key;
-          const color = FIELD_COLORS[key] ?? "border-gray-400";
+          const borderColor = FIELD_COLORS[key] ?? "border-gray-400";
+          const bgClass = isMapped ? (FIELD_BG_COLORS[key] ?? "bg-white") : "bg-white";
+          const ringClass = isSelected
+            ? `ring-2 ring-offset-1 ${FIELD_RING_COLORS[key] ?? "ring-blue-400"}`
+            : "";
 
           return (
             <div
               key={key}
-              role={isLocked ? undefined : "button"}
-              tabIndex={isLocked ? undefined : 0}
-              onClick={() => !isLocked && setSelectedField(isSelected ? null : key)}
-              onKeyDown={(e) => !isLocked && (e.key === "Enter" || e.key === " ") && setSelectedField(isSelected ? null : key)}
+              role="button"
+              tabIndex={0}
+              onClick={() => setSelectedField(isSelected ? null : key)}
+              onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && setSelectedField(isSelected ? null : key)}
               className={[
-                "relative rounded-lg border-2 p-2.5 text-left transition-all select-none",
-                isLocked ? "bg-gray-50 opacity-75 cursor-default" : "cursor-pointer",
-                isMapped ? color : "border-gray-200",
-                isSelected ? "ring-2 ring-offset-2 ring-blue-400" : "",
-                !isMapped && !isLocked ? "hover:border-gray-400" : "",
+                "relative rounded-lg border-[3px] p-2.5 text-left transition-all select-none cursor-pointer",
+                isMapped ? borderColor : "border-gray-200",
+                bgClass,
+                ringClass,
+                !isMapped ? "hover:border-gray-400" : "",
               ].join(" ")}
             >
-              <p className="text-xs font-semibold text-gray-800 truncate">
+              <p className="text-xs font-semibold text-gray-900 truncate">
                 {FIELD_LABELS[key]}
               </p>
               {isMapped && (
-                <p className="text-[10px] text-gray-500 truncate mt-0.5">{mappedHeader}</p>
+                <p className="text-[10px] text-gray-600 truncate mt-0.5">{mappedHeader}</p>
               )}
-              {isLocked && (
-                <Lock size={10} className="absolute top-2 right-2 text-gray-400" />
+              {isRequired && !isMapped && (
+                <span className="block mt-0.5 text-[9px] font-semibold text-red-500 uppercase tracking-wide">
+                  Required
+                </span>
               )}
-              {isMapped && !isLocked && (
+              {isMapped && (
                 <button
                   type="button"
                   onClick={(e) => { e.stopPropagation(); unlinkField(key); }}
@@ -204,6 +241,13 @@ export function MapColumns({ state, onUpdate }: Props) {
           );
         })}
       </div>
+
+      {/* ── Required error ─────────────────────────────────────────────────── */}
+      {showRequiredError && (
+        <p className="text-sm text-red-500 mb-3 text-center">
+          Company and Title must be linked before continuing.
+        </p>
+      )}
 
       {/* ── Status bar ─────────────────────────────────────────────────────── */}
       <div className="min-h-[24px] mb-4 text-sm text-center">
@@ -224,13 +268,14 @@ export function MapColumns({ state, onUpdate }: Props) {
       </div>
 
       {/* ── Raw CSV table ──────────────────────────────────────────────────── */}
-      <div className="border border-gray-200 rounded-lg overflow-hidden">
+      <div className="border border-gray-200 rounded-lg overflow-hidden bg-white">
         <div className="overflow-x-auto">
-          <table className="w-full text-xs">
+          <table className="w-full text-xs text-gray-900">
             <tbody>
               {pageRows.map((row, relIdx) => {
                 const absIdx = page * PAGE_SIZE + relIdx;
                 const isHeaderRow = absIdx === headerRowIndex;
+                const zebraBg = absIdx % 2 === 0 ? "bg-white" : "bg-gray-50";
 
                 return (
                   <tr
@@ -238,26 +283,40 @@ export function MapColumns({ state, onUpdate }: Props) {
                     onClick={() => !isHeaderRow && changeHeaderRow(absIdx)}
                     className={[
                       "border-b border-gray-100 last:border-0",
-                      isHeaderRow
-                        ? "bg-blue-50"
-                        : "hover:bg-gray-50 cursor-pointer",
+                      !isHeaderRow ? `${zebraBg} hover:bg-blue-50 cursor-pointer` : "",
                     ].join(" ")}
                   >
                     {/* Row number cell */}
-                    <td className="px-2 py-1.5 text-gray-400 font-mono text-right w-10 border-r border-gray-200 select-none">
-                      {isHeaderRow ? (
-                        <span className="text-blue-600 font-semibold text-[9px] uppercase tracking-wide">HDR</span>
-                      ) : (
-                        absIdx + 1
-                      )}
+                    <td
+                      className={[
+                        "px-2 py-1.5 font-mono text-right w-10 border-r border-gray-200 select-none",
+                        isHeaderRow
+                          ? "bg-blue-600 text-white font-bold"
+                          : "text-gray-400",
+                      ].join(" ")}
+                    >
+                      {isHeaderRow ? "HDR" : absIdx + 1}
                     </td>
 
                     {/* Data cells */}
                     {row.map((cell, colIdx) => {
                       const headerValue = csvHeaders[colIdx];
                       const mappedFieldKey = headerValue ? headerToField.get(headerValue) : undefined;
-                      const color = mappedFieldKey ? (FIELD_COLORS[mappedFieldKey] ?? "") : "";
                       const isClickableHeader = isHeaderRow && !!selectedField;
+
+                      // Background for this cell
+                      let cellBg = "";
+                      if (isHeaderRow) {
+                        cellBg = mappedFieldKey
+                          ? (FIELD_BG_COLORS[mappedFieldKey] ?? "bg-blue-50")
+                          : "bg-blue-50";
+                      }
+
+                      // Bottom border color for mapped header cells
+                      const bottomBorder =
+                        isHeaderRow && mappedFieldKey
+                          ? `border-b-4 ${FIELD_COLORS[mappedFieldKey] ?? ""}`
+                          : "";
 
                       return (
                         <td
@@ -265,9 +324,10 @@ export function MapColumns({ state, onUpdate }: Props) {
                           onClick={isClickableHeader ? (e) => { e.stopPropagation(); linkHeaderToField(cell); } : undefined}
                           className={[
                             "px-2 py-1.5 whitespace-nowrap max-w-[180px] truncate",
-                            isHeaderRow ? "font-semibold text-gray-800" : "text-gray-600",
-                            isHeaderRow && mappedFieldKey ? `border-b-2 ${color}` : "",
-                            isHeaderRow && isClickableHeader ? "cursor-pointer hover:bg-blue-100 rounded" : "",
+                            isHeaderRow ? "font-semibold text-gray-900" : "text-gray-900",
+                            cellBg,
+                            bottomBorder,
+                            isClickableHeader ? "cursor-pointer hover:bg-blue-100" : "",
                           ].join(" ")}
                           title={cell}
                         >
@@ -289,7 +349,7 @@ export function MapColumns({ state, onUpdate }: Props) {
               type="button"
               onClick={() => setPage((p) => Math.max(0, p - 1))}
               disabled={page === 0}
-              className="px-3 py-1 text-xs border border-gray-300 rounded disabled:opacity-40 disabled:cursor-not-allowed hover:bg-white transition-colors"
+              className="px-3 py-1 text-xs text-gray-900 border border-gray-300 rounded disabled:opacity-40 disabled:cursor-not-allowed hover:bg-white transition-colors"
             >
               &larr; Prev
             </button>
@@ -300,7 +360,7 @@ export function MapColumns({ state, onUpdate }: Props) {
               type="button"
               onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
               disabled={page === totalPages - 1}
-              className="px-3 py-1 text-xs border border-gray-300 rounded disabled:opacity-40 disabled:cursor-not-allowed hover:bg-white transition-colors"
+              className="px-3 py-1 text-xs text-gray-900 border border-gray-300 rounded disabled:opacity-40 disabled:cursor-not-allowed hover:bg-white transition-colors"
             >
               Next &rarr;
             </button>
