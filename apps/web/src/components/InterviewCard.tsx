@@ -96,6 +96,7 @@ type Props = {
   onNextRound: (jobId: string) => void;
   onReject: (jobId: string) => void;
   isDraggable?: boolean;
+  isDragTransitioning?: boolean;
   className?: string;
 };
 
@@ -114,6 +115,7 @@ export default function InterviewCard({
   onNextRound,
   onReject,
   isDraggable = true,
+  isDragTransitioning = false,
   className,
 }: Props) {
   const { attributes, listeners, setNodeRef, transform, isDragging } =
@@ -456,6 +458,9 @@ export default function InterviewCard({
     return true;
   })();
 
+  const accordionOpen = isSelected && !isDragging && !isDragTransitioning;
+  const accordionTransition = accordionOpen || isDragTransitioning;
+
   const inputCls =
     "w-full border border-gray-200 rounded px-2.5 py-1.5 text-sm text-gray-900 focus:outline-none focus:border-blue-500";
   const labelCls = "block text-xs text-gray-500 mb-1";
@@ -471,7 +476,7 @@ export default function InterviewCard({
           isSelected
             ? "z-20 border-blue-400 shadow-md"
             : "border-gray-200 hover:border-blue-300 hover:shadow-sm"
-        }${isAdvancing ? " animate-round-advance pointer-events-none" : ""}${isRejecting ? " animate-card-reject pointer-events-none" : ""}${isDragging ? " opacity-0" : ""}${className ? ` ${className}` : ""}`}
+        }${isAdvancing ? " animate-round-advance pointer-events-none" : ""}${isRejecting ? " animate-card-reject pointer-events-none" : ""}${isDragTransitioning ? " opacity-30 transition-opacity duration-200" : ""}${isDragging ? " opacity-0" : ""}${className ? ` ${className}` : ""}`}
         onClick={(e) => {
           e.stopPropagation();
           onSelect(isSelected ? null : job.id);
@@ -540,10 +545,8 @@ export default function InterviewCard({
 
         {/* ── Expandable section ─────────────────────────────────────── */}
         <div
-          className={`grid ${
-            isSelected && !isDragging
-              ? "grid-rows-[1fr] transition-all duration-300 ease-out"
-              : "grid-rows-[0fr]"
+          className={`grid ${accordionOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"} ${
+            accordionTransition ? "transition-all duration-200 ease-in-out" : ""
           }`}
         >
           <div className="min-h-0 overflow-hidden">

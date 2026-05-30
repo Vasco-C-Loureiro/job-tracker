@@ -116,6 +116,9 @@ export default function InterviewKanban({
   const [rejectingJobId, setRejectingJobId] = useState<string | null>(null);
   const [draggingJobId, setDraggingJobId] = useState<string | null>(null);
   const [overColumnId, setOverColumnId] = useState<string | null>(null);
+  const [isDragTransitioning, setIsDragTransitioning] = useState(false);
+  const dragTransitionTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const transitioningJobId = useRef<string | null>(null);
 
   // Single scroll container for both kanban and rejected section (Fix 4)
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -383,16 +386,29 @@ export default function InterviewKanban({
     });
   }
 
-  // Collapse expanded card and save notes silently before drag activates (Fix 5)
   function handleDragStart(event: DragStartEvent) {
     const jobId = event.active.id as string;
 
-    if (selectedJobId) {
+    if (selectedJobId === jobId) {
+      // Expanded card being dragged — collapse smoothly before showing DragOverlay
+      transitioningJobId.current = jobId;
       saveJobSilently(selectedJobId);
       setSelectedJobId(null);
-    }
+      setIsDragTransitioning(true);
 
-    setDraggingJobId(jobId);
+      dragTransitionTimer.current = setTimeout(() => {
+        setIsDragTransitioning(false);
+        transitioningJobId.current = null;
+        setDraggingJobId(jobId);
+      }, 220);
+    } else {
+      // Non-expanded card — no transition needed, activate immediately
+      if (selectedJobId) {
+        saveJobSilently(selectedJobId);
+        setSelectedJobId(null);
+      }
+      setDraggingJobId(jobId);
+    }
   }
 
   function handleDragOver(event: DragOverEvent) {
@@ -400,6 +416,11 @@ export default function InterviewKanban({
   }
 
   async function handleDragEnd(event: DragEndEvent) {
+    if (dragTransitionTimer.current) {
+      clearTimeout(dragTransitionTimer.current);
+      dragTransitionTimer.current = null;
+    }
+    setIsDragTransitioning(false);
     const { active, over } = event;
     setDraggingJobId(null);
     setOverColumnId(null);
@@ -533,6 +554,7 @@ export default function InterviewKanban({
                           onNextRound={handleNextRoundAnimated}
                           onReject={handleRejectAnimated}
                           isDraggable={true}
+                          isDragTransitioning={isDragTransitioning && job.id === transitioningJobId.current}
                         />
                       ))}
                     </div>
@@ -593,6 +615,7 @@ export default function InterviewKanban({
                       onNextRound={handleNextRoundAnimated}
                       onReject={handleRejectAnimated}
                       isDraggable={true}
+                      isDragTransitioning={isDragTransitioning && job.id === transitioningJobId.current}
                     />
                   ))}
                 </div>
