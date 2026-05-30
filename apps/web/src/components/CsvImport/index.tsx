@@ -3,30 +3,9 @@
 import { useState } from "react";
 import type { ImportWizardState } from "./types";
 import { WizardShell } from "./WizardShell";
+import { initialState } from "./initialState";
 
-const initialState: ImportWizardState = {
-  step: "upload",
-  file: null,
-  csvHeaders: [],
-  rawRows: [],
-  enabledFields: new Set([
-    "location",
-    "remoteType",
-    "jobType",
-    "salaryRaw",
-    "sourceUrl",
-    "status",
-    "notes",
-    "appliedAt",
-    "interestLevel",
-    "tags",
-  ]),
-  columnMap: {},
-  enumMaps: {},
-  selectedRowIndices: new Set(),
-  autoSkipRejected: false,
-  editedRows: [],
-};
+export { initialState };
 
 export default function CsvImport() {
   const [state, setState] = useState<ImportWizardState>(initialState);
