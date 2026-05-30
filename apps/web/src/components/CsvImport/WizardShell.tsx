@@ -71,10 +71,7 @@ function getPrevStep(current: WizardStep, state: ImportWizardState): WizardStep 
   return prev;
 }
 
-function isNextDisabled(state: ImportWizardState): boolean {
-  if (state.step === "map-columns") {
-    return !state.columnMap.company || !state.columnMap.title;
-  }
+function isNextDisabled(_state: ImportWizardState): boolean {
   return false;
 }
 
@@ -152,6 +149,7 @@ function computePreviewRows(
 
 export function WizardShell({ state, onUpdate }: WizardShellProps) {
   const [sidebarLeft, setSidebarLeft] = useState("208px");
+  const [mapColumnsAttempted, setMapColumnsAttempted] = useState(false);
 
   useEffect(() => {
     const sidebar = document.querySelector("aside");
@@ -166,6 +164,11 @@ export function WizardShell({ state, onUpdate }: WizardShellProps) {
   }, []);
 
   function goNext() {
+    if (state.step === "map-columns" && (!state.columnMap.company || !state.columnMap.title)) {
+      setMapColumnsAttempted(true);
+      return;
+    }
+    setMapColumnsAttempted(false);
     const next = getNextStep(state.step, state);
     onUpdate((s) => ({ ...s, step: next }));
   }
@@ -187,7 +190,13 @@ export function WizardShell({ state, onUpdate }: WizardShellProps) {
       case "toggle-fields":
         return <ToggleFields state={state} onUpdate={onUpdate} />;
       case "map-columns":
-        return <MapColumns state={state} onUpdate={onUpdate} />;
+        return (
+          <MapColumns
+            state={state}
+            onUpdate={onUpdate}
+            showRequiredError={mapColumnsAttempted && (!state.columnMap.company || !state.columnMap.title)}
+          />
+        );
       case "map-enums":
         return <MapEnumValues state={state} onUpdate={onUpdate} />;
       case "toggle-rows":
