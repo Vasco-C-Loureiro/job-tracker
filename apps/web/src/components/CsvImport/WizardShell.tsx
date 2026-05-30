@@ -11,7 +11,9 @@ import type {
 import { FileUpload } from "./steps/FileUpload";
 import { ToggleFields } from "./steps/ToggleFields";
 import { MapColumns, FIELD_LABELS } from "./steps/MapColumns";
+import { MapEnumValues } from "./steps/MapEnumValues";
 import { PreviewTable } from "./PreviewTable";
+import { translateEnumValue } from "./utils";
 
 type WizardShellProps = {
   state: ImportWizardState;
@@ -124,20 +126,9 @@ function computePreviewRows(
       let value = raw[col] ?? "";
 
       if (state.step === "map-enums") {
-        const enumKey = key as EnumFieldKey;
-        const enumMap = state.enumMaps[enumKey];
-        if (enumMap && value) {
-          for (const group of enumMap.userValues) {
-            if (
-              [group.primary, ...group.aliases].some(
-                (a) => a.toLowerCase() === value.toLowerCase()
-              )
-            ) {
-              value = enumMap.mappedTo[group.primary] ?? value;
-              break;
-            }
-          }
-        }
+        const enumMap = state.enumMaps[key as EnumFieldKey];
+        const translated = translateEnumValue(value, enumMap);
+        if (translated !== null) value = translated;
       }
 
       row[key] = value;
@@ -171,11 +162,7 @@ export function WizardShell({ state, onUpdate }: WizardShellProps) {
       case "map-columns":
         return <MapColumns state={state} onUpdate={onUpdate} />;
       case "map-enums":
-        return (
-          <div className="p-8 text-gray-500 text-sm">
-            Map Enums step (coming soon)
-          </div>
-        );
+        return <MapEnumValues state={state} onUpdate={onUpdate} />;
       case "toggle-rows":
         return (
           <div className="p-8 text-gray-500 text-sm">
