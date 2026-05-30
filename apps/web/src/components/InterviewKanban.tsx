@@ -392,6 +392,13 @@ export default function InterviewKanban({
     });
   }
 
+  function handleCardSelect(jobId: string | null) {
+    if (selectedJobId && selectedJobId !== jobId) {
+      saveJobSilently(selectedJobId);
+    }
+    setSelectedJobId(jobId);
+  }
+
   async function handleUnreject(jobId: string) {
     setJobs((prev) =>
       prev.map((j) => (j.id === jobId ? { ...j, status: "interview" } : j)),
@@ -505,7 +512,7 @@ export default function InterviewKanban({
       <div ref={scrollContainerRef} className="overflow-x-auto">
         <div className="relative min-w-max">
 
-          {/* Main kanban — each column gets z-20 only when it holds the selected card */}
+          {/* Main kanban — all columns sit above the backdrop (z-[11]); selected column gets z-20 */}
           <div className="flex gap-4 pb-4 items-stretch">
             {/* Round columns */}
             {roundColumns.map((col) => {
@@ -521,7 +528,7 @@ export default function InterviewKanban({
                     if (el) columnRefs.current.set(columnId, el);
                     else columnRefs.current.delete(columnId);
                   }}
-                  className={`flex-shrink-0 ${getColumnWidth(col)} transition-[width] duration-150 ease-in-out${isSelectedCol ? " relative z-20" : ""}`}
+                  className={`flex-shrink-0 ${getColumnWidth(col)} transition-[width] duration-150 ease-in-out relative${isSelectedCol ? " z-20" : " z-[11]"}`}
                   onClick={(e) => e.stopPropagation()}
                 >
                   <h3 className="text-sm font-bold text-gray-300 uppercase tracking-widest mb-3 flex items-center gap-2">
@@ -549,7 +556,7 @@ export default function InterviewKanban({
                             (r) => r.job_application_id === job.id,
                           )}
                           isSelected={selectedJobId === job.id}
-                          onSelect={setSelectedJobId}
+                          onSelect={handleCardSelect}
                           onRoundChange={handleRoundChange}
                           onStatusChange={handleStatusChange}
                           maxRoundColumn={maxRoundColumn}
@@ -593,7 +600,7 @@ export default function InterviewKanban({
                 if (el) columnRefs.current.set("offer", el);
                 else columnRefs.current.delete("offer");
               }}
-              className={`flex-shrink-0 w-[388px]${getCardsForColumn(OFFER_COLUMN).some((j) => j.id === selectedJobId) ? " relative z-20" : ""}`}
+              className={`flex-shrink-0 w-[388px] relative${getCardsForColumn(OFFER_COLUMN).some((j) => j.id === selectedJobId) ? " z-20" : " z-[11]"}`}
               onClick={(e) => e.stopPropagation()}
             >
               <h3 className="text-sm font-bold text-gray-300 uppercase tracking-widest mb-3 flex items-center gap-2">
