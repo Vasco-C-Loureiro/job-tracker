@@ -13,7 +13,7 @@ import {
   useSensors,
   useDroppable,
 } from "@dnd-kit/core";
-import { snapCenterToCursor } from "@dnd-kit/modifiers";
+import type { Modifier } from "@dnd-kit/core";
 import { createSupabaseBrowserClient } from "@/lib/supabase";
 import InterviewCard from "./InterviewCard";
 
@@ -76,6 +76,29 @@ const EXTRA_ROUNDS_KEY = "job-tracker-kanban-extra-rounds";
 const COLUMN_WIDTH = 388;
 const ESTIMATED_CARD_HEIGHT = 90;
 
+const snapOverlayCenterToCursor: Modifier = ({
+  activatorEvent,
+  draggingNodeRect,
+  overlayNodeRect,
+  transform,
+}) => {
+  if (!draggingNodeRect || !activatorEvent) return transform;
+
+  const event = activatorEvent as PointerEvent;
+
+  const offsetX = event.clientX - draggingNodeRect.left;
+  const offsetY = event.clientY - draggingNodeRect.top;
+
+  const overlayW = overlayNodeRect?.width ?? 388;
+  const overlayH = overlayNodeRect?.height ?? 90;
+
+  return {
+    ...transform,
+    x: transform.x + offsetX - overlayW / 2,
+    y: transform.y + offsetY - overlayH / 2,
+  };
+};
+
 function DroppableColumn({
   id,
   children,
@@ -116,9 +139,6 @@ export default function InterviewKanban({
   const [rejectingJobId, setRejectingJobId] = useState<string | null>(null);
   const [draggingJobId, setDraggingJobId] = useState<string | null>(null);
   const [overColumnId, setOverColumnId] = useState<string | null>(null);
-  const [isDragTransitioning, setIsDragTransitioning] = useState(false);
-  const dragTransitionTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const transitioningJobId = useRef<string | null>(null);
 
   // Single scroll container for both kanban and rejected section (Fix 4)
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -388,27 +408,11 @@ export default function InterviewKanban({
 
   function handleDragStart(event: DragStartEvent) {
     const jobId = event.active.id as string;
-
-    if (selectedJobId === jobId) {
-      // Expanded card being dragged — collapse smoothly before showing DragOverlay
-      transitioningJobId.current = jobId;
+    if (selectedJobId) {
       saveJobSilently(selectedJobId);
       setSelectedJobId(null);
-      setIsDragTransitioning(true);
-
-      dragTransitionTimer.current = setTimeout(() => {
-        setIsDragTransitioning(false);
-        transitioningJobId.current = null;
-        setDraggingJobId(jobId);
-      }, 220);
-    } else {
-      // Non-expanded card — no transition needed, activate immediately
-      if (selectedJobId) {
-        saveJobSilently(selectedJobId);
-        setSelectedJobId(null);
-      }
-      setDraggingJobId(jobId);
     }
+    setDraggingJobId(jobId);
   }
 
   function handleDragOver(event: DragOverEvent) {
@@ -416,11 +420,6 @@ export default function InterviewKanban({
   }
 
   async function handleDragEnd(event: DragEndEvent) {
-    if (dragTransitionTimer.current) {
-      clearTimeout(dragTransitionTimer.current);
-      dragTransitionTimer.current = null;
-    }
-    setIsDragTransitioning(false);
     const { active, over } = event;
     setDraggingJobId(null);
     setOverColumnId(null);
@@ -515,7 +514,7 @@ export default function InterviewKanban({
                     if (el) columnRefs.current.set(columnId, el);
                     else columnRefs.current.delete(columnId);
                   }}
-                  className={`flex-shrink-0 ${getColumnWidth(col)} ${draggingJobId ? "" : "transition-[width] duration-150 ease-in-out"}${isSelectedCol ? " relative z-20" : ""}`}
+                  className={`flex-shrink-0 ${getColumnWidth(col)} transition-[width] duration-150 ease-in-out${isSelectedCol ? " relative z-20" : ""}`}
                   onClick={(e) => e.stopPropagation()}
                 >
                   <h3 className="text-sm font-bold text-gray-300 uppercase tracking-widest mb-3 flex items-center gap-2">
@@ -554,7 +553,6 @@ export default function InterviewKanban({
                           onNextRound={handleNextRoundAnimated}
                           onReject={handleRejectAnimated}
                           isDraggable={true}
-                          isDragTransitioning={isDragTransitioning && job.id === transitioningJobId.current}
                         />
                       ))}
                     </div>
@@ -615,7 +613,6 @@ export default function InterviewKanban({
                       onNextRound={handleNextRoundAnimated}
                       onReject={handleRejectAnimated}
                       isDraggable={true}
-                      isDragTransitioning={isDragTransitioning && job.id === transitioningJobId.current}
                     />
                   ))}
                 </div>
@@ -677,7 +674,7 @@ export default function InterviewKanban({
         </div>
       </div>
 
-      <DragOverlay modifiers={[snapCenterToCursor]}>
+      <DragOverlay modifiers={[snapOverlayCenterToCursor]}>
         {draggingJob && (
           <InterviewCard
             job={draggingJob}
@@ -694,7 +691,7 @@ export default function InterviewKanban({
             isRejecting={false}
             onNextRound={() => {}}
             onReject={() => {}}
-            className="shadow-2xl rotate-1"
+            className="shadow-2xl rotate-1 animate-drag-lift"
           />
         )}
       </DragOverlay>
