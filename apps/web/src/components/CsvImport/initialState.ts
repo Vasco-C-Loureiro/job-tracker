@@ -23,4 +23,5 @@ export const initialState: ImportWizardState = {
   selectedRowIndices: new Set(),
   autoSkipRejected: false,
   editedRows: [],
+  importComplete: false,
 };

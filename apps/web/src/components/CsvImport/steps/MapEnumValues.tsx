@@ -36,14 +36,25 @@ function formatOurValue(v: string): string {
 }
 
 function findBestMatch(csvValue: string, ourValues: string[]): string | null {
-  const words = csvValue.toLowerCase().split(/\s+/);
-  for (const ourVal of ourValues) {
-    const ourWords = ourVal.toLowerCase().replace(/-/g, " ").split(/\s+/);
-    for (const word of words) {
-      for (const ourWord of ourWords) {
-        if (word.includes(ourWord) || ourWord.includes(word)) {
-          if (word.length >= 4 && ourWord.length >= 4) return ourVal;
-        }
+  const csv = csvValue.toLowerCase().trim();
+
+  for (const v of ourValues) {
+    if (csv === v.toLowerCase().replace(/-/g, " ")) return v;
+  }
+  for (const v of ourValues) {
+    const ourNorm = v.toLowerCase().replace(/-/g, " ");
+    if (csv.includes(ourNorm)) return v;
+  }
+  for (const v of ourValues) {
+    const ourNorm = v.toLowerCase().replace(/-/g, " ");
+    if (ourNorm.includes(csv)) return v;
+  }
+  const csvWords = csv.split(/\s+/).filter((w) => w.length >= 3);
+  for (const v of ourValues) {
+    const ourWords = v.toLowerCase().replace(/-/g, " ").split(/\s+/).filter((w) => w.length >= 3);
+    for (const cw of csvWords) {
+      for (const ow of ourWords) {
+        if (cw.includes(ow) || ow.includes(cw)) return v;
       }
     }
   }
@@ -64,14 +75,11 @@ function buildInitialEnumMap(
   }
 
   const ourVals = OUR_ENUM_VALUES[fieldKey];
-
-  // Start with empty mappings for every our-value
   const mappings: EnumMap["mappings"] = {};
   for (const ourVal of ourVals) {
     mappings[ourVal] = { primary: "", aliases: [] };
   }
 
-  // Try to match each CSV value to an our-value
   const assigned = new Set<string>();
   for (const csvVal of seen) {
     const match = findBestMatch(csvVal, ourVals);
@@ -82,6 +90,93 @@ function buildInitialEnumMap(
   }
 
   return { mappings, extraRows: [] };
+}
+
+// ── AliasRow — stable top-level component so local state survives re-renders ──
+
+function AliasRow({
+  aliases,
+  onAdd,
+  onRemove,
+}: {
+  aliases: string[];
+  onAdd: (alias: string) => void;
+  onRemove: (idx: number) => void;
+}) {
+  const [aliasInput, setAliasInput] = useState("");
+
+  function commit() {
+    if (!aliasInput.trim()) return;
+    onAdd(aliasInput.trim());
+    setAliasInput("");
+  }
+
+  return (
+    <div className="mt-2 pt-2 border-t border-gray-100">
+      {aliases.length > 0 && (
+        <div className="flex flex-wrap gap-1 mb-2">
+          {aliases.map((alias, ai) => (
+            <span
+              key={ai}
+              className="inline-flex items-center gap-1 bg-gray-100 text-gray-900 text-xs px-2 py-0.5 rounded-full"
+            >
+              {alias}
+              <button type="button" onClick={() => onRemove(ai)} className="text-gray-500 hover:text-red-500">
+                <X size={10} />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+      <div className="flex items-center gap-2">
+        <input
+          type="text"
+          placeholder="Add alias…"
+          value={aliasInput}
+          onChange={(e) => setAliasInput(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") commit(); }}
+          className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded-md focus:outline-none focus:border-blue-400 bg-white text-gray-900"
+        />
+        <button
+          type="button"
+          onClick={commit}
+          className="px-2 py-1 text-xs bg-gray-100 text-gray-900 rounded-md hover:bg-gray-200 transition-colors"
+        >
+          Add
+        </button>
+      </div>
+      <p className="text-xs text-gray-400 mt-1">
+        Add alternative names that also mean this value
+      </p>
+    </div>
+  );
+}
+
+// ── AliasPills — chips shown in-line when alias section is collapsed ───────────
+
+function AliasPills({
+  aliases,
+  onRemove,
+}: {
+  aliases: string[];
+  onRemove: (idx: number) => void;
+}) {
+  if (aliases.length === 0) return null;
+  return (
+    <div className="flex flex-wrap gap-1 mt-1">
+      {aliases.map((alias, ai) => (
+        <span
+          key={ai}
+          className="inline-flex items-center gap-1 bg-gray-100 text-gray-900 text-xs px-2 py-0.5 rounded-full"
+        >
+          {alias}
+          <button type="button" onClick={() => onRemove(ai)} className="text-gray-500 hover:text-red-500">
+            <X size={10} />
+          </button>
+        </span>
+      ))}
+    </div>
+  );
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -97,9 +192,7 @@ export function MapEnumValues({ state, onUpdate }: Props) {
     () => new Set(mappedEnumFields.slice(0, 1))
   );
   const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
-  const [aliasInputs, setAliasInputs] = useState<Record<string, string>>({});
 
-  // Auto-initialise on first mount only
   useEffect(() => {
     let needsUpdate = false;
     const next = { ...state.enumMaps };
@@ -131,14 +224,13 @@ export function MapEnumValues({ state, onUpdate }: Props) {
   }
 
   function addMainAlias(fieldKey: EnumFieldKey, ourVal: string, alias: string) {
-    if (!alias.trim()) return;
     updateEnumMap(fieldKey, (em) => ({
       ...em,
       mappings: {
         ...em.mappings,
         [ourVal]: {
           ...em.mappings[ourVal]!,
-          aliases: [...(em.mappings[ourVal]?.aliases ?? []), alias.trim()],
+          aliases: [...(em.mappings[ourVal]?.aliases ?? []), alias],
         },
       },
     }));
@@ -155,6 +247,25 @@ export function MapEnumValues({ state, onUpdate }: Props) {
         },
       },
     }));
+  }
+
+  function removeMainRow(fieldKey: EnumFieldKey, ourVal: string) {
+    updateEnumMap(fieldKey, (em) => {
+      const next = { ...em.mappings };
+      delete next[ourVal];
+      return { ...em, mappings: next };
+    });
+  }
+
+  function renameMainRow(fieldKey: EnumFieldKey, oldOurVal: string, newOurVal: string) {
+    if (oldOurVal === newOurVal) return;
+    updateEnumMap(fieldKey, (em) => {
+      const data = em.mappings[oldOurVal] ?? { primary: "", aliases: [] };
+      const next = { ...em.mappings };
+      delete next[oldOurVal];
+      next[newOurVal] = data;
+      return { ...em, mappings: next };
+    });
   }
 
   function addExtraRow(fieldKey: EnumFieldKey) {
@@ -186,11 +297,10 @@ export function MapEnumValues({ state, onUpdate }: Props) {
   }
 
   function addExtraAlias(fieldKey: EnumFieldKey, rowIdx: number, alias: string) {
-    if (!alias.trim()) return;
     updateEnumMap(fieldKey, (em) => ({
       ...em,
       extraRows: em.extraRows.map((r, i) =>
-        i === rowIdx ? { ...r, aliases: [...r.aliases, alias.trim()] } : r
+        i === rowIdx ? { ...r, aliases: [...r.aliases, alias] } : r
       ),
     }));
   }
@@ -217,69 +327,6 @@ export function MapEnumValues({ state, onUpdate }: Props) {
     setExpandedRows((prev) => ({ ...prev, [rowKey]: !prev[rowKey] }));
   }
 
-  // ── Alias sub-row ─────────────────────────────────────────────────────────
-
-  function AliasRow({
-    rowKey,
-    aliases,
-    onAdd,
-    onRemove,
-  }: {
-    rowKey: string;
-    aliases: string[];
-    onAdd: (alias: string) => void;
-    onRemove: (idx: number) => void;
-  }) {
-    const input = aliasInputs[rowKey] ?? "";
-    return (
-      <div className="mt-2 ml-2 pl-3 border-l-2 border-gray-100">
-        {aliases.length > 0 && (
-          <div className="flex flex-wrap gap-1 mb-2">
-            {aliases.map((alias, ai) => (
-              <span
-                key={ai}
-                className="inline-flex items-center gap-1 bg-gray-100 text-gray-900 text-xs px-2 py-0.5 rounded-full"
-              >
-                {alias}
-                <button type="button" onClick={() => onRemove(ai)} className="text-gray-500 hover:text-red-500">
-                  <X size={10} />
-                </button>
-              </span>
-            ))}
-          </div>
-        )}
-        <div className="flex items-center gap-2">
-          <input
-            type="text"
-            placeholder="Add alias…"
-            value={input}
-            onChange={(e) => setAliasInputs((prev) => ({ ...prev, [rowKey]: e.target.value }))}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                onAdd(input);
-                setAliasInputs((prev) => ({ ...prev, [rowKey]: "" }));
-              }
-            }}
-            className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded-md focus:outline-none focus:border-blue-400 text-gray-900"
-          />
-          <button
-            type="button"
-            onClick={() => {
-              onAdd(input);
-              setAliasInputs((prev) => ({ ...prev, [rowKey]: "" }));
-            }}
-            className="px-2 py-1 text-xs bg-gray-100 text-gray-900 rounded-md hover:bg-gray-200 transition-colors"
-          >
-            Add
-          </button>
-        </div>
-        <p className="text-xs text-gray-400 mt-1">
-          Add alternative names that also mean this value
-        </p>
-      </div>
-    );
-  }
-
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
@@ -293,28 +340,20 @@ export function MapEnumValues({ state, onUpdate }: Props) {
         const enumMap = enumMaps[fieldKey];
         const isOpen = openSections.has(fieldKey);
         const mappedCount = enumMap
-          ? Object.values(enumMap.mappings).filter((m) => m.primary).length +
-            enumMap.extraRows.length
+          ? Object.values(enumMap.mappings).filter((m) => m.primary).length + enumMap.extraRows.length
           : 0;
 
         return (
-          <div key={fieldKey} className="border border-gray-200 rounded-lg overflow-hidden mb-4">
-            {/* Accordion header */}
+          <div key={fieldKey} className="border border-gray-200 rounded-lg overflow-hidden mb-4 mx-[10%]">
             <button
               onClick={() => toggleSection(fieldKey)}
               className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors text-left"
             >
               <span className="text-sm font-medium text-gray-900">
                 {FIELD_LABELS[fieldKey]}
-                <span className="text-gray-400 font-normal ml-2">
-                  ({mappedCount} values detected)
-                </span>
+                <span className="text-gray-400 font-normal ml-2">({mappedCount} values detected)</span>
               </span>
-              {isOpen ? (
-                <ChevronUp size={16} className="text-gray-500 shrink-0" />
-              ) : (
-                <ChevronDown size={16} className="text-gray-500 shrink-0" />
-              )}
+              {isOpen ? <ChevronUp size={16} className="text-gray-500 shrink-0" /> : <ChevronDown size={16} className="text-gray-500 shrink-0" />}
             </button>
 
             {isOpen && enumMap && (
@@ -330,26 +369,30 @@ export function MapEnumValues({ state, onUpdate }: Props) {
                   </div>
                 </div>
 
-                {/* Main rows — one per our enum value */}
-                {OUR_ENUM_VALUES[fieldKey].map((ourVal) => {
-                  const mapping = enumMap.mappings[ourVal] ?? { primary: "", aliases: [] };
+                {/* Main rows */}
+                {Object.entries(enumMap.mappings).map(([ourVal, mapping]) => {
                   const rowKey = `${fieldKey}|${ourVal}`;
                   const isExpanded = !!expandedRows[rowKey];
 
                   return (
                     <div key={ourVal} className="mb-2">
                       <div className="flex items-start gap-3">
-                        {/* Left: our value label */}
+                        {/* Left: select */}
                         <div className="flex-1">
-                          <div className="px-2 py-1.5 text-sm font-medium text-gray-900 bg-gray-50 border border-gray-200 rounded-md">
-                            {formatOurValue(ourVal)}
-                          </div>
+                          <select
+                            value={ourVal}
+                            onChange={(e) => renameMainRow(fieldKey, ourVal, e.target.value)}
+                            className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:border-blue-400 bg-white text-gray-900"
+                          >
+                            {OUR_ENUM_VALUES[fieldKey].map((v) => (
+                              <option key={v} value={v}>{formatOurValue(v)}</option>
+                            ))}
+                          </select>
                         </div>
 
-                        {/* Arrow */}
                         <span className="text-gray-400 mt-2 shrink-0 text-sm">←</span>
 
-                        {/* Right: their CSV value input */}
+                        {/* Right: CSV input + alias area */}
                         <div className="flex-1">
                           <div className="flex items-center gap-1">
                             <input
@@ -357,7 +400,7 @@ export function MapEnumValues({ state, onUpdate }: Props) {
                               value={mapping.primary}
                               onChange={(e) => setMainPrimary(fieldKey, ourVal, e.target.value)}
                               placeholder="CSV value…"
-                              className="flex-1 min-w-0 px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:border-blue-400 text-gray-900"
+                              className="flex-1 min-w-0 px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:border-blue-400 bg-white text-gray-900"
                             />
                             <button
                               type="button"
@@ -367,23 +410,37 @@ export function MapEnumValues({ state, onUpdate }: Props) {
                             >
                               {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                             </button>
+                            <button
+                              type="button"
+                              onClick={() => removeMainRow(fieldKey, ourVal)}
+                              title="Remove this row"
+                              className="p-1 text-gray-400 hover:text-red-500 shrink-0"
+                            >
+                              <X size={14} />
+                            </button>
                           </div>
+                          {/* Collapsed: show alias chips inline */}
+                          {!isExpanded && (
+                            <AliasPills
+                              aliases={mapping.aliases}
+                              onRemove={(idx) => removeMainAlias(fieldKey, ourVal, idx)}
+                            />
+                          )}
+                          {/* Expanded: full alias section with add input */}
+                          {isExpanded && (
+                            <AliasRow
+                              aliases={mapping.aliases}
+                              onAdd={(alias) => addMainAlias(fieldKey, ourVal, alias)}
+                              onRemove={(idx) => removeMainAlias(fieldKey, ourVal, idx)}
+                            />
+                          )}
                         </div>
                       </div>
-
-                      {isExpanded && (
-                        <AliasRow
-                          rowKey={rowKey}
-                          aliases={mapping.aliases}
-                          onAdd={(alias) => addMainAlias(fieldKey, ourVal, alias)}
-                          onRemove={(idx) => removeMainAlias(fieldKey, ourVal, idx)}
-                        />
-                      )}
                     </div>
                   );
                 })}
 
-                {/* Extra rows added by user */}
+                {/* Extra rows */}
                 {enumMap.extraRows.map((extra, rowIdx) => {
                   const rowKey = `${fieldKey}|extra|${rowIdx}`;
                   const isExpanded = !!expandedRows[rowKey];
@@ -391,7 +448,7 @@ export function MapEnumValues({ state, onUpdate }: Props) {
                   return (
                     <div key={rowIdx} className="mb-2">
                       <div className="flex items-start gap-3">
-                        {/* Left: select our value */}
+                        {/* Left: select */}
                         <div className="flex-1">
                           <select
                             value={extra.ourValue}
@@ -404,10 +461,9 @@ export function MapEnumValues({ state, onUpdate }: Props) {
                           </select>
                         </div>
 
-                        {/* Arrow */}
                         <span className="text-gray-400 mt-2 shrink-0 text-sm">←</span>
 
-                        {/* Right: CSV value input */}
+                        {/* Right: CSV input + alias area */}
                         <div className="flex-1">
                           <div className="flex items-center gap-1">
                             <input
@@ -415,7 +471,7 @@ export function MapEnumValues({ state, onUpdate }: Props) {
                               value={extra.primary}
                               onChange={(e) => setExtraPrimary(fieldKey, rowIdx, e.target.value)}
                               placeholder="CSV value…"
-                              className="flex-1 min-w-0 px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:border-blue-400 text-gray-900"
+                              className="flex-1 min-w-0 px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:border-blue-400 bg-white text-gray-900"
                             />
                             <button
                               type="button"
@@ -434,22 +490,25 @@ export function MapEnumValues({ state, onUpdate }: Props) {
                               <X size={14} />
                             </button>
                           </div>
+                          {!isExpanded && (
+                            <AliasPills
+                              aliases={extra.aliases}
+                              onRemove={(idx) => removeExtraAlias(fieldKey, rowIdx, idx)}
+                            />
+                          )}
+                          {isExpanded && (
+                            <AliasRow
+                              aliases={extra.aliases}
+                              onAdd={(alias) => addExtraAlias(fieldKey, rowIdx, alias)}
+                              onRemove={(idx) => removeExtraAlias(fieldKey, rowIdx, idx)}
+                            />
+                          )}
                         </div>
                       </div>
-
-                      {isExpanded && (
-                        <AliasRow
-                          rowKey={rowKey}
-                          aliases={extra.aliases}
-                          onAdd={(alias) => addExtraAlias(fieldKey, rowIdx, alias)}
-                          onRemove={(idx) => removeExtraAlias(fieldKey, rowIdx, idx)}
-                        />
-                      )}
                     </div>
                   );
                 })}
 
-                {/* Add row button */}
                 <button
                   type="button"
                   onClick={() => addExtraRow(fieldKey)}

@@ -286,7 +286,7 @@ export function ToggleRows({ state, onUpdate }: Props) {
               type="button"
               onClick={() => setPage((p) => Math.max(0, p - 1))}
               disabled={page === 0}
-              className="px-3 py-1.5 text-sm border border-gray-300 rounded-md disabled:opacity-40 disabled:cursor-not-allowed hover:bg-white transition-colors"
+              className="px-3 py-1.5 text-sm text-gray-900 border border-gray-300 rounded-md disabled:opacity-40 disabled:cursor-not-allowed hover:bg-white transition-colors"
             >
               &larr; Prev
             </button>
@@ -297,7 +297,7 @@ export function ToggleRows({ state, onUpdate }: Props) {
               type="button"
               onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
               disabled={page === totalPages - 1}
-              className="px-3 py-1.5 text-sm border border-gray-300 rounded-md disabled:opacity-40 disabled:cursor-not-allowed hover:bg-white transition-colors"
+              className="px-3 py-1.5 text-sm text-gray-900 border border-gray-300 rounded-md disabled:opacity-40 disabled:cursor-not-allowed hover:bg-white transition-colors"
             >
               Next &rarr;
             </button>

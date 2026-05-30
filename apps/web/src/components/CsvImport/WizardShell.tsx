@@ -16,6 +16,7 @@ import { ToggleRows } from "./steps/ToggleRows";
 import { FinalPreview } from "./steps/FinalPreview";
 import { PreviewTable } from "./PreviewTable";
 import { translateEnumValue } from "./utils";
+import { initialState } from "./initialState";
 
 type WizardShellProps = {
   state: ImportWizardState;
@@ -196,7 +197,7 @@ export function WizardShell({ state, onUpdate }: WizardShellProps) {
     }
   }
 
-  const showNav = state.step !== "upload";
+  const showNav = state.step !== "upload" && !state.importComplete;
   const showPreview = !NO_PREVIEW_STEPS.includes(state.step);
 
   return (
@@ -217,22 +218,36 @@ export function WizardShell({ state, onUpdate }: WizardShellProps) {
 
       {showNav && (
         <div
-          className="fixed bottom-0 right-0 z-20 bg-white border-t border-gray-200 px-6 py-4 flex items-center justify-end gap-3"
+          className="fixed bottom-0 right-0 z-20 bg-white border-t border-gray-200 px-6 py-4 flex items-center justify-between"
           style={{ left: sidebarLeft }}
         >
           <button
-            onClick={goBack}
-            className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+            onClick={() => {
+              if (window.confirm("Cancel import and discard all progress?")) {
+                onUpdate(() => ({ ...initialState }));
+              }
+            }}
+            className="px-4 py-2 text-sm border border-red-500 text-red-500 rounded-md hover:bg-red-50 transition-colors"
           >
-            &larr; Back
+            Cancel
           </button>
-          <button
-            onClick={goNext}
-            disabled={isNextDisabled(state)}
-            className="px-5 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            {nextLabel(state)}
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={goBack}
+              className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+            >
+              &larr; Back
+            </button>
+            {state.step !== "preview" && (
+              <button
+                onClick={goNext}
+                disabled={isNextDisabled(state)}
+                className="px-5 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {nextLabel(state)}
+              </button>
+            )}
+          </div>
         </div>
       )}
     </div>
