@@ -12,6 +12,7 @@ import { FileUpload } from "./steps/FileUpload";
 import { ToggleFields } from "./steps/ToggleFields";
 import { MapColumns, FIELD_LABELS } from "./steps/MapColumns";
 import { MapEnumValues } from "./steps/MapEnumValues";
+import { ToggleRows } from "./steps/ToggleRows";
 import { PreviewTable } from "./PreviewTable";
 import { translateEnumValue } from "./utils";
 
@@ -164,11 +165,7 @@ export function WizardShell({ state, onUpdate }: WizardShellProps) {
       case "map-enums":
         return <MapEnumValues state={state} onUpdate={onUpdate} />;
       case "toggle-rows":
-        return (
-          <div className="p-8 text-gray-500 text-sm">
-            Toggle Rows step (coming soon)
-          </div>
-        );
+        return <ToggleRows state={state} onUpdate={onUpdate} />;
       case "preview":
         return (
           <div className="p-8 text-gray-500 text-sm">
