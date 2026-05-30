@@ -8,6 +8,7 @@ import {
   Mail,
   Calendar,
   BarChart2,
+  Upload,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
@@ -23,6 +24,7 @@ type NavItem = {
 const NAV_ITEMS: NavItem[] = [
   { href: "/",           icon: Briefcase, label: "Applications" },
   { href: "/interviews", icon: Mail,      label: "Interviews"   },
+  { href: "/import",     icon: Upload,    label: "Import"       },
   { href: "/calendar",   icon: Calendar,  label: "Calendar",  disabled: true },
   { href: "/analytics",  icon: BarChart2, label: "Analytics", disabled: true },
 ];
