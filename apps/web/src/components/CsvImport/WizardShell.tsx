@@ -1,8 +1,17 @@
 "use client";
 
 import React from "react";
-import type { ImportWizardState, WizardStep, EnumFieldKey } from "./types";
+import type {
+  ImportWizardState,
+  WizardStep,
+  EnumFieldKey,
+  FieldKey,
+  ColumnMapKey,
+} from "./types";
 import { FileUpload } from "./steps/FileUpload";
+import { ToggleFields } from "./steps/ToggleFields";
+import { MapColumns, FIELD_LABELS } from "./steps/MapColumns";
+import { PreviewTable } from "./PreviewTable";
 
 type WizardShellProps = {
   state: ImportWizardState;
@@ -18,7 +27,14 @@ const STEP_ORDER: WizardStep[] = [
   "preview",
 ];
 
-const ENUM_FIELD_KEYS: EnumFieldKey[] = ["status", "remoteType", "jobType", "interestLevel"];
+const ENUM_FIELD_KEYS: EnumFieldKey[] = [
+  "status",
+  "remoteType",
+  "jobType",
+  "interestLevel",
+];
+
+const NO_PREVIEW_STEPS: WizardStep[] = ["upload", "toggle-rows", "preview"];
 
 function hasEnumFieldsMapped(state: ImportWizardState): boolean {
   return ENUM_FIELD_KEYS.some(
@@ -26,7 +42,10 @@ function hasEnumFieldsMapped(state: ImportWizardState): boolean {
   );
 }
 
-function getNextStep(current: WizardStep, state: ImportWizardState): WizardStep {
+function getNextStep(
+  current: WizardStep,
+  state: ImportWizardState
+): WizardStep {
   const idx = STEP_ORDER.indexOf(current);
   if (idx === -1 || idx === STEP_ORDER.length - 1) return current;
   const next = STEP_ORDER[idx + 1];
@@ -36,10 +55,15 @@ function getNextStep(current: WizardStep, state: ImportWizardState): WizardStep 
   return next;
 }
 
-function getPrevStep(current: WizardStep): WizardStep {
+function getPrevStep(current: WizardStep, state: ImportWizardState): WizardStep {
   const idx = STEP_ORDER.indexOf(current);
   if (idx <= 0) return current;
-  return STEP_ORDER[idx - 1];
+  const prev = STEP_ORDER[idx - 1];
+  // Skip map-enums going backward too if it would be skipped going forward
+  if (prev === "map-enums" && !hasEnumFieldsMapped(state)) {
+    return STEP_ORDER[idx - 2] ?? prev;
+  }
+  return prev;
 }
 
 function isNextDisabled(state: ImportWizardState): boolean {
@@ -56,6 +80,72 @@ function nextLabel(state: ImportWizardState): string {
   return "Next →";
 }
 
+function computePreviewColumns(
+  state: ImportWizardState
+): { key: string; label: string }[] {
+  if (state.step === "toggle-fields") {
+    return [
+      { key: "company", label: "Company" },
+      { key: "title", label: "Title" },
+      ...Array.from(state.enabledFields).map((k: FieldKey) => ({
+        key: k,
+        label: FIELD_LABELS[k],
+      })),
+    ];
+  }
+  const cols: { key: string; label: string }[] = [];
+  if (state.columnMap.company) cols.push({ key: "company", label: "Company" });
+  if (state.columnMap.title) cols.push({ key: "title", label: "Title" });
+  for (const key of state.enabledFields) {
+    if (state.columnMap[key] != null) {
+      cols.push({ key, label: FIELD_LABELS[key as ColumnMapKey] });
+    }
+  }
+  return cols;
+}
+
+function computePreviewRows(
+  state: ImportWizardState
+): Record<string, string>[] {
+  if (state.step === "toggle-fields") return [];
+
+  return state.rawRows.slice(0, 2).map((raw) => {
+    const row: Record<string, string> = {};
+
+    const companyCol = state.columnMap.company;
+    if (companyCol) row.company = raw[companyCol] ?? "";
+
+    const titleCol = state.columnMap.title;
+    if (titleCol) row.title = raw[titleCol] ?? "";
+
+    for (const key of state.enabledFields) {
+      const col = state.columnMap[key];
+      if (!col) continue;
+      let value = raw[col] ?? "";
+
+      if (state.step === "map-enums") {
+        const enumKey = key as EnumFieldKey;
+        const enumMap = state.enumMaps[enumKey];
+        if (enumMap && value) {
+          for (const group of enumMap.userValues) {
+            if (
+              [group.primary, ...group.aliases].some(
+                (a) => a.toLowerCase() === value.toLowerCase()
+              )
+            ) {
+              value = enumMap.mappedTo[group.primary] ?? value;
+              break;
+            }
+          }
+        }
+      }
+
+      row[key] = value;
+    }
+    return row;
+  });
+}
+
 export function WizardShell({ state, onUpdate }: WizardShellProps) {
   function goNext() {
     const next = getNextStep(state.step, state);
@@ -68,8 +158,7 @@ export function WizardShell({ state, onUpdate }: WizardShellProps) {
       onUpdate((s) => ({ ...s, step: "upload" }));
       return;
     }
-    // When going back from map-enums, we skip it in reverse too
-    const prev = getPrevStep(state.step);
+    const prev = getPrevStep(state.step, state);
     onUpdate((s) => ({ ...s, step: prev }));
   }
 
@@ -78,17 +167,9 @@ export function WizardShell({ state, onUpdate }: WizardShellProps) {
       case "upload":
         return <FileUpload state={state} onUpdate={onUpdate} />;
       case "toggle-fields":
-        return (
-          <div className="p-8 text-gray-500 text-sm">
-            Toggle Fields step (coming soon)
-          </div>
-        );
+        return <ToggleFields state={state} onUpdate={onUpdate} />;
       case "map-columns":
-        return (
-          <div className="p-8 text-gray-500 text-sm">
-            Map Columns step (coming soon)
-          </div>
-        );
+        return <MapColumns state={state} onUpdate={onUpdate} />;
       case "map-enums":
         return (
           <div className="p-8 text-gray-500 text-sm">
@@ -111,10 +192,23 @@ export function WizardShell({ state, onUpdate }: WizardShellProps) {
   }
 
   const showNav = state.step !== "upload";
+  const showPreview = !NO_PREVIEW_STEPS.includes(state.step);
 
   return (
     <div className="flex flex-col min-h-0">
-      <div className="flex-1 overflow-y-auto">{renderStep()}</div>
+      <div className="flex-1 overflow-y-auto">
+        {renderStep()}
+
+        {showPreview && (
+          <div className="mt-6 mb-20 max-w-2xl mx-auto px-4">
+            <PreviewTable
+              columns={computePreviewColumns(state)}
+              rows={computePreviewRows(state)}
+              totalRows={state.rawRows.length}
+            />
+          </div>
+        )}
+      </div>
 
       {showNav && (
         <div className="sticky bottom-0 bg-white border-t border-gray-200 px-6 py-4 flex items-center justify-between">
