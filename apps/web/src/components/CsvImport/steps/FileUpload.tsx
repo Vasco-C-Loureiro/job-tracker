@@ -4,6 +4,7 @@ import React, { useRef, useState, useEffect } from "react";
 import Papa from "papaparse";
 import { Upload, CheckCircle2 } from "lucide-react";
 import type { ImportWizardState } from "../types";
+import { detectHeaderRow } from "../utils";
 
 type FileUploadProps = {
   state: ImportWizardState;
@@ -34,19 +35,22 @@ export function FileUpload({ state, onUpdate }: FileUploadProps) {
     const reader = new FileReader();
     reader.onload = (e) => {
       const text = e.target?.result as string;
-      const result = Papa.parse<Record<string, string>>(text, {
-        header: true,
+      const result = Papa.parse<string[]>(text, {
+        header: false,
         skipEmptyLines: true,
       });
+      const rows = result.data;
+      const headerIdx = detectHeaderRow(rows);
       const elapsed = Date.now() - start;
       const delay = Math.max(0, 400 - elapsed);
       setTimeout(() => {
         onUpdate((s) => ({
           ...s,
           file,
-          csvHeaders: result.meta.fields ?? [],
-          rawRows: result.data,
-          selectedRowIndices: new Set(result.data.map((_, i) => i)),
+          csvHeaders: rows[headerIdx] ?? [],
+          rawRows: rows,
+          headerRowIndex: headerIdx,
+          selectedRowIndices: new Set(rows.map((_, i) => i).filter(i => i > headerIdx)),
         }));
         setSubstate("success");
       }, delay);
@@ -84,7 +88,7 @@ export function FileUpload({ state, onUpdate }: FileUploadProps) {
   }
 
   const previewHeaders = state.csvHeaders;
-  const previewRows = state.rawRows.slice(0, 3);
+  const previewRows = state.rawRows.slice(state.headerRowIndex + 1, state.headerRowIndex + 4);
 
   return (
     <div className="max-w-2xl mx-auto mt-16 px-4">
@@ -135,7 +139,7 @@ export function FileUpload({ state, onUpdate }: FileUploadProps) {
               {state.file?.name}
             </p>
             <p className="text-sm text-gray-500 mt-1">
-              {state.rawRows.length} rows detected
+              {state.rawRows.length - state.headerRowIndex - 1} rows detected
             </p>
           </div>
 
@@ -165,12 +169,12 @@ export function FileUpload({ state, onUpdate }: FileUploadProps) {
                       key={i}
                       className="border-b border-gray-100 last:border-0"
                     >
-                      {previewHeaders.map((h) => (
+                      {previewHeaders.map((h, colIdx) => (
                         <td
                           key={h}
                           className="px-3 py-2 text-gray-700 whitespace-nowrap max-w-[200px] truncate"
                         >
-                          {row[h] ?? ""}
+                          {row[colIdx] ?? ""}
                         </td>
                       ))}
                     </tr>

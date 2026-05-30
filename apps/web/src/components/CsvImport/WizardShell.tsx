@@ -113,19 +113,29 @@ function computePreviewRows(
 ): Record<string, string>[] {
   if (state.step === "toggle-fields") return [];
 
-  return state.rawRows.slice(0, 2).map((raw) => {
+  const dataRows = state.rawRows.slice(
+    state.headerRowIndex + 1,
+    state.headerRowIndex + 3
+  );
+
+  function colValue(raw: string[], header: string): string {
+    const idx = state.csvHeaders.indexOf(header);
+    return idx >= 0 ? (raw[idx] ?? "") : "";
+  }
+
+  return dataRows.map((raw) => {
     const row: Record<string, string> = {};
 
     const companyCol = state.columnMap.company;
-    if (companyCol) row.company = raw[companyCol] ?? "";
+    if (companyCol) row.company = colValue(raw, companyCol);
 
     const titleCol = state.columnMap.title;
-    if (titleCol) row.title = raw[titleCol] ?? "";
+    if (titleCol) row.title = colValue(raw, titleCol);
 
     for (const key of state.enabledFields) {
       const col = state.columnMap[key];
       if (!col) continue;
-      let value = raw[col] ?? "";
+      let value = colValue(raw, col);
 
       if (state.step === "map-enums") {
         const enumMap = state.enumMaps[key as EnumFieldKey];
@@ -199,7 +209,7 @@ export function WizardShell({ state, onUpdate }: WizardShellProps) {
             <PreviewTable
               columns={computePreviewColumns(state)}
               rows={computePreviewRows(state)}
-              totalRows={state.rawRows.length}
+              totalRows={Math.max(0, state.rawRows.length - state.headerRowIndex - 1)}
             />
           </div>
         )}

@@ -52,9 +52,10 @@ export function MapEnumValues({ state, onUpdate }: Props) {
       if (next[fieldKey] !== undefined) continue;
 
       const colHeader = columnMap[fieldKey]!;
+      const colIdx = state.csvHeaders.indexOf(colHeader);
       const seen = new Set<string>();
       for (const row of rawRows) {
-        const v = row[colHeader]?.trim();
+        const v = colIdx >= 0 ? row[colIdx]?.trim() : undefined;
         if (v) seen.add(v);
       }
 

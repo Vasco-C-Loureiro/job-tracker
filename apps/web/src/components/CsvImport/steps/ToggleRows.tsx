@@ -42,7 +42,7 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 export function ToggleRows({ state, onUpdate }: Props) {
-  const { rawRows, columnMap, enumMaps, selectedRowIndices, autoSkipRejected } =
+  const { rawRows, columnMap, csvHeaders, enumMaps, selectedRowIndices, autoSkipRejected } =
     state;
 
   const [page, setPage] = useState(0);
@@ -57,7 +57,8 @@ export function ToggleRows({ state, onUpdate }: Props) {
       function resolve(key: ColumnMapKey): string {
         const col = columnMap[key];
         if (!col) return "";
-        return raw[col] ?? "";
+        const colIdx = csvHeaders.indexOf(col);
+        return colIdx >= 0 ? (raw[colIdx] ?? "") : "";
       }
 
       const rawStatus = resolve("status");
@@ -74,11 +75,12 @@ export function ToggleRows({ state, onUpdate }: Props) {
         appliedAt: resolve("appliedAt"),
       };
     });
-  }, [rawRows, columnMap, enumMaps]);
+  }, [rawRows, columnMap, csvHeaders, enumMaps]);
 
-  const allSelected = selectedRowIndices.size === rawRows.length;
+  const dataRowCount = rawRows.length - (state.headerRowIndex + 1);
+  const allSelected = selectedRowIndices.size === dataRowCount;
   const isPartial =
-    selectedRowIndices.size > 0 && selectedRowIndices.size < rawRows.length;
+    selectedRowIndices.size > 0 && selectedRowIndices.size < dataRowCount;
 
   useEffect(() => {
     if (selectAllRef.current) {
@@ -91,7 +93,7 @@ export function ToggleRows({ state, onUpdate }: Props) {
       ...s,
       selectedRowIndices: allSelected
         ? new Set<number>()
-        : new Set(s.rawRows.map((_, i) => i)),
+        : new Set(s.rawRows.map((_, i) => i).filter(i => i > s.headerRowIndex)),
     }));
   }
 
@@ -149,7 +151,7 @@ export function ToggleRows({ state, onUpdate }: Props) {
 
         <span className="text-sm text-gray-600">
           <span className="font-medium">{selectedRowIndices.size}</span> of{" "}
-          <span className="font-medium">{rawRows.length}</span> rows selected
+          <span className="font-medium">{dataRowCount}</span> rows selected
         </span>
 
         <button

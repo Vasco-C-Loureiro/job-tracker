@@ -39,7 +39,8 @@ function buildImportRows(state: ImportWizardState): ImportRow[] {
     const get = (field: ColumnMapKey): string => {
       const header = state.columnMap[field];
       if (!header) return "";
-      return raw[header] ?? "";
+      const colIdx = state.csvHeaders.indexOf(header);
+      return colIdx >= 0 ? (raw[colIdx] ?? "") : "";
     };
 
     const translateEnum = (field: EnumFieldKey): string => {
@@ -80,7 +81,7 @@ export function FinalPreview({ state, onUpdate }: Props) {
   const [editingCell, setEditingCell] = useState<{ rowIdx: number; field: EditableField } | null>(null);
   const [page, setPage] = useState(0);
 
-  const skippedCount = state.rawRows.length - state.selectedRowIndices.size;
+  const skippedCount = Math.max(0, state.rawRows.length - state.headerRowIndex - 1) - state.selectedRowIndices.size;
 
   useEffect(() => {
     const rows = buildImportRows(state);
