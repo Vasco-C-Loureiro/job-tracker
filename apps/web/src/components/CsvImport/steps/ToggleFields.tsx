@@ -34,7 +34,7 @@ export function ToggleFields({ state, onUpdate }: Props) {
   }
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-8">
+    <div className="px-4 py-8">
       <h2 className="text-xl font-semibold text-gray-900 mb-1">
         Choose your fields
       </h2>
@@ -42,7 +42,7 @@ export function ToggleFields({ state, onUpdate }: Props) {
         Select which fields to import. Company and Title are always included.
       </p>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-7 gap-3">
         {/* Always-included locked cards */}
         {(["Company", "Title"] as const).map((label) => (
           <div
