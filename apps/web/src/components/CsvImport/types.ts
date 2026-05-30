@@ -48,6 +48,8 @@ export type ImportWizardState = {
   autoSkipRejected: boolean;
 
   editedRows: Record<string, string>[];
+
+  importComplete: boolean;
 };
 
 export type ImportRow = {

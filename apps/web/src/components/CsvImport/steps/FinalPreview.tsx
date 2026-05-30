@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { CheckCircle2, X } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase";
@@ -73,19 +73,23 @@ function buildImportRows(state: ImportWizardState): ImportRow[] {
 export function FinalPreview({ state, onUpdate }: Props) {
   const [substate, setSubstate] = useState<Substate>("editing");
   const [finalRows, setFinalRows] = useState<ImportRow[]>([]);
+  const [selectedFinalRows, setSelectedFinalRows] = useState<Set<number>>(new Set<number>());
   const [duplicateCount, setDuplicateCount] = useState(0);
+  const [duplicateIndices, setDuplicateIndices] = useState<Set<number>>(new Set());
   const [showDuplicateWarning, setShowDuplicateWarning] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [result, setResult] = useState<{ inserted: number; skipped: number } | null>(null);
   const [editingCell, setEditingCell] = useState<{ rowIdx: number; field: EditableField } | null>(null);
   const [page, setPage] = useState(0);
+  const selectAllRef = useRef<HTMLInputElement>(null);
 
   const skippedCount = Math.max(0, state.rawRows.length - state.headerRowIndex - 1) - state.selectedRowIndices.size;
 
   useEffect(() => {
     const rows = buildImportRows(state);
     setFinalRows(rows);
+    setSelectedFinalRows(new Set(rows.map((_, i) => i)));
 
     async function checkDuplicates() {
       const supabase = createSupabaseBrowserClient();
@@ -103,16 +107,60 @@ export function FinalPreview({ state, onUpdate }: Props) {
           `${r.company}|||${r.title}`.toLowerCase()
         )
       );
-      const dups = rows.filter((r) =>
-        pairs.has(`${r.company}|||${r.title}`.toLowerCase())
-      ).length;
-      setDuplicateCount(dups);
-      setShowDuplicateWarning(dups > 0);
+      const dupSet = new Set<number>();
+      rows.forEach((r, i) => {
+        if (pairs.has(`${r.company}|||${r.title}`.toLowerCase())) dupSet.add(i);
+      });
+      setDuplicateCount(dupSet.size);
+      setDuplicateIndices(dupSet);
+      setShowDuplicateWarning(dupSet.size > 0);
     }
 
     void checkDuplicates();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Sync select-all indeterminate state
+  useEffect(() => {
+    if (selectAllRef.current) {
+      const total = finalRows.length;
+      const sel = selectedFinalRows.size;
+      selectAllRef.current.indeterminate = sel > 0 && sel < total;
+    }
+  }, [finalRows.length, selectedFinalRows.size]);
+
+  function toggleAllFinalRows() {
+    if (selectedFinalRows.size === finalRows.length) {
+      setSelectedFinalRows(new Set<number>());
+    } else {
+      setSelectedFinalRows(new Set(finalRows.map((_, i) => i)));
+    }
+  }
+
+  function toggleFinalRow(idx: number) {
+    setSelectedFinalRows((prev) => {
+      const next = new Set(prev);
+      if (next.has(idx)) next.delete(idx);
+      else next.add(idx);
+      return next;
+    });
+  }
+
+  const allDupsDeselected =
+    duplicateIndices.size > 0 &&
+    Array.from(duplicateIndices).every((i) => !selectedFinalRows.has(i));
+
+  function toggleDuplicateSelection() {
+    setSelectedFinalRows((prev) => {
+      const next = new Set(prev);
+      if (allDupsDeselected) {
+        duplicateIndices.forEach((i) => next.add(i));
+      } else {
+        duplicateIndices.forEach((i) => next.delete(i));
+      }
+      return next;
+    });
+  }
 
   function updateRow(rowIdx: number, patch: Partial<ImportRow>) {
     setFinalRows((prev) =>
@@ -135,7 +183,7 @@ export function FinalPreview({ state, onUpdate }: Props) {
           Authorization: `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
-          rows: finalRows,
+          rows: finalRows.filter((_, i) => selectedFinalRows.has(i)),
           filename: state.file?.name ?? "import.csv",
         }),
       });
@@ -148,6 +196,7 @@ export function FinalPreview({ state, onUpdate }: Props) {
       const data = await res.json() as { inserted: number; skipped: number };
       setResult(data);
       setSubstate("success");
+      onUpdate((s) => ({ ...s, importComplete: true }));
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : "Import failed");
     } finally {
@@ -229,9 +278,7 @@ export function FinalPreview({ state, onUpdate }: Props) {
           className="w-full px-1 py-0.5 text-sm border border-blue-400 rounded focus:outline-none bg-white"
         >
           {VALID_STATUSES.map((s) => (
-            <option key={s} value={s}>
-              {STATUS_LABELS[s]}
-            </option>
+            <option key={s} value={s}>{STATUS_LABELS[s]}</option>
           ))}
         </select>
       );
@@ -269,12 +316,12 @@ export function FinalPreview({ state, onUpdate }: Props) {
     <div className="max-w-5xl mx-auto px-4 py-6">
       {/* Duplicate warning banner */}
       {showDuplicateWarning && (
-        <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 mb-4">
+        <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 mb-3">
           <span className="text-amber-600 shrink-0">⚠</span>
           <p className="flex-1 text-sm text-amber-800">
-            {duplicateCount} {duplicateCount === 1 ? "row" : "rows"} may already
-            exist in your tracker. They will still be imported — review before
-            confirming.
+            {duplicateCount} {duplicateCount === 1 ? "row" : "rows"} may already exist in your
+            tracker — highlighted with an orange stripe. They will still be imported unless you
+            deselect them.
           </p>
           <button
             type="button"
@@ -286,10 +333,27 @@ export function FinalPreview({ state, onUpdate }: Props) {
         </div>
       )}
 
+      {/* Deselect duplicates toggle */}
+      {duplicateCount > 0 && (
+        <div className="mb-4">
+          <button
+            type="button"
+            onClick={toggleDuplicateSelection}
+            className={`text-sm px-3 py-1.5 rounded-md border transition-colors ${
+              allDupsDeselected
+                ? "bg-amber-100 text-amber-800 border-amber-300"
+                : "bg-white text-gray-600 border-gray-300 hover:border-gray-400"
+            }`}
+          >
+            {allDupsDeselected ? "Re-select duplicates" : "Deselect all duplicates"}
+          </button>
+        </div>
+      )}
+
       {/* Summary bar */}
       <div className="flex items-center gap-2 text-sm text-gray-600 mb-4 flex-wrap">
         <span className="font-medium text-gray-900">
-          Importing {finalRows.length} {finalRows.length === 1 ? "row" : "rows"}
+          Importing {selectedFinalRows.size} {selectedFinalRows.size === 1 ? "row" : "rows"}
         </span>
         {skippedCount > 0 && (
           <>
@@ -300,34 +364,55 @@ export function FinalPreview({ state, onUpdate }: Props) {
         {duplicateCount > 0 && (
           <>
             <span className="text-gray-400">·</span>
-            <span className="text-amber-600">{duplicateCount} may be duplicates</span>
+            <span className="text-orange-500">{duplicateCount} may be duplicates</span>
           </>
         )}
       </div>
 
       {/* Editable table */}
-      <div className="border border-gray-200 rounded-lg overflow-hidden mb-4">
+      <div className="border border-gray-200 rounded-lg overflow-hidden mb-4 bg-white">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm text-gray-900">
             <thead>
               <tr className="border-b border-gray-200 bg-gray-50">
-                <th className="text-left px-3 py-2.5 font-semibold text-gray-700 whitespace-nowrap">Title</th>
-                <th className="text-left px-3 py-2.5 font-semibold text-gray-700 whitespace-nowrap">Company</th>
-                <th className="text-left px-3 py-2.5 font-semibold text-gray-700 whitespace-nowrap">Status</th>
-                <th className="text-left px-3 py-2.5 font-semibold text-gray-700 whitespace-nowrap">Notes</th>
-                <th className="text-left px-3 py-2.5 font-semibold text-gray-700 whitespace-nowrap">Location</th>
-                <th className="text-left px-3 py-2.5 font-semibold text-gray-700 whitespace-nowrap">Applied</th>
+                <th className="w-10 px-3 py-2.5">
+                  <input
+                    ref={selectAllRef}
+                    type="checkbox"
+                    checked={selectedFinalRows.size === finalRows.length && finalRows.length > 0}
+                    onChange={toggleAllFinalRows}
+                    className="w-4 h-4 cursor-pointer"
+                  />
+                </th>
+                <th className="text-left px-3 py-2.5 font-semibold text-gray-900 whitespace-nowrap">Title</th>
+                <th className="text-left px-3 py-2.5 font-semibold text-gray-900 whitespace-nowrap">Company</th>
+                <th className="text-left px-3 py-2.5 font-semibold text-gray-900 whitespace-nowrap">Status</th>
+                <th className="text-left px-3 py-2.5 font-semibold text-gray-900 whitespace-nowrap">Notes</th>
+                <th className="text-left px-3 py-2.5 font-semibold text-gray-900 whitespace-nowrap">Location</th>
+                <th className="text-left px-3 py-2.5 font-semibold text-gray-900 whitespace-nowrap">Applied</th>
+                <th className="w-10 px-3 py-2.5" />
               </tr>
             </thead>
             <tbody>
               {pageSlice.map((row, relIdx) => {
                 const rowIdx = startIdx + relIdx;
+                const isDuplicate = duplicateIndices.has(rowIdx);
+                const isSelected = selectedFinalRows.has(rowIdx);
                 return (
                   <tr
                     key={rowIdx}
-                    className="border-b border-gray-100 last:border-0 hover:bg-gray-50"
+                    style={isDuplicate ? { borderLeft: "6px solid #fb923c" } : undefined}
+                    className={`border-b border-gray-100 last:border-0 ${isSelected ? "hover:bg-gray-50" : "opacity-40"}`}
                   >
-                    <td className="px-3 py-2 max-w-[200px]">
+                    <td className="px-3 py-2 text-center">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggleFinalRow(rowIdx)}
+                        className="w-4 h-4 cursor-pointer"
+                      />
+                    </td>
+                    <td className="pl-4 pr-3 py-2 max-w-[200px]">
                       <EditableCell rowIdx={rowIdx} field="title" value={row.title} />
                     </td>
                     <td className="px-3 py-2 max-w-[160px]">
@@ -340,14 +425,19 @@ export function FinalPreview({ state, onUpdate }: Props) {
                       <EditableCell rowIdx={rowIdx} field="notes" value={row.notes ?? ""} />
                     </td>
                     <td className="px-3 py-2 max-w-[140px]">
-                      <span className="block truncate text-gray-600" title={row.location}>
+                      <span className="block truncate text-gray-900" title={row.location}>
                         {row.location || "—"}
                       </span>
                     </td>
                     <td className="px-3 py-2 max-w-[120px]">
-                      <span className="block truncate text-gray-500" title={row.appliedAt}>
+                      <span className="block truncate text-gray-900" title={row.appliedAt}>
                         {row.appliedAt || "—"}
                       </span>
+                    </td>
+                    <td className="px-3 py-2 text-center w-10">
+                      {isDuplicate && (
+                        <span className="w-2.5 h-2.5 rounded-full bg-orange-400 inline-block" />
+                      )}
                     </td>
                   </tr>
                 );
@@ -363,7 +453,7 @@ export function FinalPreview({ state, onUpdate }: Props) {
               type="button"
               onClick={() => setPage((p) => Math.max(0, p - 1))}
               disabled={page === 0}
-              className="px-3 py-1.5 text-sm border border-gray-300 rounded-md disabled:opacity-40 disabled:cursor-not-allowed hover:bg-white transition-colors"
+              className="px-3 py-1.5 text-sm text-gray-900 border border-gray-300 rounded-md disabled:opacity-40 disabled:cursor-not-allowed hover:bg-white transition-colors"
             >
               &larr; Prev
             </button>
@@ -374,7 +464,7 @@ export function FinalPreview({ state, onUpdate }: Props) {
               type="button"
               onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
               disabled={page === totalPages - 1}
-              className="px-3 py-1.5 text-sm border border-gray-300 rounded-md disabled:opacity-40 disabled:cursor-not-allowed hover:bg-white transition-colors"
+              className="px-3 py-1.5 text-sm text-gray-900 border border-gray-300 rounded-md disabled:opacity-40 disabled:cursor-not-allowed hover:bg-white transition-colors"
             >
               Next &rarr;
             </button>
@@ -387,13 +477,13 @@ export function FinalPreview({ state, onUpdate }: Props) {
         <button
           type="button"
           onClick={() => void handleImport()}
-          disabled={isSubmitting}
+          disabled={isSubmitting || selectedFinalRows.size === 0}
           className="flex items-center gap-2 px-6 py-2.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
         >
           {isSubmitting && (
             <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
           )}
-          Import {finalRows.length} {finalRows.length === 1 ? "row" : "rows"}
+          Import {selectedFinalRows.size} {selectedFinalRows.size === 1 ? "row" : "rows"}
         </button>
         {submitError && (
           <p className="text-sm text-red-600">{submitError}</p>

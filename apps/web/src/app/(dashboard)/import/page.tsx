@@ -1,5 +1,4 @@
 import CsvImport from "@/components/CsvImport";
-import { ImportHistory } from "@/components/CsvImport/ImportHistory";
 
 export default function ImportPage() {
   return (
@@ -9,9 +8,6 @@ export default function ImportPage() {
         Import your existing job applications from a spreadsheet.
       </p>
       <CsvImport />
-      <div className="mt-12">
-        <ImportHistory />
-      </div>
     </main>
   );
 }
