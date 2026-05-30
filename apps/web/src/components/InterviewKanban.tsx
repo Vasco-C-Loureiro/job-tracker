@@ -560,6 +560,7 @@ export default function InterviewKanban({
                           onNextRound={handleNextRoundAnimated}
                           onReject={handleRejectAnimated}
                           isDraggable={true}
+                          isBeingDragged={draggingJobId === job.id}
                         />
                       ))}
                     </div>
@@ -620,6 +621,7 @@ export default function InterviewKanban({
                       onNextRound={handleNextRoundAnimated}
                       onReject={handleRejectAnimated}
                       isDraggable={true}
+                      isBeingDragged={draggingJobId === job.id}
                     />
                   ))}
                 </div>
@@ -683,23 +685,25 @@ export default function InterviewKanban({
 
       <DragOverlay modifiers={[snapOverlayCenterToCursor]}>
         {draggingJob && (
-          <InterviewCard
-            job={draggingJob}
-            rounds={draggingJobRounds}
-            isSelected={false}
-            isDraggable={false}
-            onSelect={() => {}}
-            onRoundChange={() => {}}
-            onStatusChange={() => {}}
-            maxRoundColumn={maxRoundColumn}
-            getToken={() => Promise.resolve(null)}
-            onRoundsChange={() => {}}
-            isAdvancing={false}
-            isRejecting={false}
-            onNextRound={() => {}}
-            onReject={() => {}}
-            className={`shadow-2xl rotate-1${dragWasExpanded.current ? " animate-drag-lift" : ""}`}
-          />
+          <div className="w-[388px]">
+            <InterviewCard
+              job={draggingJob}
+              rounds={draggingJobRounds}
+              isSelected={false}
+              isDraggable={false}
+              onSelect={() => {}}
+              onRoundChange={() => {}}
+              onStatusChange={() => {}}
+              maxRoundColumn={maxRoundColumn}
+              getToken={() => Promise.resolve(null)}
+              onRoundsChange={() => {}}
+              isAdvancing={false}
+              isRejecting={false}
+              onNextRound={() => {}}
+              onReject={() => {}}
+              className={`shadow-2xl rotate-1${dragWasExpanded.current ? " animate-drag-lift" : ""}`}
+            />
+          </div>
         )}
       </DragOverlay>
     </DndContext>
