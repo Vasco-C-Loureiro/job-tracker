@@ -92,7 +92,7 @@ function RoundCard({
       >
         ×
       </button>
-      <p className="text-xs font-semibold text-gray-600 mb-2">Round {round.roundNumber}</p>
+      <p className="text-xs font-semibold text-gray-900 mb-2">Round {round.roundNumber}</p>
       <div className="flex flex-col gap-2">
         <select
           className={fc}
@@ -109,7 +109,7 @@ function RoundCard({
           value={round.date}
           onChange={(e) => onPatch({ date: e.target.value })}
         />
-        <label className="flex items-center gap-2 text-xs text-gray-600 cursor-pointer">
+        <label className="flex items-center gap-2 text-xs text-gray-700 cursor-pointer">
           <input
             type="checkbox"
             checked={round.done}
@@ -284,7 +284,7 @@ export function ExpandedJobPanel({ job, getToken, onJobPatched }: Props) {
   // ─── Styles ──────────────────────────────────────────────────────────────────
 
   const fc = "w-full px-2 py-1.5 border border-gray-300 rounded text-sm text-gray-900 focus:outline-none focus:border-blue-400 bg-white";
-  const lc = "block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1";
+  const lc = "block text-xs font-medium text-gray-700 uppercase tracking-wide mb-1";
 
   // ─── Render ───────────────────────────────────────────────────────────────────
 
@@ -295,7 +295,7 @@ export function ExpandedJobPanel({ job, getToken, onJobPatched }: Props) {
       {description ? (
         <div className="mb-4">
           <p className={lc}>Description</p>
-          <div className="text-sm text-gray-700 whitespace-pre-wrap bg-white border border-gray-200 rounded p-3 max-h-[200px] overflow-y-auto">
+          <div className="text-sm text-gray-800 whitespace-pre-wrap bg-white border border-gray-200 rounded p-3 max-h-[200px] overflow-y-auto">
             {description}
           </div>
         </div>
@@ -467,7 +467,7 @@ export function ExpandedJobPanel({ job, getToken, onJobPatched }: Props) {
       {/* Interview Rounds */}
       <div>
         <div className="flex items-center gap-3 mb-3">
-          <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+          <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
             Interview Rounds
           </span>
           <div className="flex-1 h-px bg-gray-200" />
