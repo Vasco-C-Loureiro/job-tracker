@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServiceClient } from "@/lib/supabase.server";
+import { DEFAULT_VISIBLE_COLUMNS } from "@/lib/column-preferences";
 
 type PrefsRow = {
   visible_columns: string[] | null;
@@ -8,12 +9,6 @@ type PrefsRow = {
   default_resume_submitted: boolean | null;
   default_cover_letter_submitted: boolean | null;
 };
-
-export const DEFAULT_VISIBLE_COLUMNS = [
-  "company", "title", "status",
-  "jobType", "remoteType", "location", "salaryRaw",
-  "interestLevel", "appliedAt", "resumeCoverLetter", "sourceUrl",
-];
 
 const DEFAULT_PREFS = {
   visible_columns: DEFAULT_VISIBLE_COLUMNS,

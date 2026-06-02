@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Lock } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase";
-import { DEFAULT_VISIBLE_COLUMNS } from "@/app/api/preferences/route";
+import { DEFAULT_VISIBLE_COLUMNS } from "@/lib/column-preferences";
 
 type Prefs = {
   visible_columns: string[];
