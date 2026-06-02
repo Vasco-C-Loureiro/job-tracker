@@ -130,6 +130,8 @@ export function ExpandedJobPanel({ job, getToken, onJobPatched }: Props) {
   const [rounds, setRounds]           = useState<Round[] | null>(null);
 
   // Local editable values — initialised from job prop on mount
+  const [company, setCompany]                   = useState(job.company);
+  const [title, setTitle]                       = useState(job.title);
   const [notes, setNotes]                       = useState(job.notes ?? "");
   const [location, setLocation]                 = useState(job.location ?? "");
   const [remoteType, setRemoteType]             = useState<RemoteType | "">(job.remoteType ?? "");
@@ -315,6 +317,36 @@ export function ExpandedJobPanel({ job, getToken, onJobPatched }: Props) {
 
       {/* Field grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-3 mb-5">
+
+        <div>
+          <label className={lc}>Company</label>
+          <input
+            type="text"
+            className={fc}
+            value={company}
+            onChange={(e) => setCompany(e.target.value)}
+            onBlur={() => {
+              const v = company.trim();
+              if (v) void saveField("company", v, "company");
+              else setCompany(job.company);
+            }}
+          />
+        </div>
+
+        <div className="col-span-1 sm:col-span-2">
+          <label className={lc}>Title</label>
+          <input
+            type="text"
+            className={fc}
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            onBlur={() => {
+              const v = title.trim();
+              if (v) void saveField("title", v, "title");
+              else setTitle(job.title);
+            }}
+          />
+        </div>
 
         <div>
           <label className={lc}>Status</label>

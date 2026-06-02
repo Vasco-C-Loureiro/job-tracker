@@ -1131,7 +1131,7 @@ export function JobTable({ jobs, newJobId, onAddJob }: Props) {
   // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
-    <div className="mx-auto w-full max-w-7xl px-6 flex flex-col gap-2">
+    <div className="mx-auto w-full max-w-[1400px] px-4 flex flex-col gap-2">
 
       {/* Fixed-height controls area — spacer + search bar + banner always occupy the same vertical space */}
       <div className="h-24 flex flex-col gap-2">
@@ -1361,7 +1361,7 @@ export function JobTable({ jobs, newJobId, onAddJob }: Props) {
                 </th>
                 <SortHeader column="status" className="w-24">Status</SortHeader>
                 <SortHeader column="company" className="w-44">Company</SortHeader>
-                <SortHeader column="title" className="w-64">Title</SortHeader>
+                <SortHeader column="title" className="w-52">Title</SortHeader>
                 {show("location") && <SortHeader column="location" className="w-32">Location</SortHeader>}
                 {show("remoteType") && <th className="py-2 pb-3 pr-4 w-20 text-gray-500 text-xs font-semibold uppercase tracking-wide">Remote</th>}
                 {show("jobType") && <th className="py-2 pb-3 pr-4 w-24 text-gray-500 text-xs font-semibold uppercase tracking-wide">Job Type</th>}
