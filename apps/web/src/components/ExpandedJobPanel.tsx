@@ -289,11 +289,11 @@ export function ExpandedJobPanel({ job, getToken, onJobPatched }: Props) {
   // ─── Render ───────────────────────────────────────────────────────────────────
 
   return (
-    <div className="px-5 py-4 bg-gray-50 border-t border-gray-200">
+    <div className="px-5 bg-gray-100">
 
       {/* Description (read-only) */}
       {description ? (
-        <div className="mb-4">
+        <div className="pt-4 mb-4">
           <p className={lc}>Description</p>
           <div className="text-sm text-gray-800 whitespace-pre-wrap bg-white border border-gray-200 rounded p-3 max-h-[200px] overflow-y-auto">
             {description}
@@ -302,7 +302,7 @@ export function ExpandedJobPanel({ job, getToken, onJobPatched }: Props) {
       ) : null}
 
       {/* Notes */}
-      <div className="mb-4">
+      <div className={`mb-4${!description ? " pt-4" : ""}`}>
         <label className={lc}>Notes</label>
         <textarea
           rows={3}
@@ -465,7 +465,7 @@ export function ExpandedJobPanel({ job, getToken, onJobPatched }: Props) {
       </div>
 
       {/* Interview Rounds */}
-      <div>
+      <div className="pb-6">
         <div className="flex items-center gap-3 mb-3">
           <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
             Interview Rounds

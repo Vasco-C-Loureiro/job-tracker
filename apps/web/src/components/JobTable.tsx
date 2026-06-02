@@ -140,8 +140,38 @@ function formatDate(iso: string | undefined | null): string {
   });
 }
 
-function wrapLocation(loc: string): string {
-  return loc.replace(/\//g, "/​").replace(/\(/g, "​(");
+function renderLocation(loc: string): React.ReactNode {
+  if (!loc) return "—";
+
+  const slashIdx = loc.indexOf("/");
+  if (slashIdx !== -1) {
+    const before = loc.slice(0, slashIdx + 1);
+    const after = loc.slice(slashIdx + 1);
+    if (after.trim()) {
+      return (
+        <span>
+          <span className="block">{before}</span>
+          <span className="block">{after}</span>
+        </span>
+      );
+    }
+  }
+
+  const parenIdx = loc.indexOf("(");
+  if (parenIdx !== -1) {
+    const before = loc.slice(0, parenIdx).trim();
+    const after = loc.slice(parenIdx);
+    if (after.trim()) {
+      return (
+        <span>
+          <span className="block">{before}</span>
+          <span className="block">{after}</span>
+        </span>
+      );
+    }
+  }
+
+  return loc;
 }
 
 function formatSalaryCell(raw: string | undefined | null): React.ReactNode {
@@ -714,7 +744,7 @@ export function JobTable({ jobs, newJobId, onAddJob }: Props) {
     if (expandedId === id) {
       setClosingId(id);
       setExpandedId(null);
-      setTimeout(() => setClosingId(null), 300);
+      setTimeout(() => setClosingId(null), 350);
     } else {
       setClosingId(null);
       setExpandedId(id);
@@ -1096,7 +1126,7 @@ export function JobTable({ jobs, newJobId, onAddJob }: Props) {
   // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
-    <div className="flex flex-col gap-2 px-6">
+    <div className="mx-auto w-full max-w-7xl px-6 flex flex-col gap-2">
 
       {/* Fixed-height controls area — spacer + search bar + banner always occupy the same vertical space */}
       <div className="h-24 flex flex-col gap-2">
@@ -1365,7 +1395,7 @@ export function JobTable({ jobs, newJobId, onAddJob }: Props) {
                 : "[&>td]:bg-gray-100 [&>td]:border-gray-600";
 
               const hoverClass = !isSelected ? "[&:hover>td]:bg-gray-200" : "";
-              const rowClass = `cursor-pointer ${borderClasses} ${cornerClasses} ${colorClasses} ${hoverClass}`;
+              const rowClass = `cursor-pointer [&>td]:min-h-[72px] ${borderClasses} ${cornerClasses} ${colorClasses} ${hoverClass}`;
 
               // Expand panel td: visible + connected when open, invisible when closed
               const expandTdClass = visuallyExpanded
@@ -1395,7 +1425,7 @@ export function JobTable({ jobs, newJobId, onAddJob }: Props) {
                     <td className="py-4 pr-3 whitespace-normal break-words leading-snug text-blue-700">{job.title}</td>
                     {show("location") && (
                       <td className="py-4 pr-3 whitespace-normal break-words">
-                        {job.location ? wrapLocation(job.location) : "—"}
+                        {renderLocation(job.location ?? "")}
                       </td>
                     )}
                     {show("remoteType") && <td className="py-4 pr-3">{job.remoteType ?? "—"}</td>}
@@ -1456,7 +1486,7 @@ export function JobTable({ jobs, newJobId, onAddJob }: Props) {
                   {/* Expand panel — always in DOM for smooth open/close animation */}
                   <tr>
                     <td colSpan={99} className={expandTdClass}>
-                      <div className={`grid transition-all duration-300 ease-in-out overflow-hidden ${isOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}>
+                      <div className={`grid w-full transition-all duration-300 ease-in-out overflow-hidden ${isOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}>
                         <div className="min-h-0">
                           {isMounted && (
                             <ExpandedJobPanel
