@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { ExternalLink } from "lucide-react";
 import type {
   JobApplicationListItem,
   ApplicationStatus,
@@ -19,7 +20,7 @@ type SortColumn =
   | "status"
   | "location"
   | "salary"
-  | "savedAt";
+  | "appliedAt";
 type SortDirection = "asc" | "desc";
 type SortState = { column: SortColumn; direction: SortDirection };
 
@@ -113,6 +114,15 @@ const DEFAULT_FILTERS: FilterState = {
 
 function formatSalary(n: number): string {
   return n >= 1000 ? `${Math.round(n / 1000)}k` : String(n);
+}
+
+function formatDate(iso: string | undefined | null): string {
+  if (!iso) return "";
+  return new Date(iso).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
 }
 
 function countActiveFilters(f: FilterState): number {
@@ -511,7 +521,7 @@ type Props = { jobs: JobApplicationListItem[] };
 export function JobTable({ jobs }: Props) {
   const router = useRouter();
   const [sort, setSort] = useState<SortState>({
-    column: "savedAt",
+    column: "appliedAt",
     direction: "desc",
   });
   const [search, setSearch] = useState("");
@@ -522,6 +532,12 @@ export function JobTable({ jobs }: Props) {
   // Inline status editing
   const [statusPatch, setStatusPatch] = useState<Record<string, ApplicationStatus>>({});
   const [patchingId, setPatchingId] = useState<string | null>(null);
+
+  // Inline docs editing (resume + cover letter)
+  type DocField = "resumeSubmitted" | "coverLetterSubmitted";
+  type DocOverride = Partial<Record<DocField, boolean>>;
+  const [docsPatch, setDocsPatch] = useState<Record<string, DocOverride>>({});
+  const [patchingDocs, setPatchingDocs] = useState<Set<string>>(new Set());
 
   async function handleStatusChange(jobId: string, newStatus: ApplicationStatus) {
     setStatusPatch((prev) => ({ ...prev, [jobId]: newStatus }));
@@ -548,6 +564,45 @@ export function JobTable({ jobs }: Props) {
       });
     } finally {
       setPatchingId(null);
+    }
+  }
+
+  async function handleDocChange(jobId: string, field: DocField, value: boolean) {
+    const patchKey = `${jobId}-${field}`;
+    if (patchingDocs.has(patchKey)) return;
+    setDocsPatch((prev) => ({
+      ...prev,
+      [jobId]: { ...(prev[jobId] ?? {}), [field]: value },
+    }));
+    setPatchingDocs((prev) => new Set(prev).add(patchKey));
+    try {
+      const supabase = createSupabaseBrowserClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error("Not authenticated");
+      const res = await fetch(`/api/jobs/${jobId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ [field]: value }),
+      });
+      if (!res.ok) throw new Error(`Patch failed: ${res.status}`);
+    } catch {
+      setDocsPatch((prev) => {
+        const next = { ...prev };
+        const jobDocs = { ...(next[jobId] ?? {}) };
+        delete jobDocs[field];
+        if (Object.keys(jobDocs).length === 0) delete next[jobId];
+        else next[jobId] = jobDocs;
+        return next;
+      });
+    } finally {
+      setPatchingDocs((prev) => {
+        const next = new Set(prev);
+        next.delete(patchKey);
+        return next;
+      });
     }
   }
 
@@ -722,7 +777,12 @@ export function JobTable({ jobs }: Props) {
         else if (aMid === null) cmp = 1;
         else if (bMid === null) cmp = -1;
         else cmp = aMid - bMid;
-      } else if (column === "savedAt") cmp = a.savedAt.localeCompare(b.savedAt);
+      } else if (column === "appliedAt") {
+        if (!a.appliedAt && !b.appliedAt) cmp = 0;
+        else if (!a.appliedAt) cmp = 1;
+        else if (!b.appliedAt) cmp = -1;
+        else cmp = a.appliedAt.localeCompare(b.appliedAt);
+      }
 
       return direction === "asc" ? cmp : -cmp;
     });
@@ -998,13 +1058,14 @@ export function JobTable({ jobs }: Props) {
           <thead>
             <tr className="border-b-2 border-gray-300 text-left">
               <SortHeader column="status">Status</SortHeader>
-              <SortHeader column="title">Title</SortHeader>
               <SortHeader column="company">Company</SortHeader>
+              <SortHeader column="title">Title</SortHeader>
               <SortHeader column="location">Location</SortHeader>
               <th className="py-2 pr-4 font-semibold">Remote</th>
               <SortHeader column="salary">Salary</SortHeader>
               <th className="py-2 pr-4 font-semibold">Source</th>
-              <SortHeader column="savedAt">Saved at</SortHeader>
+              <SortHeader column="appliedAt">Applied</SortHeader>
+              <th className="py-2 pr-4 font-semibold">Docs</th>
               <th className="py-2 font-semibold">URL</th>
             </tr>
           </thead>
@@ -1023,24 +1084,47 @@ export function JobTable({ jobs }: Props) {
                     saving={patchingId === job.id}
                   />
                 </td>
-                <td className="py-2 pr-4 text-blue-700">{job.title}</td>
                 <td className="py-2 pr-4">{job.company}</td>
+                <td className="py-2 pr-4 text-blue-700">{job.title}</td>
                 <td className="py-2 pr-4">{job.location ?? "—"}</td>
                 <td className="py-2 pr-4">{job.remoteType ?? "—"}</td>
                 <td className="py-2 pr-4">{job.salaryRaw ?? "—"}</td>
                 <td className="py-2 pr-4">{job.source}</td>
-                <td className="py-2 pr-4">
-                  {new Date(job.savedAt).toLocaleString("en-GB")}
+                <td className="py-2 pr-4">{formatDate(job.appliedAt)}</td>
+                <td className="py-2 pr-4" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex items-center gap-2">
+                    <label className="flex items-center gap-1 text-xs text-gray-600 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={docsPatch[job.id]?.resumeSubmitted ?? job.resumeSubmitted ?? false}
+                        disabled={patchingDocs.has(`${job.id}-resumeSubmitted`)}
+                        onChange={(e) => void handleDocChange(job.id, "resumeSubmitted", e.target.checked)}
+                        className="shrink-0"
+                      />
+                      R
+                    </label>
+                    <label className="flex items-center gap-1 text-xs text-gray-600 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={docsPatch[job.id]?.coverLetterSubmitted ?? job.coverLetterSubmitted ?? false}
+                        disabled={patchingDocs.has(`${job.id}-coverLetterSubmitted`)}
+                        onChange={(e) => void handleDocChange(job.id, "coverLetterSubmitted", e.target.checked)}
+                        className="shrink-0"
+                      />
+                      CL
+                    </label>
+                  </div>
                 </td>
                 <td className="py-2">
                   <a
                     href={job.sourceUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-blue-700 underline"
+                    title={job.sourceUrl}
+                    className="text-blue-700 hover:text-blue-900 inline-flex"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    Link
+                    <ExternalLink size={16} />
                   </a>
                 </td>
               </tr>
