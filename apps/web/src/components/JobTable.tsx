@@ -1024,41 +1024,102 @@ export function JobTable({ jobs }: Props) {
 
   return (
     <div>
-      {/* Toolbar */}
-      <div className="flex items-center gap-3 mb-3">
-        <div className="relative flex-1 max-w-sm">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none">
-            &#x1F50D;
-          </span>
-          <input
-            ref={searchRef}
-            type="text"
-            placeholder="Search company, title, location, or tags…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-8 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:border-blue-400"
-          />
-          {search && (
-            <button
-              onClick={() => { setSearch(""); searchRef.current?.focus(); }}
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-200 text-lg leading-none"
-              aria-label="Clear search"
-            >
-              ×
-            </button>
-          )}
-        </div>
-        <div className="flex-1" />
-        <button
-          onClick={() => setFilterOpen((o) => !o)}
-          className={`px-4 py-2 rounded-md text-sm border transition-colors whitespace-nowrap ${
-            filterOpen || activeFilterCount > 0
-              ? "bg-blue-600 text-white border-blue-600"
-              : "bg-white text-gray-700 border-gray-300 hover:border-blue-400"
+      {/* Fixed-space zone: banner above toolbar — table position never shifts when banner appears */}
+      <div className="mb-3 flex flex-col gap-2">
+        {/* Bulk action banner — always in the DOM to occupy its height; invisible when nothing selected */}
+        <div
+          className={`flex flex-wrap items-center gap-2 px-3 py-2 border rounded-lg shadow-sm transition-opacity ${
+            selectedIds.size > 0
+              ? "bg-white border-gray-200 opacity-100"
+              : "opacity-0 pointer-events-none border-transparent shadow-none"
           }`}
+          aria-hidden={selectedIds.size === 0}
         >
-          Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
-        </button>
+          <span className="text-sm font-medium text-gray-700 whitespace-nowrap">
+            {selectedIds.size} selected
+          </span>
+          <select
+            value={bulkStatus}
+            onChange={(e) => setBulkStatus(e.target.value as ApplicationStatus | "")}
+            className="text-sm border border-gray-300 rounded-md px-2 py-1.5 text-gray-700 bg-white focus:outline-none focus:border-blue-400"
+          >
+            <option value="">Change status…</option>
+            {STATUS_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
+          <input
+            type="text"
+            placeholder="Add tags (comma separated)…"
+            value={bulkTags}
+            onChange={(e) => setBulkTags(e.target.value)}
+            className="flex-1 min-w-[180px] text-sm border border-gray-300 rounded-md px-2 py-1.5 text-gray-700 focus:outline-none focus:border-blue-400"
+          />
+          <button
+            onClick={() => { setArchiveActive((a) => !a); setDeleteActive(false); }}
+            className={`px-3 py-1.5 text-sm rounded-md border transition-colors whitespace-nowrap ${
+              archiveActive
+                ? "bg-amber-500 text-white border-amber-500"
+                : "border-amber-400 text-amber-600 hover:bg-amber-50"
+            }`}
+          >
+            Archive
+          </button>
+          <button
+            onClick={() => { setDeleteActive((d) => !d); setArchiveActive(false); }}
+            className={`px-3 py-1.5 text-sm rounded-md border transition-colors whitespace-nowrap ${
+              deleteActive
+                ? "bg-red-600 text-white border-red-600"
+                : "border-red-400 text-red-600 hover:bg-red-50"
+            }`}
+          >
+            Delete
+          </button>
+          <div className="flex-1" />
+          <button
+            onClick={() => void handleApply()}
+            disabled={applying}
+            className="px-4 py-1.5 text-sm rounded-md bg-green-600 text-white font-medium hover:bg-green-700 disabled:opacity-50 disabled:cursor-wait transition-colors whitespace-nowrap"
+          >
+            {applying ? "Applying…" : "Apply changes"}
+          </button>
+        </div>
+        {/* Search + filter button */}
+        <div className="flex items-center gap-3">
+          <div className="relative flex-1 max-w-sm">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none">
+              &#x1F50D;
+            </span>
+            <input
+              ref={searchRef}
+              type="text"
+              placeholder="Search company, title, location, or tags…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-9 pr-8 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:border-blue-400"
+            />
+            {search && (
+              <button
+                onClick={() => { setSearch(""); searchRef.current?.focus(); }}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-200 text-lg leading-none"
+                aria-label="Clear search"
+              >
+                ×
+              </button>
+            )}
+          </div>
+          <div className="flex-1" />
+          <button
+            onClick={() => setFilterOpen((o) => !o)}
+            className={`px-4 py-2 rounded-md text-sm border transition-colors whitespace-nowrap ${
+              filterOpen || activeFilterCount > 0
+                ? "bg-blue-600 text-white border-blue-600"
+                : "bg-white text-gray-700 border-gray-300 hover:border-blue-400"
+            }`}
+          >
+            Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
+          </button>
+        </div>
       </div>
 
       {/* Collapsible filter panel — grid-rows trick for smooth height animation */}
@@ -1163,60 +1224,6 @@ export function JobTable({ jobs }: Props) {
         </div>
       </div>
 
-      {/* Bulk action banner — visible only when rows are selected */}
-      {selectedIds.size > 0 && (
-        <div className="flex flex-wrap items-center gap-2 mb-3 px-3 py-2 bg-white border border-gray-200 rounded-lg shadow-sm">
-          <span className="text-sm font-medium text-gray-700 whitespace-nowrap">
-            {selectedIds.size} selected
-          </span>
-          <select
-            value={bulkStatus}
-            onChange={(e) => setBulkStatus(e.target.value as ApplicationStatus | "")}
-            className="text-sm border border-gray-300 rounded-md px-2 py-1.5 text-gray-700 bg-white focus:outline-none focus:border-blue-400"
-          >
-            <option value="">Change status…</option>
-            {STATUS_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
-            ))}
-          </select>
-          <input
-            type="text"
-            placeholder="Add tags (comma separated)…"
-            value={bulkTags}
-            onChange={(e) => setBulkTags(e.target.value)}
-            className="flex-1 min-w-[180px] text-sm border border-gray-300 rounded-md px-2 py-1.5 text-gray-700 focus:outline-none focus:border-blue-400"
-          />
-          <button
-            onClick={() => { setArchiveActive((a) => !a); setDeleteActive(false); }}
-            className={`px-3 py-1.5 text-sm rounded-md border transition-colors whitespace-nowrap ${
-              archiveActive
-                ? "bg-amber-500 text-white border-amber-500"
-                : "border-amber-400 text-amber-600 hover:bg-amber-50"
-            }`}
-          >
-            Archive
-          </button>
-          <button
-            onClick={() => { setDeleteActive((d) => !d); setArchiveActive(false); }}
-            className={`px-3 py-1.5 text-sm rounded-md border transition-colors whitespace-nowrap ${
-              deleteActive
-                ? "bg-red-600 text-white border-red-600"
-                : "border-red-400 text-red-600 hover:bg-red-50"
-            }`}
-          >
-            Delete
-          </button>
-          <div className="flex-1" />
-          <button
-            onClick={() => void handleApply()}
-            disabled={applying}
-            className="px-4 py-1.5 text-sm rounded-md bg-green-600 text-white font-medium hover:bg-green-700 disabled:opacity-50 disabled:cursor-wait transition-colors whitespace-nowrap"
-          >
-            {applying ? "Applying…" : "Apply changes"}
-          </button>
-        </div>
-      )}
-
       {/* Table */}
       {localJobs.length === 0 ? (
         <p className="text-gray-600">No jobs saved yet. Use the extension to save a job.</p>
@@ -1232,7 +1239,7 @@ export function JobTable({ jobs }: Props) {
                   checked={allDisplayedSelected}
                   ref={(el) => { if (el) el.indeterminate = someDisplayedSelected; }}
                   onChange={toggleSelectAll}
-                  className="cursor-pointer"
+                  className="w-4 h-4 cursor-pointer"
                 />
               </th>
               <SortHeader column="status">Status</SortHeader>
@@ -1265,7 +1272,7 @@ export function JobTable({ jobs }: Props) {
                       type="checkbox"
                       checked={isSelected}
                       onChange={() => toggleSelectOne(job.id)}
-                      className="cursor-pointer"
+                      className="w-4 h-4 cursor-pointer"
                     />
                   </td>
                   <td className="py-2 pr-4" onClick={(e) => e.stopPropagation()}>
@@ -1298,7 +1305,7 @@ export function JobTable({ jobs }: Props) {
                             checked={docsPatch[job.id]?.resumeSubmitted ?? job.resumeSubmitted ?? false}
                             disabled={patchingDocs.has(`${job.id}-resumeSubmitted`)}
                             onChange={(e) => void handleDocChange(job.id, "resumeSubmitted", e.target.checked)}
-                            className="shrink-0"
+                            className="w-4 h-4 shrink-0 cursor-pointer"
                           />
                           R
                         </label>
@@ -1308,7 +1315,7 @@ export function JobTable({ jobs }: Props) {
                             checked={docsPatch[job.id]?.coverLetterSubmitted ?? job.coverLetterSubmitted ?? false}
                             disabled={patchingDocs.has(`${job.id}-coverLetterSubmitted`)}
                             onChange={(e) => void handleDocChange(job.id, "coverLetterSubmitted", e.target.checked)}
-                            className="shrink-0"
+                            className="w-4 h-4 shrink-0 cursor-pointer"
                           />
                           CL
                         </label>
