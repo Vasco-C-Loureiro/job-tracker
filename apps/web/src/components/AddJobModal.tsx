@@ -220,7 +220,7 @@ export function AddJobModal({ isOpen, onClose, onJobAdded }: Props) {
                 type="text"
                 value={company}
                 onChange={(e) => setCompany(e.target.value)}
-                className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:border-blue-400 ${
+                className={`w-full px-3 py-2 border rounded-md text-sm text-gray-900 focus:outline-none focus:border-blue-400 ${
                   errors.company ? "border-red-400" : "border-gray-300"
                 }`}
               />
@@ -238,7 +238,7 @@ export function AddJobModal({ isOpen, onClose, onJobAdded }: Props) {
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:border-blue-400 ${
+                className={`w-full px-3 py-2 border rounded-md text-sm text-gray-900 focus:outline-none focus:border-blue-400 ${
                   errors.title ? "border-red-400" : "border-gray-300"
                 }`}
               />
@@ -254,7 +254,7 @@ export function AddJobModal({ isOpen, onClose, onJobAdded }: Props) {
                 type="text"
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:border-blue-400"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-900 focus:outline-none focus:border-blue-400"
               />
             </div>
 
@@ -265,7 +265,7 @@ export function AddJobModal({ isOpen, onClose, onJobAdded }: Props) {
                 <select
                   value={remoteType}
                   onChange={(e) => setRemoteType(e.target.value as RemoteType | "")}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:border-blue-400 bg-white"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-900 focus:outline-none focus:border-blue-400 bg-white"
                 >
                   <option value="">—</option>
                   <option value="remote">Remote</option>
@@ -278,7 +278,7 @@ export function AddJobModal({ isOpen, onClose, onJobAdded }: Props) {
                 <select
                   value={jobType}
                   onChange={(e) => setJobType(e.target.value as JobType | "")}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:border-blue-400 bg-white"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-900 focus:outline-none focus:border-blue-400 bg-white"
                 >
                   <option value="">—</option>
                   <option value="full-time">Full-time</option>
@@ -300,7 +300,7 @@ export function AddJobModal({ isOpen, onClose, onJobAdded }: Props) {
                 placeholder="e.g. £40,000–£50,000"
                 value={salary}
                 onChange={(e) => setSalary(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:border-blue-400"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-900 focus:outline-none focus:border-blue-400"
               />
             </div>
 
@@ -310,7 +310,7 @@ export function AddJobModal({ isOpen, onClose, onJobAdded }: Props) {
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value as ApplicationStatus)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:border-blue-400 bg-white"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-900 focus:outline-none focus:border-blue-400 bg-white"
               >
                 {STATUS_OPTIONS.map((opt) => (
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -325,7 +325,7 @@ export function AddJobModal({ isOpen, onClose, onJobAdded }: Props) {
                 type="text"
                 value={sourceUrl}
                 onChange={(e) => setSourceUrl(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:border-blue-400"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-900 focus:outline-none focus:border-blue-400"
               />
             </div>
 
@@ -336,7 +336,7 @@ export function AddJobModal({ isOpen, onClose, onJobAdded }: Props) {
                 type="date"
                 value={appliedAt}
                 onChange={(e) => setAppliedAt(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:border-blue-400"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-900 focus:outline-none focus:border-blue-400"
               />
             </div>
 
@@ -346,7 +346,7 @@ export function AddJobModal({ isOpen, onClose, onJobAdded }: Props) {
               <select
                 value={interestLevel}
                 onChange={(e) => setInterestLevel(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:border-blue-400 bg-white"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-900 focus:outline-none focus:border-blue-400 bg-white"
               >
                 <option value="">—</option>
                 <option value="low">Low</option>
@@ -364,7 +364,7 @@ export function AddJobModal({ isOpen, onClose, onJobAdded }: Props) {
                 placeholder="comma separated"
                 value={tags}
                 onChange={(e) => setTags(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:border-blue-400"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-900 focus:outline-none focus:border-blue-400"
               />
             </div>
 
@@ -375,7 +375,7 @@ export function AddJobModal({ isOpen, onClose, onJobAdded }: Props) {
                 rows={3}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:border-blue-400 resize-none"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-900 focus:outline-none focus:border-blue-400 resize-none"
               />
             </div>
 
