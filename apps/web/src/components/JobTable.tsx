@@ -1025,11 +1025,49 @@ export function JobTable({ jobs }: Props) {
   return (
     <div className="flex flex-col gap-2">
 
-      {/* Fixed-height controls area — banner + search bar always occupy the same vertical space */}
-      <div className="h-24 flex flex-col justify-end gap-2">
-        {/* Banner is first in DOM; justify-end anchors the group at the bottom so when
-            only the search bar is present it sits at the bottom of this container,
-            and when the banner is also present they together fill the space from top. */}
+      {/* Fixed-height controls area — spacer + search bar + banner always occupy the same vertical space */}
+      <div className="h-24 flex flex-col gap-2">
+        {/* Spacer grows to fill unused space, pushing search bar and banner to the bottom */}
+        <div className="flex-1" />
+
+        {/* Search bar + filter button */}
+        <div className="flex items-center gap-3">
+          <div className="relative flex-1 max-w-sm">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none">
+              &#x1F50D;
+            </span>
+            <input
+              ref={searchRef}
+              type="text"
+              placeholder="Search company, title, location, or tags…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-9 pr-8 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:border-blue-400"
+            />
+            {search && (
+              <button
+                onClick={() => { setSearch(""); searchRef.current?.focus(); }}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-200 text-lg leading-none"
+                aria-label="Clear search"
+              >
+                ×
+              </button>
+            )}
+          </div>
+          <div className="flex-1" />
+          <button
+            onClick={() => setFilterOpen((o) => !o)}
+            className={`px-4 py-2 rounded-md text-sm border transition-colors whitespace-nowrap ${
+              filterOpen || activeFilterCount > 0
+                ? "bg-blue-600 text-white border-blue-600"
+                : "bg-white text-gray-700 border-gray-300 hover:border-blue-400"
+            }`}
+          >
+            Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
+          </button>
+        </div>
+
+        {/* Banner — only mounted when rows are selected */}
         {selectedIds.size > 0 && (
           <div className="flex flex-wrap items-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-lg shadow-sm">
             <span className="text-sm font-medium text-gray-700 whitespace-nowrap">
@@ -1082,43 +1120,6 @@ export function JobTable({ jobs }: Props) {
             </button>
           </div>
         )}
-
-        {/* Search bar + filter button */}
-        <div className="flex items-center gap-3">
-          <div className="relative flex-1 max-w-sm">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none">
-              &#x1F50D;
-            </span>
-            <input
-              ref={searchRef}
-              type="text"
-              placeholder="Search company, title, location, or tags…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-8 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:border-blue-400"
-            />
-            {search && (
-              <button
-                onClick={() => { setSearch(""); searchRef.current?.focus(); }}
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-200 text-lg leading-none"
-                aria-label="Clear search"
-              >
-                ×
-              </button>
-            )}
-          </div>
-          <div className="flex-1" />
-          <button
-            onClick={() => setFilterOpen((o) => !o)}
-            className={`px-4 py-2 rounded-md text-sm border transition-colors whitespace-nowrap ${
-              filterOpen || activeFilterCount > 0
-                ? "bg-blue-600 text-white border-blue-600"
-                : "bg-white text-gray-700 border-gray-300 hover:border-blue-400"
-            }`}
-          >
-            Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
-          </button>
-        </div>
       </div>
 
       {/* Collapsible filter panel — grid-rows trick for smooth height animation */}
