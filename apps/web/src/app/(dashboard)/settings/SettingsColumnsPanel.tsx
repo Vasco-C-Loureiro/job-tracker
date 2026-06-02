@@ -116,7 +116,7 @@ export default function SettingsColumnsPanel() {
     return (
       <div className="animate-pulse space-y-6">
         <div className="h-5 bg-gray-200 rounded w-40" />
-        <div className="grid grid-cols-3 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 gap-3">
           {Array.from({ length: 11 }).map((_, i) => (
             <div key={i} className="h-20 bg-gray-200 rounded-lg" />
           ))}
@@ -138,7 +138,7 @@ export default function SettingsColumnsPanel() {
         <p className="text-sm text-gray-500 mb-4">
           Choose which columns appear in the Applications table.
         </p>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 gap-3">
           {COLUMN_META.map(({ key, label, description, locked }) => {
             const enabled = localColumns.has(key);
             if (locked) {
