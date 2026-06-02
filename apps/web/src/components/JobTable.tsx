@@ -12,6 +12,21 @@ import type {
 import { parseSalary } from "@job-tracker/shared";
 import { createSupabaseBrowserClient } from "@/lib/supabase";
 
+// ─── Column preferences ───────────────────────────────────────────────────────
+
+const DEFAULT_VISIBLE_COLUMNS = new Set([
+  "company", "title", "status",
+  "jobType", "remoteType", "location", "salaryRaw",
+  "interestLevel", "appliedAt", "resumeCoverLetter", "sourceUrl",
+]);
+
+const INTEREST_LABELS: Record<string, string> = {
+  low: "Low",
+  medium: "Medium",
+  high: "High",
+  "very-high": "Very High",
+};
+
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 type SortColumn =
@@ -528,6 +543,39 @@ export function JobTable({ jobs }: Props) {
   const searchRef = useRef<HTMLInputElement>(null);
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
   const [filterOpen, setFilterOpen] = useState(false);
+
+  // Column visibility from preferences
+  const [visibleColumns, setVisibleColumns] = useState<Set<string>>(
+    () => new Set(DEFAULT_VISIBLE_COLUMNS),
+  );
+
+  useEffect(() => {
+    async function loadPreferences() {
+      try {
+        const supabase = createSupabaseBrowserClient();
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.access_token) return;
+        const res = await fetch("/api/preferences", {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        });
+        if (!res.ok) return;
+        const prefs = (await res.json()) as { visible_columns: string[] };
+        if (Array.isArray(prefs.visible_columns)) {
+          const cols = new Set(prefs.visible_columns);
+          // Always show locked columns regardless of stored prefs
+          cols.add("company");
+          cols.add("title");
+          cols.add("status");
+          setVisibleColumns(cols);
+        }
+      } catch {
+        // Keep defaults on any error
+      }
+    }
+    void loadPreferences();
+  }, []);
+
+  const show = (col: string) => visibleColumns.has(col);
 
   // Inline status editing
   const [statusPatch, setStatusPatch] = useState<Record<string, ApplicationStatus>>({});
@@ -1060,13 +1108,15 @@ export function JobTable({ jobs }: Props) {
               <SortHeader column="status">Status</SortHeader>
               <SortHeader column="company">Company</SortHeader>
               <SortHeader column="title">Title</SortHeader>
-              <SortHeader column="location">Location</SortHeader>
-              <th className="py-2 pr-4 font-semibold">Remote</th>
-              <SortHeader column="salary">Salary</SortHeader>
+              {show("location") && <SortHeader column="location">Location</SortHeader>}
+              {show("remoteType") && <th className="py-2 pr-4 font-semibold">Remote</th>}
+              {show("jobType") && <th className="py-2 pr-4 font-semibold">Job Type</th>}
+              {show("salaryRaw") && <SortHeader column="salary">Salary</SortHeader>}
+              {show("interestLevel") && <th className="py-2 pr-4 font-semibold">Interest</th>}
               <th className="py-2 pr-4 font-semibold">Source</th>
-              <SortHeader column="appliedAt">Applied</SortHeader>
-              <th className="py-2 pr-4 font-semibold">Docs</th>
-              <th className="py-2 font-semibold">URL</th>
+              {show("appliedAt") && <SortHeader column="appliedAt">Applied</SortHeader>}
+              {show("resumeCoverLetter") && <th className="py-2 pr-4 font-semibold">Docs</th>}
+              {show("sourceUrl") && <th className="py-2 font-semibold">URL</th>}
             </tr>
           </thead>
           <tbody>
@@ -1086,47 +1136,57 @@ export function JobTable({ jobs }: Props) {
                 </td>
                 <td className="py-2 pr-4">{job.company}</td>
                 <td className="py-2 pr-4 text-blue-700">{job.title}</td>
-                <td className="py-2 pr-4">{job.location ?? "—"}</td>
-                <td className="py-2 pr-4">{job.remoteType ?? "—"}</td>
-                <td className="py-2 pr-4">{job.salaryRaw ?? "—"}</td>
+                {show("location") && <td className="py-2 pr-4">{job.location ?? "—"}</td>}
+                {show("remoteType") && <td className="py-2 pr-4">{job.remoteType ?? "—"}</td>}
+                {show("jobType") && <td className="py-2 pr-4">{job.jobType ?? "—"}</td>}
+                {show("salaryRaw") && <td className="py-2 pr-4">{job.salaryRaw ?? "—"}</td>}
+                {show("interestLevel") && (
+                  <td className="py-2 pr-4">
+                    {job.interestLevel ? (INTEREST_LABELS[job.interestLevel] ?? job.interestLevel) : "—"}
+                  </td>
+                )}
                 <td className="py-2 pr-4">{job.source}</td>
-                <td className="py-2 pr-4">{formatDate(job.appliedAt)}</td>
-                <td className="py-2 pr-4" onClick={(e) => e.stopPropagation()}>
-                  <div className="flex items-center gap-2">
-                    <label className="flex items-center gap-1 text-xs text-gray-600 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={docsPatch[job.id]?.resumeSubmitted ?? job.resumeSubmitted ?? false}
-                        disabled={patchingDocs.has(`${job.id}-resumeSubmitted`)}
-                        onChange={(e) => void handleDocChange(job.id, "resumeSubmitted", e.target.checked)}
-                        className="shrink-0"
-                      />
-                      R
-                    </label>
-                    <label className="flex items-center gap-1 text-xs text-gray-600 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={docsPatch[job.id]?.coverLetterSubmitted ?? job.coverLetterSubmitted ?? false}
-                        disabled={patchingDocs.has(`${job.id}-coverLetterSubmitted`)}
-                        onChange={(e) => void handleDocChange(job.id, "coverLetterSubmitted", e.target.checked)}
-                        className="shrink-0"
-                      />
-                      CL
-                    </label>
-                  </div>
-                </td>
-                <td className="py-2">
-                  <a
-                    href={job.sourceUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    title={job.sourceUrl}
-                    className="text-blue-700 hover:text-blue-900 inline-flex"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <ExternalLink size={16} />
-                  </a>
-                </td>
+                {show("appliedAt") && <td className="py-2 pr-4">{formatDate(job.appliedAt)}</td>}
+                {show("resumeCoverLetter") && (
+                  <td className="py-2 pr-4" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center gap-2">
+                      <label className="flex items-center gap-1 text-xs text-gray-600 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={docsPatch[job.id]?.resumeSubmitted ?? job.resumeSubmitted ?? false}
+                          disabled={patchingDocs.has(`${job.id}-resumeSubmitted`)}
+                          onChange={(e) => void handleDocChange(job.id, "resumeSubmitted", e.target.checked)}
+                          className="shrink-0"
+                        />
+                        R
+                      </label>
+                      <label className="flex items-center gap-1 text-xs text-gray-600 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={docsPatch[job.id]?.coverLetterSubmitted ?? job.coverLetterSubmitted ?? false}
+                          disabled={patchingDocs.has(`${job.id}-coverLetterSubmitted`)}
+                          onChange={(e) => void handleDocChange(job.id, "coverLetterSubmitted", e.target.checked)}
+                          className="shrink-0"
+                        />
+                        CL
+                      </label>
+                    </div>
+                  </td>
+                )}
+                {show("sourceUrl") && (
+                  <td className="py-2">
+                    <a
+                      href={job.sourceUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title={job.sourceUrl}
+                      className="text-blue-700 hover:text-blue-900 inline-flex"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <ExternalLink size={16} />
+                    </a>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>

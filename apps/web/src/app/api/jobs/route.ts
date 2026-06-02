@@ -60,6 +60,21 @@ export async function POST(request: NextRequest) {
   }
   const userId = userData.user.id;
 
+  // Fetch user's doc submission defaults (fall back to hardcoded defaults on error)
+  let defaultResumeSubmitted = true;
+  let defaultCoverLetterSubmitted = false;
+  {
+    const { data: prefs } = await supabase
+      .from("user_preferences")
+      .select("default_resume_submitted, default_cover_letter_submitted")
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (prefs) {
+      defaultResumeSubmitted = prefs.default_resume_submitted ?? true;
+      defaultCoverLetterSubmitted = prefs.default_cover_letter_submitted ?? false;
+    }
+  }
+
   // Validate — all four payload fields are required non-empty strings
   const { company, title, sourceUrl, source } = body as Partial<SaveJobPayload>;
 
@@ -145,8 +160,8 @@ export async function POST(request: NextRequest) {
       salary_currency: safeSalaryCurrency,
       salary_requested: safeSalaryRequested,
       description: safeDescription,
-      // AddJobModal should initialise its resumeSubmitted field to true to match
-      resume_submitted: true,
+      resume_submitted: defaultResumeSubmitted,
+      cover_letter_submitted: defaultCoverLetterSubmitted,
     })
     .select()
     .single();
