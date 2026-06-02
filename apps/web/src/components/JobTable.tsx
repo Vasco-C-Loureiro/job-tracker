@@ -1395,26 +1395,34 @@ export function JobTable({ jobs, newJobId, onAddJob }: Props) {
               // Keep connected card styling while panel is open or animating closed
               const visuallyExpanded = isOpen || isClosing;
 
-              // Main row borders: no bottom border when expanded so it merges with expand panel
-              const borderClasses = visuallyExpanded
-                ? "[&>td]:border-t [&>td:first-child]:border-l [&>td:last-child]:border-r"
-                : "[&>td]:border-t [&>td]:border-b [&>td:first-child]:border-l [&>td:last-child]:border-r";
+              // Border sides: all cells get all four sides; inner L/R are transparent so
+              // only the outer rectangle is visible, matching the expanded panel's border exactly.
+              const borderSideClasses = visuallyExpanded
+                ? "[&>td]:border-t [&>td]:border-l [&>td]:border-r [&>td]:border-l-transparent [&>td]:border-r-transparent"
+                : "[&>td]:border-t [&>td]:border-b [&>td]:border-l [&>td]:border-r [&>td]:border-l-transparent [&>td]:border-r-transparent";
+
+              // Outer border colors: first/last child overrides restore color on the outer edges.
+              // Pseudo-class specificity ensures these win over the transparent rule above.
+              const outerBorderColor = isSelected
+                ? "[&>td]:border-t-blue-400 [&>td]:border-b-blue-400 [&>td:first-child]:border-l-blue-400 [&>td:last-child]:border-r-blue-400"
+                : "[&>td]:border-t-gray-600 [&>td]:border-b-gray-600 [&>td:first-child]:border-l-gray-600 [&>td:last-child]:border-r-gray-600";
 
               // Rounded corners: only top when expanded, full when collapsed
               const cornerClasses = visuallyExpanded
                 ? "[&>td:first-child]:rounded-tl-lg [&>td:last-child]:rounded-tr-lg"
                 : "[&>td:first-child]:rounded-tl-lg [&>td:last-child]:rounded-tr-lg [&>td:first-child]:rounded-bl-lg [&>td:last-child]:rounded-br-lg";
 
+              // Background only — border colors handled above
               const colorClasses = isSelected
-                ? "[&>td]:bg-blue-50 [&>td]:border-blue-400"
+                ? "[&>td]:bg-blue-50"
                 : highlightedId === job.id
-                ? "[&>td]:bg-green-100 [&>td]:border-gray-600"
+                ? "[&>td]:bg-green-100"
                 : fadingId === job.id
-                ? "[&>td]:bg-gray-100 [&>td]:border-gray-600 [&>td]:transition-colors [&>td]:duration-[600ms]"
-                : "[&>td]:bg-gray-100 [&>td]:border-gray-600";
+                ? "[&>td]:bg-gray-100 [&>td]:transition-colors [&>td]:duration-[600ms]"
+                : "[&>td]:bg-gray-100";
 
               const hoverClass = !isSelected ? "[&:hover>td]:bg-gray-200" : "";
-              const rowClass = `cursor-pointer [&>td]:min-h-[72px] ${borderClasses} ${cornerClasses} ${colorClasses} ${hoverClass}`;
+              const rowClass = `cursor-pointer [&>td]:min-h-[72px] ${borderSideClasses} ${outerBorderColor} ${cornerClasses} ${colorClasses} ${hoverClass}`;
 
               // Expand panel td: visible + connected when open, invisible when closed
               const expandTdClass = visuallyExpanded
