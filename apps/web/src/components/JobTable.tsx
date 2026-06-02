@@ -1347,7 +1347,7 @@ export function JobTable({ jobs, newJobId, onAddJob }: Props) {
         <p className="text-gray-500">No jobs match your search or filters.</p>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full table-fixed border-separate border-spacing-y-1 text-sm text-gray-900">
+          <table className="w-full table-fixed text-sm text-gray-900">
             <thead>
               <tr className="text-left">
                 <th className="py-2 pb-3 pl-3 pr-3 w-10">
@@ -1503,6 +1503,10 @@ export function JobTable({ jobs, newJobId, onAddJob }: Props) {
                         </div>
                       </div>
                     </td>
+                  </tr>
+                  {/* Spacer — creates the visual gap between cards without border-spacing */}
+                  <tr aria-hidden="true">
+                    <td colSpan={99} className="h-1 p-0 bg-transparent border-0" />
                   </tr>
                 </tbody>
               );
