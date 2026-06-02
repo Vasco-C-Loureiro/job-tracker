@@ -1025,96 +1025,101 @@ export function JobTable({ jobs }: Props) {
   return (
     <div className="flex flex-col gap-2">
 
-      {/* Search bar + filter button */}
-      <div className="flex items-center gap-3">
-        <div className="relative flex-1 max-w-sm">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none">
-            &#x1F50D;
-          </span>
-          <input
-            ref={searchRef}
-            type="text"
-            placeholder="Search company, title, location, or tags…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-8 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:border-blue-400"
-          />
-          {search && (
-            <button
-              onClick={() => { setSearch(""); searchRef.current?.focus(); }}
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-200 text-lg leading-none"
-              aria-label="Clear search"
+      {/* Fixed-height controls area — banner + search bar always occupy the same vertical space */}
+      <div className="h-24 flex flex-col justify-end gap-2">
+        {/* Banner is first in DOM; justify-end anchors the group at the bottom so when
+            only the search bar is present it sits at the bottom of this container,
+            and when the banner is also present they together fill the space from top. */}
+        {selectedIds.size > 0 && (
+          <div className="flex flex-wrap items-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-lg shadow-sm">
+            <span className="text-sm font-medium text-gray-700 whitespace-nowrap">
+              {selectedIds.size} selected
+            </span>
+            <select
+              value={bulkStatus}
+              onChange={(e) => setBulkStatus(e.target.value as ApplicationStatus | "")}
+              className="text-sm border border-gray-300 rounded-md px-2 py-1.5 text-gray-700 bg-white focus:outline-none focus:border-blue-400"
             >
-              ×
+              <option value="">Change status…</option>
+              {STATUS_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+            <input
+              type="text"
+              placeholder="Add tags (comma separated)…"
+              value={bulkTags}
+              onChange={(e) => setBulkTags(e.target.value)}
+              className="flex-1 min-w-[180px] text-sm border border-gray-300 rounded-md px-2 py-1.5 text-gray-700 focus:outline-none focus:border-blue-400"
+            />
+            <button
+              onClick={() => { setArchiveActive((a) => !a); setDeleteActive(false); }}
+              className={`px-3 py-1.5 text-sm rounded-md border transition-colors whitespace-nowrap ${
+                archiveActive
+                  ? "bg-amber-500 text-white border-amber-500"
+                  : "border-amber-400 text-amber-600 hover:bg-amber-50"
+              }`}
+            >
+              Archive
             </button>
-          )}
-        </div>
-        <div className="flex-1" />
-        <button
-          onClick={() => setFilterOpen((o) => !o)}
-          className={`px-4 py-2 rounded-md text-sm border transition-colors whitespace-nowrap ${
-            filterOpen || activeFilterCount > 0
-              ? "bg-blue-600 text-white border-blue-600"
-              : "bg-white text-gray-700 border-gray-300 hover:border-blue-400"
-          }`}
-        >
-          Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
-        </button>
-      </div>
+            <button
+              onClick={() => { setDeleteActive((d) => !d); setArchiveActive(false); }}
+              className={`px-3 py-1.5 text-sm rounded-md border transition-colors whitespace-nowrap ${
+                deleteActive
+                  ? "bg-red-600 text-white border-red-600"
+                  : "border-red-400 text-red-600 hover:bg-red-50"
+              }`}
+            >
+              Delete
+            </button>
+            <div className="flex-1" />
+            <button
+              onClick={() => void handleApply()}
+              disabled={applying}
+              className="px-4 py-1.5 text-sm rounded-md bg-green-600 text-white font-medium hover:bg-green-700 disabled:opacity-50 disabled:cursor-wait transition-colors whitespace-nowrap"
+            >
+              {applying ? "Applying…" : "Apply changes"}
+            </button>
+          </div>
+        )}
 
-      {/* Bulk action banner — only mounted when rows are selected */}
-      {selectedIds.size > 0 && (
-        <div className="flex flex-wrap items-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-lg shadow-sm">
-          <span className="text-sm font-medium text-gray-700 whitespace-nowrap">
-            {selectedIds.size} selected
-          </span>
-          <select
-            value={bulkStatus}
-            onChange={(e) => setBulkStatus(e.target.value as ApplicationStatus | "")}
-            className="text-sm border border-gray-300 rounded-md px-2 py-1.5 text-gray-700 bg-white focus:outline-none focus:border-blue-400"
-          >
-            <option value="">Change status…</option>
-            {STATUS_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
-            ))}
-          </select>
-          <input
-            type="text"
-            placeholder="Add tags (comma separated)…"
-            value={bulkTags}
-            onChange={(e) => setBulkTags(e.target.value)}
-            className="flex-1 min-w-[180px] text-sm border border-gray-300 rounded-md px-2 py-1.5 text-gray-700 focus:outline-none focus:border-blue-400"
-          />
-          <button
-            onClick={() => { setArchiveActive((a) => !a); setDeleteActive(false); }}
-            className={`px-3 py-1.5 text-sm rounded-md border transition-colors whitespace-nowrap ${
-              archiveActive
-                ? "bg-amber-500 text-white border-amber-500"
-                : "border-amber-400 text-amber-600 hover:bg-amber-50"
-            }`}
-          >
-            Archive
-          </button>
-          <button
-            onClick={() => { setDeleteActive((d) => !d); setArchiveActive(false); }}
-            className={`px-3 py-1.5 text-sm rounded-md border transition-colors whitespace-nowrap ${
-              deleteActive
-                ? "bg-red-600 text-white border-red-600"
-                : "border-red-400 text-red-600 hover:bg-red-50"
-            }`}
-          >
-            Delete
-          </button>
+        {/* Search bar + filter button */}
+        <div className="flex items-center gap-3">
+          <div className="relative flex-1 max-w-sm">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none">
+              &#x1F50D;
+            </span>
+            <input
+              ref={searchRef}
+              type="text"
+              placeholder="Search company, title, location, or tags…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-9 pr-8 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:border-blue-400"
+            />
+            {search && (
+              <button
+                onClick={() => { setSearch(""); searchRef.current?.focus(); }}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-200 text-lg leading-none"
+                aria-label="Clear search"
+              >
+                ×
+              </button>
+            )}
+          </div>
           <div className="flex-1" />
           <button
-            onClick={() => void handleApply()}
-            disabled={applying}
-            className="px-4 py-1.5 text-sm rounded-md bg-green-600 text-white font-medium hover:bg-green-700 disabled:opacity-50 disabled:cursor-wait transition-colors whitespace-nowrap"
+            onClick={() => setFilterOpen((o) => !o)}
+            className={`px-4 py-2 rounded-md text-sm border transition-colors whitespace-nowrap ${
+              filterOpen || activeFilterCount > 0
+                ? "bg-blue-600 text-white border-blue-600"
+                : "bg-white text-gray-700 border-gray-300 hover:border-blue-400"
+            }`}
           >
-            {applying ? "Applying…" : "Apply changes"}
+            Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
           </button>
         </div>
-      )}
+      </div>
 
       {/* Collapsible filter panel — grid-rows trick for smooth height animation */}
       <div
