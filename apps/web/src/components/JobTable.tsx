@@ -586,9 +586,13 @@ function ConfirmModal({
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-type Props = { jobs: JobApplicationListItem[] };
+type Props = {
+  jobs: JobApplicationListItem[];
+  newJobId?: string;
+  onAddJob?: () => void;
+};
 
-export function JobTable({ jobs }: Props) {
+export function JobTable({ jobs, newJobId, onAddJob }: Props) {
   const router = useRouter();
 
   // Local copy — lets us optimistically remove deleted rows without a page reload
@@ -659,6 +663,21 @@ export function JobTable({ jobs }: Props) {
   const [archiveActive, setArchiveActive] = useState(false);
   const [applying, setApplying] = useState(false);
   const [modal, setModal] = useState<{ type: "delete" | "archive"; count: number } | null>(null);
+
+  // New-row highlight — highlightedId shows green, fadingId holds the slow transition
+  const [highlightedId, setHighlightedId] = useState<string | null>(null);
+  const [fadingId, setFadingId]           = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!newJobId) return;
+    setHighlightedId(newJobId);
+    const t1 = setTimeout(() => {
+      setFadingId(newJobId);
+      setHighlightedId(null);
+    }, 50);
+    const t2 = setTimeout(() => setFadingId(null), 700);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, [newJobId]);
 
   // ─── Auth helper ──────────────────────────────────────────────────────────
 
@@ -1065,6 +1084,14 @@ export function JobTable({ jobs }: Props) {
           >
             Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
           </button>
+          {onAddJob && (
+            <button
+              onClick={onAddJob}
+              className="px-4 py-2 rounded-md text-sm bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors whitespace-nowrap"
+            >
+              + Add job
+            </button>
+          )}
         </div>
 
         {/* Banner — only mounted when rows are selected */}
@@ -1264,7 +1291,13 @@ export function JobTable({ jobs }: Props) {
                   <tr
                     key={job.id}
                     className={`border-b border-gray-200 cursor-pointer transition-colors ${
-                      isSelected ? "bg-blue-50 hover:bg-blue-100" : "hover:bg-gray-50"
+                      isSelected
+                        ? "bg-blue-50 hover:bg-blue-100"
+                        : highlightedId === job.id
+                        ? "bg-green-100 duration-[600ms]"
+                        : fadingId === job.id
+                        ? "duration-[600ms]"
+                        : "hover:bg-gray-50"
                     }`}
                     onClick={() => router.push(`/jobs/${job.id}`)}
                   >
