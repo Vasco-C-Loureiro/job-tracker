@@ -1287,11 +1287,11 @@ export function JobTable({ jobs, newJobId, onAddJob }: Props) {
       ) : displayedJobs.length === 0 ? (
         <p className="text-gray-500">No jobs match your search or filters.</p>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-sm">
+        <div className="overflow-x-auto bg-white rounded-md">
+          <table className="w-full border-collapse text-sm text-gray-900">
             <thead>
-              <tr className="border-b-2 border-gray-300 text-left">
-                <th className="py-2 pr-3 w-8">
+              <tr className="border-b-2 border-gray-300 text-left bg-white">
+                <th className="py-2 pl-4 pr-3 w-8">
                   <input
                     type="checkbox"
                     checked={allDisplayedSelected}
@@ -1331,11 +1331,11 @@ export function JobTable({ jobs, newJobId, onAddJob }: Props) {
                         ? "duration-[600ms]"
                         : isOpen
                         ? "bg-gray-50"
-                        : "hover:bg-gray-50"
+                        : "bg-white hover:bg-gray-50"
                     }`}
                     onClick={() => toggleExpand(job.id)}
                   >
-                    <td className="py-2 pr-3" onClick={(e) => e.stopPropagation()}>
+                    <td className="py-2 pl-4 pr-3" onClick={(e) => e.stopPropagation()}>
                       <input
                         type="checkbox"
                         checked={isSelected}
@@ -1367,7 +1367,7 @@ export function JobTable({ jobs, newJobId, onAddJob }: Props) {
                     {show("resumeCoverLetter") && (
                       <td className="py-2 pr-4" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center gap-2">
-                          <label className="flex items-center gap-1 text-xs text-gray-600 cursor-pointer">
+                          <label className="flex items-center gap-1 text-xs text-gray-700 cursor-pointer">
                             <input
                               type="checkbox"
                               checked={docsPatch[job.id]?.resumeSubmitted ?? job.resumeSubmitted ?? false}
@@ -1377,7 +1377,7 @@ export function JobTable({ jobs, newJobId, onAddJob }: Props) {
                             />
                             R
                           </label>
-                          <label className="flex items-center gap-1 text-xs text-gray-600 cursor-pointer">
+                          <label className="flex items-center gap-1 text-xs text-gray-700 cursor-pointer">
                             <input
                               type="checkbox"
                               checked={docsPatch[job.id]?.coverLetterSubmitted ?? job.coverLetterSubmitted ?? false}
@@ -1405,25 +1405,21 @@ export function JobTable({ jobs, newJobId, onAddJob }: Props) {
                       </td>
                     )}
                   </tr>,
-                  ...(isMounted ? [
-                    <tr key={`${job.id}-expand`}>
-                      <td colSpan={99} className="p-0">
-                        <div
-                          style={{
-                            maxHeight: isOpen ? "2000px" : "0",
-                            overflow: "hidden",
-                            transition: "max-height 300ms ease-in-out",
-                          }}
-                        >
-                          <ExpandedJobPanel
-                            job={job}
-                            getToken={getToken}
-                            onJobPatched={handleJobPatched}
-                          />
+                  <tr key={`${job.id}-expand`}>
+                    <td colSpan={99} className="p-0 border-0">
+                      <div className={`grid transition-all duration-300 ease-in-out overflow-hidden ${isOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}>
+                        <div className="min-h-0">
+                          {isMounted && (
+                            <ExpandedJobPanel
+                              job={job}
+                              getToken={getToken}
+                              onJobPatched={handleJobPatched}
+                            />
+                          )}
                         </div>
-                      </td>
-                    </tr>,
-                  ] : []),
+                      </div>
+                    </td>
+                  </tr>,
                 ];
               })}
             </tbody>
