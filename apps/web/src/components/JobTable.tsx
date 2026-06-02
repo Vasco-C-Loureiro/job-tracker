@@ -529,25 +529,84 @@ function StatusCell({ jobId, status, onStatusChange, saving }: StatusCellProps) 
   );
 }
 
+// ─── ConfirmModal ─────────────────────────────────────────────────────────────
+
+function ConfirmModal({
+  type,
+  count,
+  onConfirm,
+  onCancel,
+}: {
+  type: "delete" | "archive";
+  count: number;
+  onConfirm: (dontAskAgain: boolean) => void;
+  onCancel: () => void;
+}) {
+  const [dontAsk, setDontAsk] = useState(false);
+  const isDelete = type === "delete";
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="absolute inset-0 bg-black/50" onClick={onCancel} />
+      <div className="relative bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+        <h2 className="text-lg font-semibold text-gray-900 mb-3">Are you sure?</h2>
+        <p className="text-sm text-gray-600 mb-5">
+          {isDelete
+            ? `This will permanently delete ${count} application${count !== 1 ? "s" : ""}. This cannot be undone.`
+            : `This will archive ${count} application${count !== 1 ? "s" : ""}.`}
+        </p>
+        <label className="flex items-center gap-2 text-sm text-gray-700 mb-6 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={dontAsk}
+            onChange={(e) => setDontAsk(e.target.checked)}
+            className="shrink-0"
+          />
+          Don&apos;t ask again
+        </label>
+        <div className="flex justify-between gap-3">
+          <button
+            onClick={onCancel}
+            className="px-4 py-2 rounded-md border border-gray-300 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => onConfirm(dontAsk)}
+            className={`px-4 py-2 rounded-md text-sm text-white font-medium transition-colors ${
+              isDelete ? "bg-red-600 hover:bg-red-700" : "bg-amber-500 hover:bg-amber-600"
+            }`}
+          >
+            Confirm
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
 
 type Props = { jobs: JobApplicationListItem[] };
 
 export function JobTable({ jobs }: Props) {
   const router = useRouter();
-  const [sort, setSort] = useState<SortState>({
-    column: "appliedAt",
-    direction: "desc",
-  });
+
+  // Local copy — lets us optimistically remove deleted rows without a page reload
+  const [localJobs, setLocalJobs] = useState<JobApplicationListItem[]>(jobs);
+  useEffect(() => { setLocalJobs(jobs); }, [jobs]);
+
+  const [sort, setSort] = useState<SortState>({ column: "appliedAt", direction: "desc" });
   const [search, setSearch] = useState("");
   const searchRef = useRef<HTMLInputElement>(null);
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
   const [filterOpen, setFilterOpen] = useState(false);
 
-  // Column visibility from preferences
+  // Column visibility + bulk-warning prefs (loaded from /api/preferences on mount)
   const [visibleColumns, setVisibleColumns] = useState<Set<string>>(
     () => new Set(DEFAULT_VISIBLE_COLUMNS),
   );
+  const [skipDeleteWarning, setSkipDeleteWarning] = useState(false);
+  const [skipArchiveWarning, setSkipArchiveWarning] = useState(false);
 
   useEffect(() => {
     async function loadPreferences() {
@@ -559,15 +618,18 @@ export function JobTable({ jobs }: Props) {
           headers: { Authorization: `Bearer ${session.access_token}` },
         });
         if (!res.ok) return;
-        const prefs = (await res.json()) as { visible_columns: string[] };
+        const prefs = (await res.json()) as {
+          visible_columns: string[];
+          skip_bulk_delete_warning: boolean;
+          skip_bulk_archive_warning: boolean;
+        };
         if (Array.isArray(prefs.visible_columns)) {
           const cols = new Set(prefs.visible_columns);
-          // Always show locked columns regardless of stored prefs
-          cols.add("company");
-          cols.add("title");
-          cols.add("status");
+          cols.add("company"); cols.add("title"); cols.add("status");
           setVisibleColumns(cols);
         }
+        setSkipDeleteWarning(prefs.skip_bulk_delete_warning ?? false);
+        setSkipArchiveWarning(prefs.skip_bulk_archive_warning ?? false);
       } catch {
         // Keep defaults on any error
       }
@@ -587,29 +649,41 @@ export function JobTable({ jobs }: Props) {
   const [docsPatch, setDocsPatch] = useState<Record<string, DocOverride>>({});
   const [patchingDocs, setPatchingDocs] = useState<Set<string>>(new Set());
 
+  // Bulk selection
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  // Bulk action controls
+  const [bulkStatus, setBulkStatus] = useState<ApplicationStatus | "">("");
+  const [bulkTags, setBulkTags] = useState("");
+  const [deleteActive, setDeleteActive] = useState(false);
+  const [archiveActive, setArchiveActive] = useState(false);
+  const [applying, setApplying] = useState(false);
+  const [modal, setModal] = useState<{ type: "delete" | "archive"; count: number } | null>(null);
+
+  // ─── Auth helper ──────────────────────────────────────────────────────────
+
+  async function getToken(): Promise<string> {
+    const supabase = createSupabaseBrowserClient();
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) throw new Error("Not authenticated");
+    return session.access_token;
+  }
+
+  // ─── Single-row handlers ──────────────────────────────────────────────────
+
   async function handleStatusChange(jobId: string, newStatus: ApplicationStatus) {
     setStatusPatch((prev) => ({ ...prev, [jobId]: newStatus }));
     setPatchingId(jobId);
     try {
-      const supabase = createSupabaseBrowserClient();
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) throw new Error("Not authenticated");
+      const token = await getToken();
       const res = await fetch(`/api/jobs/${jobId}`, {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session.access_token}`,
-        },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ status: newStatus }),
       });
       if (!res.ok) throw new Error(`Patch failed: ${res.status}`);
     } catch {
-      // Revert optimistic update on failure
-      setStatusPatch((prev) => {
-        const next = { ...prev };
-        delete next[jobId];
-        return next;
-      });
+      setStatusPatch((prev) => { const n = { ...prev }; delete n[jobId]; return n; });
     } finally {
       setPatchingId(null);
     }
@@ -618,21 +692,13 @@ export function JobTable({ jobs }: Props) {
   async function handleDocChange(jobId: string, field: DocField, value: boolean) {
     const patchKey = `${jobId}-${field}`;
     if (patchingDocs.has(patchKey)) return;
-    setDocsPatch((prev) => ({
-      ...prev,
-      [jobId]: { ...(prev[jobId] ?? {}), [field]: value },
-    }));
+    setDocsPatch((prev) => ({ ...prev, [jobId]: { ...(prev[jobId] ?? {}), [field]: value } }));
     setPatchingDocs((prev) => new Set(prev).add(patchKey));
     try {
-      const supabase = createSupabaseBrowserClient();
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) throw new Error("Not authenticated");
+      const token = await getToken();
       const res = await fetch(`/api/jobs/${jobId}`, {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session.access_token}`,
-        },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ [field]: value }),
       });
       if (!res.ok) throw new Error(`Patch failed: ${res.status}`);
@@ -646,35 +712,138 @@ export function JobTable({ jobs }: Props) {
         return next;
       });
     } finally {
-      setPatchingDocs((prev) => {
-        const next = new Set(prev);
-        next.delete(patchKey);
-        return next;
-      });
+      setPatchingDocs((prev) => { const n = new Set(prev); n.delete(patchKey); return n; });
     }
   }
 
-  // Dynamic options built from the data
+  // ─── Bulk handlers ────────────────────────────────────────────────────────
+
+  async function executeDelete(ids: string[]) {
+    const token = await getToken();
+    const res = await fetch("/api/jobs", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ ids }),
+    });
+    if (!res.ok) throw new Error("Delete failed");
+    setLocalJobs((prev) => prev.filter((j) => !ids.includes(j.id)));
+    setSelectedIds(new Set());
+    setDeleteActive(false);
+    setBulkStatus("");
+    setBulkTags("");
+  }
+
+  async function handleApply() {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+
+    if (deleteActive) {
+      if (skipDeleteWarning) {
+        setApplying(true);
+        try { await executeDelete(ids); } finally { setApplying(false); }
+      } else {
+        setModal({ type: "delete", count: ids.length });
+      }
+      return;
+    }
+
+    if (archiveActive) {
+      if (skipArchiveWarning) {
+        // TODO: implement archive API call in archive unit
+        setSelectedIds(new Set());
+        setArchiveActive(false);
+      } else {
+        setModal({ type: "archive", count: ids.length });
+      }
+      return;
+    }
+
+    const hasStatus = bulkStatus !== "";
+    const hasNewTags = bulkTags.trim() !== "";
+    if (!hasStatus && !hasNewTags) return;
+
+    setApplying(true);
+    try {
+      const token = await getToken();
+      const newTagList = hasNewTags
+        ? bulkTags.split(",").map((t) => t.trim()).filter(Boolean)
+        : [];
+
+      await Promise.all(
+        ids.map(async (id) => {
+          const patches: Record<string, unknown> = {};
+          if (hasStatus) patches.status = bulkStatus;
+          if (hasNewTags) {
+            const existing = localJobs.find((j) => j.id === id)?.tags ?? [];
+            patches.tags = Array.from(new Set([...existing, ...newTagList]));
+          }
+          const res = await fetch(`/api/jobs/${id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+            body: JSON.stringify(patches),
+          });
+          if (!res.ok) return;
+          if (hasStatus)
+            setStatusPatch((prev) => ({ ...prev, [id]: bulkStatus as ApplicationStatus }));
+          if (hasNewTags)
+            setLocalJobs((prev) =>
+              prev.map((j) => j.id === id ? { ...j, tags: patches.tags as string[] } : j),
+            );
+        }),
+      );
+    } finally {
+      setSelectedIds(new Set());
+      setBulkStatus("");
+      setBulkTags("");
+      setApplying(false);
+    }
+  }
+
+  async function handleModalConfirm(dontAskAgain: boolean) {
+    const ids = Array.from(selectedIds);
+    const type = modal!.type;
+    setModal(null);
+
+    if (dontAskAgain) {
+      try {
+        const token = await getToken();
+        const prefKey =
+          type === "delete" ? "skip_bulk_delete_warning" : "skip_bulk_archive_warning";
+        await fetch("/api/preferences", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ [prefKey]: true }),
+        });
+        if (type === "delete") setSkipDeleteWarning(true);
+        else setSkipArchiveWarning(true);
+      } catch { /* preference update is best-effort */ }
+    }
+
+    if (type === "delete") {
+      try { await executeDelete(ids); } catch { /* silent */ }
+    } else {
+      // TODO: implement archive API call in archive unit
+      setSelectedIds(new Set());
+      setArchiveActive(false);
+    }
+  }
+
+  // ─── Derived data ─────────────────────────────────────────────────────────
+
   const allSources = useMemo(() => {
     const set = new Set<string>();
-    jobs.forEach((j) => {
-      if (j.source) set.add(j.source);
-    });
-    return Array.from(set)
-      .sort()
-      .map((s) => ({ value: s, label: s }));
-  }, [jobs]);
+    localJobs.forEach((j) => { if (j.source) set.add(j.source); });
+    return Array.from(set).sort().map((s) => ({ value: s, label: s }));
+  }, [localJobs]);
 
   const allTags = useMemo(() => {
     const set = new Set<string>();
-    jobs.forEach((j) => j.tags?.forEach((t) => set.add(t)));
-    return Array.from(set)
-      .sort()
-      .map((t) => ({ value: t, label: t }));
-  }, [jobs]);
+    localJobs.forEach((j) => j.tags?.forEach((t) => set.add(t)));
+    return Array.from(set).sort().map((t) => ({ value: t, label: t }));
+  }, [localJobs]);
 
   const maxSalary = useMemo(() => {
-    const maxVals = jobs
+    const maxVals = localJobs
       .map((j) => {
         if (j.salaryMax != null) return j.salaryMax;
         return parseSalary(j.salaryRaw)?.max ?? null;
@@ -682,25 +851,18 @@ export function JobTable({ jobs }: Props) {
       .filter((v): v is number => v !== null);
     if (maxVals.length === 0) return 0;
     return Math.ceil(Math.max(...maxVals) / 10000) * 10000;
-  }, [jobs]);
+  }, [localJobs]);
 
   const sliderMin = filters.salaryMin ?? 0;
   const sliderMax = filters.salaryMax ?? maxSalary;
-
-  const activeFilterCount = useMemo(
-    () => countActiveFilters(filters),
-    [filters],
-  );
+  const activeFilterCount = useMemo(() => countActiveFilters(filters), [filters]);
 
   const handleSort = (column: SortColumn) => {
     setSort((prev) => ({
       column,
-      direction:
-        prev.column === column
-          ? prev.direction === "asc"
-            ? "desc"
-            : "asc"
-          : "asc",
+      direction: prev.column === column
+        ? prev.direction === "asc" ? "desc" : "asc"
+        : "asc",
     }));
   };
 
@@ -717,9 +879,8 @@ export function JobTable({ jobs }: Props) {
     const effectiveStatus = (j: JobApplicationListItem): ApplicationStatus =>
       statusPatch[j.id] ?? j.status;
 
-    let result = [...jobs];
+    let result = [...localJobs];
 
-    // Search
     if (search.trim()) {
       const q = search.trim().toLowerCase();
       result = result.filter(
@@ -731,28 +892,16 @@ export function JobTable({ jobs }: Props) {
       );
     }
 
-    // Filters
     if (filters.status.size > 0)
       result = result.filter((j) => filters.status.has(effectiveStatus(j)));
-
     if (filters.interestLevel.size > 0)
-      result = result.filter(
-        (j) => j.interestLevel && filters.interestLevel.has(j.interestLevel),
-      );
-
+      result = result.filter((j) => j.interestLevel && filters.interestLevel.has(j.interestLevel));
     if (filters.remoteType.size > 0)
-      result = result.filter(
-        (j) => j.remoteType && filters.remoteType.has(j.remoteType),
-      );
-
+      result = result.filter((j) => j.remoteType && filters.remoteType.has(j.remoteType));
     if (filters.jobType.size > 0)
-      result = result.filter(
-        (j) => j.jobType && filters.jobType.has(j.jobType),
-      );
-
+      result = result.filter((j) => j.jobType && filters.jobType.has(j.jobType));
     if (filters.source.size > 0)
       result = result.filter((j) => filters.source.has(j.source));
-
     if (filters.tags.size > 0)
       result = result.filter((j) => j.tags?.some((t) => filters.tags.has(t)));
 
@@ -768,7 +917,6 @@ export function JobTable({ jobs }: Props) {
           }
         }
         if (jobMin === null || jobMax === null) return filters.includeUnspecifiedSalary;
-        // Range overlap: job passes if job.max >= filterMin AND job.min <= filterMax
         const filterMin = filters.salaryMin ?? 0;
         const filterMax = filters.salaryMax ?? Infinity;
         return jobMax >= filterMin && jobMin <= filterMax;
@@ -782,30 +930,20 @@ export function JobTable({ jobs }: Props) {
 
     if (filters.savedDateFrom)
       result = result.filter((j) => j.savedAt >= filters.savedDateFrom!);
-
     if (filters.savedDateTo)
-      result = result.filter(
-        (j) => j.savedAt.slice(0, 10) <= filters.savedDateTo!,
-      );
-
+      result = result.filter((j) => j.savedAt.slice(0, 10) <= filters.savedDateTo!);
     if (filters.resumeSubmitted !== "either")
       result = result.filter(
-        (j) =>
-          (j.resumeSubmitted ?? false) === (filters.resumeSubmitted === "yes"),
+        (j) => (j.resumeSubmitted ?? false) === (filters.resumeSubmitted === "yes"),
       );
-
     if (filters.coverLetterSubmitted !== "either")
       result = result.filter(
-        (j) =>
-          (j.coverLetterSubmitted ?? false) ===
-          (filters.coverLetterSubmitted === "yes"),
+        (j) => (j.coverLetterSubmitted ?? false) === (filters.coverLetterSubmitted === "yes"),
       );
 
-    // Sort
     return result.sort((a, b) => {
       let cmp = 0;
       const { column, direction } = sort;
-
       if (column === "company") cmp = a.company.localeCompare(b.company);
       else if (column === "title") cmp = a.title.localeCompare(b.title);
       else if (column === "status")
@@ -831,34 +969,49 @@ export function JobTable({ jobs }: Props) {
         else if (!b.appliedAt) cmp = -1;
         else cmp = a.appliedAt.localeCompare(b.appliedAt);
       }
-
       return direction === "asc" ? cmp : -cmp;
     });
-  }, [jobs, search, filters, sort, statusPatch]);
+  }, [localJobs, search, filters, sort, statusPatch]);
 
-  function SortHeader({
-    column,
-    children,
-  }: {
-    column: SortColumn;
-    children: React.ReactNode;
-  }) {
+  // ─── Selection helpers ────────────────────────────────────────────────────
+
+  const allDisplayedSelected =
+    displayedJobs.length > 0 && displayedJobs.every((j) => selectedIds.has(j.id));
+  const someDisplayedSelected =
+    displayedJobs.some((j) => selectedIds.has(j.id)) && !allDisplayedSelected;
+
+  function toggleSelectAll() {
+    if (allDisplayedSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(displayedJobs.map((j) => j.id)));
+    }
+  }
+
+  function toggleSelectOne(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  // ─── SortHeader (closure over sort state) ─────────────────────────────────
+
+  function SortHeader({ column, children }: { column: SortColumn; children: React.ReactNode }) {
     const isActive = sort.column === column;
     return (
       <th
         className={`py-2 pr-4 cursor-pointer select-none whitespace-nowrap group transition-colors ${
-          isActive
-            ? "font-medium border-b-2 border-blue-400"
-            : "font-semibold hover:bg-white/5"
+          isActive ? "font-medium border-b-2 border-blue-400" : "font-semibold hover:bg-white/5"
         }`}
         onClick={() => handleSort(column)}
       >
         {children}
         <span
           className={`ml-1 text-xs transition-colors ${
-            isActive
-              ? "text-blue-400"
-              : "text-gray-500 group-hover:text-gray-300"
+            isActive ? "text-blue-400" : "text-gray-500 group-hover:text-gray-300"
           }`}
         >
           {isActive ? (sort.direction === "asc" ? "▲" : "▼") : "⇅"}
@@ -866,6 +1019,8 @@ export function JobTable({ jobs }: Props) {
       </th>
     );
   }
+
+  // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
     <div>
@@ -885,10 +1040,7 @@ export function JobTable({ jobs }: Props) {
           />
           {search && (
             <button
-              onClick={() => {
-                setSearch("");
-                searchRef.current?.focus();
-              }}
+              onClick={() => { setSearch(""); searchRef.current?.focus(); }}
               className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-200 text-lg leading-none"
               aria-label="Clear search"
             >
@@ -918,83 +1070,36 @@ export function JobTable({ jobs }: Props) {
         <div className="min-h-0">
           <div className="border border-gray-200 rounded-lg p-5 bg-gray-50">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-5">
-              {/* Status */}
-              <MultiPills
-                label="Status"
-                options={[
-                  { value: "saved", label: "Saved" },
-                  { value: "applied", label: "Applied" },
-                  { value: "oa", label: "OA" },
-                  { value: "interview", label: "Interview" },
-                  { value: "offer", label: "Offer" },
-                  { value: "rejected", label: "Rejected" },
-                  { value: "ghosted", label: "Ghosted" },
-                ]}
-                selected={filters.status}
-                onToggle={(v) => toggleSetFilter("status", v)}
-              />
+              <MultiPills label="Status" options={[
+                { value: "saved", label: "Saved" }, { value: "applied", label: "Applied" },
+                { value: "oa", label: "OA" }, { value: "interview", label: "Interview" },
+                { value: "offer", label: "Offer" }, { value: "rejected", label: "Rejected" },
+                { value: "ghosted", label: "Ghosted" },
+              ]} selected={filters.status} onToggle={(v) => toggleSetFilter("status", v)} />
 
-              {/* Interest level */}
-              <MultiPills
-                label="Interest Level"
-                options={[
-                  { value: "low", label: "Low" },
-                  { value: "medium", label: "Medium" },
-                  { value: "high", label: "High" },
-                  { value: "very-high", label: "Very High" },
-                ]}
-                selected={filters.interestLevel}
-                onToggle={(v) => toggleSetFilter("interestLevel", v)}
-              />
+              <MultiPills label="Interest Level" options={[
+                { value: "low", label: "Low" }, { value: "medium", label: "Medium" },
+                { value: "high", label: "High" }, { value: "very-high", label: "Very High" },
+              ]} selected={filters.interestLevel} onToggle={(v) => toggleSetFilter("interestLevel", v)} />
 
-              {/* Remote type */}
-              <MultiPills
-                label="Remote Type"
-                options={[
-                  { value: "remote", label: "Remote" },
-                  { value: "hybrid", label: "Hybrid" },
-                  { value: "onsite", label: "Onsite" },
-                ]}
-                selected={filters.remoteType}
-                onToggle={(v) => toggleSetFilter("remoteType", v)}
-              />
+              <MultiPills label="Remote Type" options={[
+                { value: "remote", label: "Remote" }, { value: "hybrid", label: "Hybrid" },
+                { value: "onsite", label: "Onsite" },
+              ]} selected={filters.remoteType} onToggle={(v) => toggleSetFilter("remoteType", v)} />
 
-              {/* Job type */}
-              <MultiDropdown
-                label="Job Type"
-                placeholder="Any job type"
-                options={[
-                  { value: "full-time", label: "Full-time" },
-                  { value: "part-time", label: "Part-time" },
-                  { value: "contract", label: "Contract" },
-                  { value: "internship", label: "Internship" },
-                  { value: "graduate", label: "Graduate" },
-                  { value: "fixed-term", label: "Fixed-term" },
-                  { value: "permanent", label: "Permanent" },
-                ]}
-                selected={filters.jobType}
-                onToggle={(v) => toggleSetFilter("jobType", v)}
-              />
+              <MultiDropdown label="Job Type" placeholder="Any job type" options={[
+                { value: "full-time", label: "Full-time" }, { value: "part-time", label: "Part-time" },
+                { value: "contract", label: "Contract" }, { value: "internship", label: "Internship" },
+                { value: "graduate", label: "Graduate" }, { value: "fixed-term", label: "Fixed-term" },
+                { value: "permanent", label: "Permanent" },
+              ]} selected={filters.jobType} onToggle={(v) => toggleSetFilter("jobType", v)} />
 
-              {/* Source */}
-              <MultiDropdown
-                label="Source"
-                placeholder="Any source"
-                options={allSources}
-                selected={filters.source}
-                onToggle={(v) => toggleSetFilter("source", v)}
-              />
+              <MultiDropdown label="Source" placeholder="Any source" options={allSources}
+                selected={filters.source} onToggle={(v) => toggleSetFilter("source", v)} />
 
-              {/* Tags */}
-              <MultiDropdown
-                label="Tags"
-                placeholder="Any tag"
-                options={allTags}
-                selected={filters.tags}
-                onToggle={(v) => toggleSetFilter("tags", v)}
-              />
+              <MultiDropdown label="Tags" placeholder="Any tag" options={allTags}
+                selected={filters.tags} onToggle={(v) => toggleSetFilter("tags", v)} />
 
-              {/* Salary — spans full width */}
               <div className="sm:col-span-2 lg:col-span-3">
                 <SalarySlider
                   max={maxSalary}
@@ -1004,19 +1109,15 @@ export function JobTable({ jobs }: Props) {
                   onMinChange={(v) => {
                     const newMin = v === 0 ? null : v;
                     setFilters((f) => ({
-                      ...f,
-                      salaryMin: newMin,
-                      includeUnspecifiedSalary:
-                        newMin !== null || f.salaryMax !== null ? false : true,
+                      ...f, salaryMin: newMin,
+                      includeUnspecifiedSalary: newMin !== null || f.salaryMax !== null ? false : true,
                     }));
                   }}
                   onMaxChange={(v) => {
                     const newMax = v === maxSalary ? null : v;
                     setFilters((f) => ({
-                      ...f,
-                      salaryMax: newMax,
-                      includeUnspecifiedSalary:
-                        f.salaryMin !== null || newMax !== null ? false : true,
+                      ...f, salaryMax: newMax,
+                      includeUnspecifiedSalary: f.salaryMin !== null || newMax !== null ? false : true,
                     }));
                   }}
                   onIncludeUnspecifiedChange={(v) =>
@@ -1025,62 +1126,30 @@ export function JobTable({ jobs }: Props) {
                 />
               </div>
 
-              {/* Saved date range */}
               <div>
                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
                   Saved Date
                 </p>
                 <div className="flex items-center gap-2">
-                  <input
-                    type="date"
-                    value={filters.savedDateFrom ?? ""}
-                    onChange={(e) =>
-                      setFilters((f) => ({
-                        ...f,
-                        savedDateFrom: e.target.value || null,
-                      }))
-                    }
-                    className="flex-1 px-2 py-1.5 border border-gray-300 rounded text-sm text-gray-900 focus:outline-none focus:border-blue-400"
-                  />
+                  <input type="date" value={filters.savedDateFrom ?? ""}
+                    onChange={(e) => setFilters((f) => ({ ...f, savedDateFrom: e.target.value || null }))}
+                    className="flex-1 px-2 py-1.5 border border-gray-300 rounded text-sm text-gray-900 focus:outline-none focus:border-blue-400" />
                   <span className="text-gray-400 text-sm">–</span>
-                  <input
-                    type="date"
-                    value={filters.savedDateTo ?? ""}
-                    onChange={(e) =>
-                      setFilters((f) => ({
-                        ...f,
-                        savedDateTo: e.target.value || null,
-                      }))
-                    }
-                    className="flex-1 px-2 py-1.5 border border-gray-300 rounded text-sm text-gray-900 focus:outline-none focus:border-blue-400"
-                  />
+                  <input type="date" value={filters.savedDateTo ?? ""}
+                    onChange={(e) => setFilters((f) => ({ ...f, savedDateTo: e.target.value || null }))}
+                    className="flex-1 px-2 py-1.5 border border-gray-300 rounded text-sm text-gray-900 focus:outline-none focus:border-blue-400" />
                 </div>
               </div>
 
-              {/* Resume submitted */}
-              <ThreeWayToggle
-                label="Resume Submitted"
-                value={filters.resumeSubmitted}
-                onChange={(v) =>
-                  setFilters((f) => ({ ...f, resumeSubmitted: v }))
-                }
-              />
-
-              {/* Cover letter submitted */}
-              <ThreeWayToggle
-                label="Cover Letter"
-                value={filters.coverLetterSubmitted}
-                onChange={(v) =>
-                  setFilters((f) => ({ ...f, coverLetterSubmitted: v }))
-                }
-              />
+              <ThreeWayToggle label="Resume Submitted" value={filters.resumeSubmitted}
+                onChange={(v) => setFilters((f) => ({ ...f, resumeSubmitted: v }))} />
+              <ThreeWayToggle label="Cover Letter" value={filters.coverLetterSubmitted}
+                onChange={(v) => setFilters((f) => ({ ...f, coverLetterSubmitted: v }))} />
             </div>
 
-            {/* Panel footer */}
             <div className="mt-5 pt-4 border-t border-gray-200 flex items-center justify-between">
               <span className="text-sm text-gray-500">
-                {displayedJobs.length} of {jobs.length} job
-                {jobs.length !== 1 ? "s" : ""}
+                {displayedJobs.length} of {localJobs.length} job{localJobs.length !== 1 ? "s" : ""}
               </span>
               <button
                 onClick={() => setFilters(DEFAULT_FILTERS)}
@@ -1094,17 +1163,78 @@ export function JobTable({ jobs }: Props) {
         </div>
       </div>
 
+      {/* Bulk action banner — visible only when rows are selected */}
+      {selectedIds.size > 0 && (
+        <div className="flex flex-wrap items-center gap-2 mb-3 px-3 py-2 bg-white border border-gray-200 rounded-lg shadow-sm">
+          <span className="text-sm font-medium text-gray-700 whitespace-nowrap">
+            {selectedIds.size} selected
+          </span>
+          <select
+            value={bulkStatus}
+            onChange={(e) => setBulkStatus(e.target.value as ApplicationStatus | "")}
+            className="text-sm border border-gray-300 rounded-md px-2 py-1.5 text-gray-700 bg-white focus:outline-none focus:border-blue-400"
+          >
+            <option value="">Change status…</option>
+            {STATUS_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
+          <input
+            type="text"
+            placeholder="Add tags (comma separated)…"
+            value={bulkTags}
+            onChange={(e) => setBulkTags(e.target.value)}
+            className="flex-1 min-w-[180px] text-sm border border-gray-300 rounded-md px-2 py-1.5 text-gray-700 focus:outline-none focus:border-blue-400"
+          />
+          <button
+            onClick={() => { setArchiveActive((a) => !a); setDeleteActive(false); }}
+            className={`px-3 py-1.5 text-sm rounded-md border transition-colors whitespace-nowrap ${
+              archiveActive
+                ? "bg-amber-500 text-white border-amber-500"
+                : "border-amber-400 text-amber-600 hover:bg-amber-50"
+            }`}
+          >
+            Archive
+          </button>
+          <button
+            onClick={() => { setDeleteActive((d) => !d); setArchiveActive(false); }}
+            className={`px-3 py-1.5 text-sm rounded-md border transition-colors whitespace-nowrap ${
+              deleteActive
+                ? "bg-red-600 text-white border-red-600"
+                : "border-red-400 text-red-600 hover:bg-red-50"
+            }`}
+          >
+            Delete
+          </button>
+          <div className="flex-1" />
+          <button
+            onClick={() => void handleApply()}
+            disabled={applying}
+            className="px-4 py-1.5 text-sm rounded-md bg-green-600 text-white font-medium hover:bg-green-700 disabled:opacity-50 disabled:cursor-wait transition-colors whitespace-nowrap"
+          >
+            {applying ? "Applying…" : "Apply changes"}
+          </button>
+        </div>
+      )}
+
       {/* Table */}
-      {jobs.length === 0 ? (
-        <p className="text-gray-600">
-          No jobs saved yet. Use the extension to save a job.
-        </p>
+      {localJobs.length === 0 ? (
+        <p className="text-gray-600">No jobs saved yet. Use the extension to save a job.</p>
       ) : displayedJobs.length === 0 ? (
         <p className="text-gray-500">No jobs match your search or filters.</p>
       ) : (
         <table className="w-full border-collapse text-sm">
           <thead>
             <tr className="border-b-2 border-gray-300 text-left">
+              <th className="py-2 pr-3 w-8">
+                <input
+                  type="checkbox"
+                  checked={allDisplayedSelected}
+                  ref={(el) => { if (el) el.indeterminate = someDisplayedSelected; }}
+                  onChange={toggleSelectAll}
+                  className="cursor-pointer"
+                />
+              </th>
               <SortHeader column="status">Status</SortHeader>
               <SortHeader column="company">Company</SortHeader>
               <SortHeader column="title">Title</SortHeader>
@@ -1120,77 +1250,100 @@ export function JobTable({ jobs }: Props) {
             </tr>
           </thead>
           <tbody>
-            {displayedJobs.map((job) => (
-              <tr
-                key={job.id}
-                className="border-b border-gray-200 hover:bg-gray-50 cursor-pointer"
-                onClick={() => router.push(`/jobs/${job.id}`)}
-              >
-                <td className="py-2 pr-4" onClick={(e) => e.stopPropagation()}>
-                  <StatusCell
-                    jobId={job.id}
-                    status={statusPatch[job.id] ?? job.status}
-                    onStatusChange={handleStatusChange}
-                    saving={patchingId === job.id}
-                  />
-                </td>
-                <td className="py-2 pr-4">{job.company}</td>
-                <td className="py-2 pr-4 text-blue-700">{job.title}</td>
-                {show("location") && <td className="py-2 pr-4">{job.location ?? "—"}</td>}
-                {show("remoteType") && <td className="py-2 pr-4">{job.remoteType ?? "—"}</td>}
-                {show("jobType") && <td className="py-2 pr-4">{job.jobType ?? "—"}</td>}
-                {show("salaryRaw") && <td className="py-2 pr-4">{job.salaryRaw ?? "—"}</td>}
-                {show("interestLevel") && (
-                  <td className="py-2 pr-4">
-                    {job.interestLevel ? (INTEREST_LABELS[job.interestLevel] ?? job.interestLevel) : "—"}
+            {displayedJobs.map((job) => {
+              const isSelected = selectedIds.has(job.id);
+              return (
+                <tr
+                  key={job.id}
+                  className={`border-b border-gray-200 cursor-pointer transition-colors ${
+                    isSelected ? "bg-blue-50 hover:bg-blue-100" : "hover:bg-gray-50"
+                  }`}
+                  onClick={() => router.push(`/jobs/${job.id}`)}
+                >
+                  <td className="py-2 pr-3" onClick={(e) => e.stopPropagation()}>
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => toggleSelectOne(job.id)}
+                      className="cursor-pointer"
+                    />
                   </td>
-                )}
-                <td className="py-2 pr-4">{job.source}</td>
-                {show("appliedAt") && <td className="py-2 pr-4">{formatDate(job.appliedAt)}</td>}
-                {show("resumeCoverLetter") && (
                   <td className="py-2 pr-4" onClick={(e) => e.stopPropagation()}>
-                    <div className="flex items-center gap-2">
-                      <label className="flex items-center gap-1 text-xs text-gray-600 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={docsPatch[job.id]?.resumeSubmitted ?? job.resumeSubmitted ?? false}
-                          disabled={patchingDocs.has(`${job.id}-resumeSubmitted`)}
-                          onChange={(e) => void handleDocChange(job.id, "resumeSubmitted", e.target.checked)}
-                          className="shrink-0"
-                        />
-                        R
-                      </label>
-                      <label className="flex items-center gap-1 text-xs text-gray-600 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={docsPatch[job.id]?.coverLetterSubmitted ?? job.coverLetterSubmitted ?? false}
-                          disabled={patchingDocs.has(`${job.id}-coverLetterSubmitted`)}
-                          onChange={(e) => void handleDocChange(job.id, "coverLetterSubmitted", e.target.checked)}
-                          className="shrink-0"
-                        />
-                        CL
-                      </label>
-                    </div>
+                    <StatusCell
+                      jobId={job.id}
+                      status={statusPatch[job.id] ?? job.status}
+                      onStatusChange={handleStatusChange}
+                      saving={patchingId === job.id}
+                    />
                   </td>
-                )}
-                {show("sourceUrl") && (
-                  <td className="py-2">
-                    <a
-                      href={job.sourceUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      title={job.sourceUrl}
-                      className="text-blue-700 hover:text-blue-900 inline-flex"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <ExternalLink size={16} />
-                    </a>
-                  </td>
-                )}
-              </tr>
-            ))}
+                  <td className="py-2 pr-4">{job.company}</td>
+                  <td className="py-2 pr-4 text-blue-700">{job.title}</td>
+                  {show("location") && <td className="py-2 pr-4">{job.location ?? "—"}</td>}
+                  {show("remoteType") && <td className="py-2 pr-4">{job.remoteType ?? "—"}</td>}
+                  {show("jobType") && <td className="py-2 pr-4">{job.jobType ?? "—"}</td>}
+                  {show("salaryRaw") && <td className="py-2 pr-4">{job.salaryRaw ?? "—"}</td>}
+                  {show("interestLevel") && (
+                    <td className="py-2 pr-4">
+                      {job.interestLevel ? (INTEREST_LABELS[job.interestLevel] ?? job.interestLevel) : "—"}
+                    </td>
+                  )}
+                  <td className="py-2 pr-4">{job.source}</td>
+                  {show("appliedAt") && <td className="py-2 pr-4">{formatDate(job.appliedAt)}</td>}
+                  {show("resumeCoverLetter") && (
+                    <td className="py-2 pr-4" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex items-center gap-2">
+                        <label className="flex items-center gap-1 text-xs text-gray-600 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={docsPatch[job.id]?.resumeSubmitted ?? job.resumeSubmitted ?? false}
+                            disabled={patchingDocs.has(`${job.id}-resumeSubmitted`)}
+                            onChange={(e) => void handleDocChange(job.id, "resumeSubmitted", e.target.checked)}
+                            className="shrink-0"
+                          />
+                          R
+                        </label>
+                        <label className="flex items-center gap-1 text-xs text-gray-600 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={docsPatch[job.id]?.coverLetterSubmitted ?? job.coverLetterSubmitted ?? false}
+                            disabled={patchingDocs.has(`${job.id}-coverLetterSubmitted`)}
+                            onChange={(e) => void handleDocChange(job.id, "coverLetterSubmitted", e.target.checked)}
+                            className="shrink-0"
+                          />
+                          CL
+                        </label>
+                      </div>
+                    </td>
+                  )}
+                  {show("sourceUrl") && (
+                    <td className="py-2">
+                      <a
+                        href={job.sourceUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title={job.sourceUrl}
+                        className="text-blue-700 hover:text-blue-900 inline-flex"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <ExternalLink size={16} />
+                      </a>
+                    </td>
+                  )}
+                </tr>
+              );
+            })}
           </tbody>
         </table>
+      )}
+
+      {/* Confirmation modal */}
+      {modal && (
+        <ConfirmModal
+          type={modal.type}
+          count={modal.count}
+          onConfirm={(dontAskAgain) => void handleModalConfirm(dontAskAgain)}
+          onCancel={() => setModal(null)}
+        />
       )}
     </div>
   );

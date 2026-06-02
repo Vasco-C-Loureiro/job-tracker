@@ -176,3 +176,53 @@ export async function POST(request: NextRequest) {
 
   return NextResponse.json(data, { status: 201, headers: corsHeaders });
 }
+
+export async function DELETE(request: NextRequest) {
+  const authHeader = request.headers.get("Authorization");
+  if (!authHeader?.startsWith("Bearer ")) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const token = authHeader.slice(7);
+  const supabase = createSupabaseServiceClient();
+  const { data: userData, error: authError } = await supabase.auth.getUser(token);
+  if (authError || !userData.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const userId = userData.user.id;
+
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+  if (typeof body !== "object" || body === null || Array.isArray(body)) {
+    return NextResponse.json({ error: "Body must be a JSON object" }, { status: 400 });
+  }
+
+  const b = body as Record<string, unknown>;
+  if (
+    !Array.isArray(b.ids) ||
+    b.ids.length === 0 ||
+    !b.ids.every((id) => typeof id === "string")
+  ) {
+    return NextResponse.json(
+      { error: "ids must be a non-empty array of strings" },
+      { status: 400 },
+    );
+  }
+  const ids = b.ids as string[];
+
+  const { error, count } = await supabase
+    .from("job_applications")
+    .delete({ count: "exact" })
+    .in("id", ids)
+    .eq("user_id", userId);
+
+  if (error) {
+    console.error("Supabase delete error:", error);
+    return NextResponse.json({ error: "Failed to delete jobs" }, { status: 500 });
+  }
+
+  return NextResponse.json({ deleted: count ?? ids.length });
+}
