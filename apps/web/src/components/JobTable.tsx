@@ -794,6 +794,20 @@ export function JobTable({ jobs, newJobId, onAddJob }: Props) {
         body: JSON.stringify({ status: newStatus }),
       });
       if (!res.ok) throw new Error(`Patch failed: ${res.status}`);
+      const today = new Date().toISOString().split("T")[0];
+      if (newStatus === "applied") {
+        setLocalJobs((prev) =>
+          prev.map((j) =>
+            j.id === jobId
+              ? { ...j, status: newStatus, appliedAt: j.appliedAt ?? today }
+              : j,
+          ),
+        );
+      } else {
+        setLocalJobs((prev) =>
+          prev.map((j) => (j.id === jobId ? { ...j, status: newStatus } : j)),
+        );
+      }
     } catch {
       setStatusPatch((prev) => { const n = { ...prev }; delete n[jobId]; return n; });
     } finally {
@@ -1346,7 +1360,7 @@ export function JobTable({ jobs, newJobId, onAddJob }: Props) {
       ) : displayedJobs.length === 0 ? (
         <p className="text-gray-500">No jobs match your search or filters.</p>
       ) : (
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto w-full">
           <table className="w-full table-fixed text-sm text-gray-900">
             <thead>
               <tr className="text-left">
