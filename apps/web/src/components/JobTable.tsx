@@ -759,6 +759,11 @@ export function JobTable({ jobs, newJobId, onAddJob }: Props) {
         const normalised = Object.fromEntries(
           Object.entries(patch).map(([k, v]) => [k, v === null ? undefined : v]),
         );
+        // Optimistically set appliedAt to today when status changes to "applied"
+        // and the job doesn't already have one, matching the API's auto-set logic.
+        if (patch.status === "applied" && !j.appliedAt) {
+          normalised.appliedAt = new Date().toISOString().split("T")[0];
+        }
         return { ...j, ...normalised } as JobApplicationListItem;
       }),
     );

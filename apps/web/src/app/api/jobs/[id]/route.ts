@@ -285,6 +285,20 @@ export async function PATCH(
     }
   }
 
+  // When status is set to "applied" and applied_at wasn't explicitly provided,
+  // auto-set it to today if it isn't already recorded.
+  if (update.status === "applied" && !has("appliedAt")) {
+    const { data: current } = await supabase
+      .from("job_applications")
+      .select("applied_at")
+      .eq("id", id)
+      .eq("user_id", userId)
+      .single();
+    if (!current?.applied_at) {
+      update.applied_at = new Date().toISOString().split("T")[0];
+    }
+  }
+
   if (Object.keys(update).length === 0) {
     return NextResponse.json({ error: "No valid fields to update" }, { status: 400 });
   }
