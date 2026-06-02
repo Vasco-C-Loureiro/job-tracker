@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServiceClient } from "@/lib/supabase.server";
-import type { RemoteType, JobType, SaveJobPayload } from "@job-tracker/shared";
+import type { RemoteType, JobType, ApplicationStatus, SaveJobPayload } from "@job-tracker/shared";
 import { parseSalary } from "@job-tracker/shared";
 
 const VALID_REMOTE_TYPES: RemoteType[] = ["remote", "hybrid", "onsite"];
 const VALID_JOB_TYPES: JobType[] = [
   "full-time", "part-time", "contract", "internship", "graduate", "fixed-term", "permanent",
 ];
+const VALID_STATUSES: ApplicationStatus[] = [
+  "saved", "applied", "oa", "interview", "offer", "rejected", "ghosted",
+];
+const VALID_INTEREST_LEVELS = ["low", "medium", "high", "very-high"];
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -75,31 +79,27 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // Validate — all four payload fields are required non-empty strings
-  const { company, title, sourceUrl, source } = body as Partial<SaveJobPayload>;
+  // Validate — company, title, source required; sourceUrl may be empty string
+  const b = body as Record<string, unknown>;
+  const { company, title, sourceUrl, source } = b as Partial<SaveJobPayload>;
 
   if (
     typeof company !== "string" ||
     !company.trim() ||
     typeof title !== "string" ||
     !title.trim() ||
-    typeof sourceUrl !== "string" ||
-    !sourceUrl.trim() ||
     typeof source !== "string" ||
     !source.trim()
   ) {
     return NextResponse.json(
-      {
-        error:
-          "Missing or invalid fields: company, title, sourceUrl, source required",
-      },
+      { error: "Missing or invalid fields: company, title, source required" },
       { status: 400, headers: corsHeaders },
     );
   }
 
   // Optional fields — validate enums against allowlists, coerce bad values to undefined
   const { location, remoteType, jobType, salaryRaw, salaryMin, salaryMax, salaryCurrency, salaryRequested, description } =
-    body as Partial<SaveJobPayload>;
+    b as Partial<SaveJobPayload>;
 
   const safeLocation =
     typeof location === "string" && location.trim() ? location.trim() : undefined;
@@ -141,6 +141,24 @@ export async function POST(request: NextRequest) {
       ? salaryCurrency.trim()
       : inferCurrency(safeSalaryRaw);
 
+  // Additional fields accepted from manual "Add job" form
+  const safeStatus: ApplicationStatus =
+    typeof b.status === "string" && VALID_STATUSES.includes(b.status as ApplicationStatus)
+      ? (b.status as ApplicationStatus)
+      : "saved";
+  const safeNotes =
+    typeof b.notes === "string" && b.notes.trim() ? b.notes.trim() : undefined;
+  const safeAppliedAt =
+    typeof b.appliedAt === "string" && b.appliedAt.trim() ? b.appliedAt.trim() : undefined;
+  const safeInterestLevel =
+    typeof b.interestLevel === "string" && VALID_INTEREST_LEVELS.includes(b.interestLevel)
+      ? b.interestLevel
+      : undefined;
+  const safeTags =
+    Array.isArray(b.tags) && (b.tags as unknown[]).every((t) => typeof t === "string")
+      ? (b.tags as string[]).filter(Boolean)
+      : undefined;
+
   // camelCase → snake_case at the API boundary
   const { data, error } = await supabase
     .from("job_applications")
@@ -148,9 +166,9 @@ export async function POST(request: NextRequest) {
       user_id: userId,
       company: company.trim(),
       title: title.trim(),
-      source_url: sourceUrl.trim(),
+      source_url: typeof sourceUrl === "string" ? sourceUrl.trim() : "",
       source: source.trim(),
-      status: "saved",
+      status: safeStatus,
       location: safeLocation,
       remote_type: safeRemoteType,
       job_type: safeJobType,
@@ -160,6 +178,10 @@ export async function POST(request: NextRequest) {
       salary_currency: safeSalaryCurrency,
       salary_requested: safeSalaryRequested,
       description: safeDescription,
+      notes: safeNotes,
+      applied_at: safeAppliedAt,
+      interest_level: safeInterestLevel,
+      tags: safeTags,
       resume_submitted: defaultResumeSubmitted,
       cover_letter_submitted: defaultCoverLetterSubmitted,
     })
