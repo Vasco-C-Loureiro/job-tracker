@@ -1023,10 +1023,10 @@ export function JobTable({ jobs }: Props) {
   // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
-    <div>
-      {/* Fixed-space wrapper: search bar then banner — table position never shifts */}
-      <div className="mb-3 flex flex-col gap-2">
-        {/* 1. Search + filter button */}
+    <div className="relative">
+      {/* Absolute overlay: search bar then banner — floats above the padded table area */}
+      <div className="absolute top-0 left-0 right-0 z-10 flex flex-col gap-2">
+        {/* Search + filter button */}
         <div className="flex items-center gap-3">
           <div className="relative flex-1 max-w-sm">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none">
@@ -1062,65 +1062,63 @@ export function JobTable({ jobs }: Props) {
             Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
           </button>
         </div>
-        {/* 2. Bulk action banner — always in the DOM to hold its height; invisible when nothing selected */}
-        <div
-          className={`flex flex-wrap items-center gap-2 px-3 py-2 border rounded-lg shadow-sm transition-opacity ${
-            selectedIds.size > 0
-              ? "bg-white border-gray-200 opacity-100"
-              : "opacity-0 pointer-events-none border-transparent shadow-none"
-          }`}
-          aria-hidden={selectedIds.size === 0}
-        >
-          <span className="text-sm font-medium text-gray-700 whitespace-nowrap">
-            {selectedIds.size} selected
-          </span>
-          <select
-            value={bulkStatus}
-            onChange={(e) => setBulkStatus(e.target.value as ApplicationStatus | "")}
-            className="text-sm border border-gray-300 rounded-md px-2 py-1.5 text-gray-700 bg-white focus:outline-none focus:border-blue-400"
-          >
-            <option value="">Change status…</option>
-            {STATUS_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
-            ))}
-          </select>
-          <input
-            type="text"
-            placeholder="Add tags (comma separated)…"
-            value={bulkTags}
-            onChange={(e) => setBulkTags(e.target.value)}
-            className="flex-1 min-w-[180px] text-sm border border-gray-300 rounded-md px-2 py-1.5 text-gray-700 focus:outline-none focus:border-blue-400"
-          />
-          <button
-            onClick={() => { setArchiveActive((a) => !a); setDeleteActive(false); }}
-            className={`px-3 py-1.5 text-sm rounded-md border transition-colors whitespace-nowrap ${
-              archiveActive
-                ? "bg-amber-500 text-white border-amber-500"
-                : "border-amber-400 text-amber-600 hover:bg-amber-50"
-            }`}
-          >
-            Archive
-          </button>
-          <button
-            onClick={() => { setDeleteActive((d) => !d); setArchiveActive(false); }}
-            className={`px-3 py-1.5 text-sm rounded-md border transition-colors whitespace-nowrap ${
-              deleteActive
-                ? "bg-red-600 text-white border-red-600"
-                : "border-red-400 text-red-600 hover:bg-red-50"
-            }`}
-          >
-            Delete
-          </button>
-          <div className="flex-1" />
-          <button
-            onClick={() => void handleApply()}
-            disabled={applying}
-            className="px-4 py-1.5 text-sm rounded-md bg-green-600 text-white font-medium hover:bg-green-700 disabled:opacity-50 disabled:cursor-wait transition-colors whitespace-nowrap"
-          >
-            {applying ? "Applying…" : "Apply changes"}
-          </button>
-        </div>
+        {/* Bulk action banner — only rendered when rows are selected */}
+        {selectedIds.size > 0 && (
+          <div className="flex flex-wrap items-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-lg shadow-sm">
+            <span className="text-sm font-medium text-gray-700 whitespace-nowrap">
+              {selectedIds.size} selected
+            </span>
+            <select
+              value={bulkStatus}
+              onChange={(e) => setBulkStatus(e.target.value as ApplicationStatus | "")}
+              className="text-sm border border-gray-300 rounded-md px-2 py-1.5 text-gray-700 bg-white focus:outline-none focus:border-blue-400"
+            >
+              <option value="">Change status…</option>
+              {STATUS_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+            <input
+              type="text"
+              placeholder="Add tags (comma separated)…"
+              value={bulkTags}
+              onChange={(e) => setBulkTags(e.target.value)}
+              className="flex-1 min-w-[180px] text-sm border border-gray-300 rounded-md px-2 py-1.5 text-gray-700 focus:outline-none focus:border-blue-400"
+            />
+            <button
+              onClick={() => { setArchiveActive((a) => !a); setDeleteActive(false); }}
+              className={`px-3 py-1.5 text-sm rounded-md border transition-colors whitespace-nowrap ${
+                archiveActive
+                  ? "bg-amber-500 text-white border-amber-500"
+                  : "border-amber-400 text-amber-600 hover:bg-amber-50"
+              }`}
+            >
+              Archive
+            </button>
+            <button
+              onClick={() => { setDeleteActive((d) => !d); setArchiveActive(false); }}
+              className={`px-3 py-1.5 text-sm rounded-md border transition-colors whitespace-nowrap ${
+                deleteActive
+                  ? "bg-red-600 text-white border-red-600"
+                  : "border-red-400 text-red-600 hover:bg-red-50"
+              }`}
+            >
+              Delete
+            </button>
+            <div className="flex-1" />
+            <button
+              onClick={() => void handleApply()}
+              disabled={applying}
+              className="px-4 py-1.5 text-sm rounded-md bg-green-600 text-white font-medium hover:bg-green-700 disabled:opacity-50 disabled:cursor-wait transition-colors whitespace-nowrap"
+            >
+              {applying ? "Applying…" : "Apply changes"}
+            </button>
+          </div>
+        )}
       </div>
+
+      {/* Padded container — pt reserves space for the overlay so the table never moves */}
+      <div className="pt-[108px]">
 
       {/* Collapsible filter panel — grid-rows trick for smooth height animation */}
       <div
@@ -1342,6 +1340,8 @@ export function JobTable({ jobs }: Props) {
           </tbody>
         </table>
       )}
+
+      </div>
 
       {/* Confirmation modal */}
       {modal && (
