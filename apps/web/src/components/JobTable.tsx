@@ -146,13 +146,24 @@ function wrapLocation(loc: string): string {
 
 function formatSalaryCell(raw: string | undefined | null): React.ReactNode {
   if (!raw) return "—";
-  const parts = raw.split(/\s*[–—]\s*/);
-  if (parts.length === 2) {
-    return <><span>{parts[0].trim()} –</span><br /><span>{parts[1].trim()}</span></>;
+  // Split on en-dash, em-dash, or hyphen (salary range)
+  const parts = raw.split(/\s*[–—-]\s*/);
+  if (parts.length === 2 && parts[0] && parts[1]) {
+    return (
+      <>
+        <span className="block">{parts[0].trim()} –</span>
+        <span className="block">{parts[1].trim()}</span>
+      </>
+    );
   }
   const toMatch = raw.match(/^(.+?)\s+to\s+(.+)$/i);
   if (toMatch) {
-    return <><span>{toMatch[1].trim()} –</span><br /><span>{toMatch[2].trim()}</span></>;
+    return (
+      <>
+        <span className="block">{toMatch[1].trim()} –</span>
+        <span className="block">{toMatch[2].trim()}</span>
+      </>
+    );
   }
   return raw;
 }
@@ -1065,11 +1076,11 @@ export function JobTable({ jobs, newJobId, onAddJob }: Props) {
 
   // ─── SortHeader (closure over sort state) ─────────────────────────────────
 
-  function SortHeader({ column, children }: { column: SortColumn; children: React.ReactNode }) {
+  function SortHeader({ column, children, className = "" }: { column: SortColumn; children: React.ReactNode; className?: string }) {
     const isActive = sort.column === column;
     return (
       <th
-        className={`py-2 pb-3 pr-4 cursor-pointer select-none text-xs font-semibold uppercase tracking-wide group transition-colors ${
+        className={`py-2 pb-3 pr-4 cursor-pointer select-none text-xs font-semibold uppercase tracking-wide group transition-colors ${className} ${
           isActive ? "text-blue-500" : "text-gray-500 hover:text-gray-700"
         }`}
         onClick={() => handleSort(column)}
@@ -1085,7 +1096,7 @@ export function JobTable({ jobs, newJobId, onAddJob }: Props) {
   // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-2 px-6">
 
       {/* Fixed-height controls area — spacer + search bar + banner always occupy the same vertical space */}
       <div className="h-24 flex flex-col gap-2">
@@ -1104,7 +1115,7 @@ export function JobTable({ jobs, newJobId, onAddJob }: Props) {
               placeholder="Search company, title, location, or tags…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-8 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:border-blue-400"
+              className="w-full pl-9 pr-8 py-2 border border-gray-300 rounded-md text-sm text-gray-900 bg-white placeholder-gray-400 focus:outline-none focus:border-blue-400"
             />
             {search && (
               <button
@@ -1301,10 +1312,10 @@ export function JobTable({ jobs, newJobId, onAddJob }: Props) {
         <p className="text-gray-500">No jobs match your search or filters.</p>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full border-separate border-spacing-y-1 text-sm text-gray-900">
+          <table className="w-full table-fixed border-separate border-spacing-y-1 text-sm text-gray-900">
             <thead>
               <tr className="text-left">
-                <th className="py-2 pb-3 pl-3 pr-3 w-8">
+                <th className="py-2 pb-3 pl-3 pr-3 w-10">
                   <input
                     type="checkbox"
                     checked={allDisplayedSelected}
@@ -1313,48 +1324,58 @@ export function JobTable({ jobs, newJobId, onAddJob }: Props) {
                     className="w-4 h-4 cursor-pointer"
                   />
                 </th>
-                <SortHeader column="status">Status</SortHeader>
-                <SortHeader column="company">Company</SortHeader>
-                <SortHeader column="title">Title</SortHeader>
-                {show("location") && <SortHeader column="location">Location</SortHeader>}
-                {show("remoteType") && <th className="py-2 pb-3 pr-4 text-gray-500 text-xs font-semibold uppercase tracking-wide">Remote</th>}
-                {show("jobType") && <th className="py-2 pb-3 pr-4 text-gray-500 text-xs font-semibold uppercase tracking-wide">Job Type</th>}
-                {show("salaryRaw") && <SortHeader column="salary">Salary</SortHeader>}
-                {show("interestLevel") && <th className="py-2 pb-3 pr-4 text-gray-500 text-xs font-semibold uppercase tracking-wide">Interest</th>}
-                <th className="py-2 pb-3 pr-4 text-gray-500 text-xs font-semibold uppercase tracking-wide">Source</th>
-                {show("appliedAt") && <SortHeader column="appliedAt">Applied</SortHeader>}
-                {show("resumeCoverLetter") && <th className="py-2 pb-3 pr-4 text-gray-500 text-xs font-semibold uppercase tracking-wide">Docs</th>}
-                {show("sourceUrl") && <th className="py-2 pb-3 text-gray-500 text-xs font-semibold uppercase tracking-wide">URL</th>}
+                <SortHeader column="status" className="w-24">Status</SortHeader>
+                <SortHeader column="company" className="w-44">Company</SortHeader>
+                <SortHeader column="title" className="w-64">Title</SortHeader>
+                {show("location") && <SortHeader column="location" className="w-32">Location</SortHeader>}
+                {show("remoteType") && <th className="py-2 pb-3 pr-4 w-20 text-gray-500 text-xs font-semibold uppercase tracking-wide">Remote</th>}
+                {show("jobType") && <th className="py-2 pb-3 pr-4 w-24 text-gray-500 text-xs font-semibold uppercase tracking-wide">Job Type</th>}
+                {show("salaryRaw") && <SortHeader column="salary" className="w-28">Salary</SortHeader>}
+                {show("interestLevel") && <th className="py-2 pb-3 pr-4 w-24 text-gray-500 text-xs font-semibold uppercase tracking-wide">Interest</th>}
+                <th className="py-2 pb-3 pr-4 w-20 text-gray-500 text-xs font-semibold uppercase tracking-wide">Source</th>
+                {show("appliedAt") && <SortHeader column="appliedAt" className="w-28">Applied</SortHeader>}
+                {show("resumeCoverLetter") && <th className="py-2 pb-3 pr-4 w-20 text-gray-500 text-xs font-semibold uppercase tracking-wide">Docs</th>}
+                {show("sourceUrl") && <th className="py-2 pb-3 w-10 text-gray-500 text-xs font-semibold uppercase tracking-wide">URL</th>}
               </tr>
             </thead>
-            <tbody>
-              {displayedJobs.flatMap((job) => {
-                const isSelected = selectedIds.has(job.id);
-                const isOpen     = expandedId === job.id;
-                const isClosing  = closingId === job.id;
-                const isMounted  = isOpen || isClosing;
-                // Keep top-only rounding while the expand panel is still visible (open or animating closed)
-                const visuallyExpanded = isOpen || isClosing;
+            {displayedJobs.map((job) => {
+              const isSelected = selectedIds.has(job.id);
+              const isOpen     = expandedId === job.id;
+              const isClosing  = closingId === job.id;
+              const isMounted  = isOpen || isClosing;
+              // Keep connected card styling while panel is open or animating closed
+              const visuallyExpanded = isOpen || isClosing;
 
-                // All class strings must be complete literals for Tailwind's scanner
-                const rowClass = [
-                  "cursor-pointer",
-                  "[&>td]:border-t [&>td]:border-b [&>td:first-child]:border-l [&>td:last-child]:border-r",
-                  "[&>td:first-child]:rounded-tl-lg [&>td:last-child]:rounded-tr-lg",
-                  visuallyExpanded ? "" : "[&>td:first-child]:rounded-bl-lg [&>td:last-child]:rounded-br-lg",
-                  isSelected
-                    ? "[&>td]:bg-blue-50 [&>td]:border-blue-400"
-                    : highlightedId === job.id
-                    ? "[&>td]:bg-green-100 [&>td]:border-gray-600"
-                    : fadingId === job.id
-                    ? "[&>td]:bg-gray-100 [&>td]:border-gray-600 [&>td]:transition-colors [&>td]:duration-[600ms]"
-                    : "[&>td]:bg-gray-100 [&>td]:border-gray-600",
-                  !isSelected ? "[&:hover>td]:bg-gray-200" : "",
-                ].filter(Boolean).join(" ");
+              // Main row borders: no bottom border when expanded so it merges with expand panel
+              const borderClasses = visuallyExpanded
+                ? "[&>td]:border-t [&>td:first-child]:border-l [&>td:last-child]:border-r"
+                : "[&>td]:border-t [&>td]:border-b [&>td:first-child]:border-l [&>td:last-child]:border-r";
 
-                return [
-                  <tr key={job.id} className={rowClass} onClick={() => toggleExpand(job.id)}>
-                    <td className="py-3 pl-3 pr-3 w-8" onClick={(e) => e.stopPropagation()}>
+              // Rounded corners: only top when expanded, full when collapsed
+              const cornerClasses = visuallyExpanded
+                ? "[&>td:first-child]:rounded-tl-lg [&>td:last-child]:rounded-tr-lg"
+                : "[&>td:first-child]:rounded-tl-lg [&>td:last-child]:rounded-tr-lg [&>td:first-child]:rounded-bl-lg [&>td:last-child]:rounded-br-lg";
+
+              const colorClasses = isSelected
+                ? "[&>td]:bg-blue-50 [&>td]:border-blue-400"
+                : highlightedId === job.id
+                ? "[&>td]:bg-green-100 [&>td]:border-gray-600"
+                : fadingId === job.id
+                ? "[&>td]:bg-gray-100 [&>td]:border-gray-600 [&>td]:transition-colors [&>td]:duration-[600ms]"
+                : "[&>td]:bg-gray-100 [&>td]:border-gray-600";
+
+              const hoverClass = !isSelected ? "[&:hover>td]:bg-gray-200" : "";
+              const rowClass = `cursor-pointer ${borderClasses} ${cornerClasses} ${colorClasses} ${hoverClass}`;
+
+              // Expand panel td: visible + connected when open, invisible when closed
+              const expandTdClass = visuallyExpanded
+                ? "p-0 border-l border-r border-b border-gray-600 rounded-b-lg bg-gray-100"
+                : "p-0 border-0 bg-transparent";
+
+              return (
+                <tbody key={job.id}>
+                  <tr className={rowClass} onClick={() => toggleExpand(job.id)}>
+                    <td className="py-4 pl-3 pr-3" onClick={(e) => e.stopPropagation()}>
                       <input
                         type="checkbox"
                         checked={isSelected}
@@ -1362,7 +1383,7 @@ export function JobTable({ jobs, newJobId, onAddJob }: Props) {
                         className="w-4 h-4 cursor-pointer"
                       />
                     </td>
-                    <td className="py-3 pr-3" onClick={(e) => e.stopPropagation()}>
+                    <td className="py-4 pr-3" onClick={(e) => e.stopPropagation()}>
                       <StatusCell
                         jobId={job.id}
                         status={statusPatch[job.id] ?? job.status}
@@ -1370,29 +1391,29 @@ export function JobTable({ jobs, newJobId, onAddJob }: Props) {
                         saving={patchingId === job.id}
                       />
                     </td>
-                    <td className="py-3 pr-3 max-w-[180px] leading-snug">{job.company}</td>
-                    <td className="py-3 pr-3 max-w-[280px] leading-snug text-blue-700">{job.title}</td>
+                    <td className="py-4 pr-3 whitespace-normal break-words leading-snug">{job.company}</td>
+                    <td className="py-4 pr-3 whitespace-normal break-words leading-snug text-blue-700">{job.title}</td>
                     {show("location") && (
-                      <td className="py-3 pr-3 max-w-[140px]">
+                      <td className="py-4 pr-3 whitespace-normal break-words">
                         {job.location ? wrapLocation(job.location) : "—"}
                       </td>
                     )}
-                    {show("remoteType") && <td className="py-3 pr-3">{job.remoteType ?? "—"}</td>}
-                    {show("jobType") && <td className="py-3 pr-3">{job.jobType ?? "—"}</td>}
+                    {show("remoteType") && <td className="py-4 pr-3">{job.remoteType ?? "—"}</td>}
+                    {show("jobType") && <td className="py-4 pr-3">{job.jobType ?? "—"}</td>}
                     {show("salaryRaw") && (
-                      <td className="py-3 pr-3 max-w-[120px]">
+                      <td className="py-4 pr-3 whitespace-normal break-words">
                         {formatSalaryCell(job.salaryRaw)}
                       </td>
                     )}
                     {show("interestLevel") && (
-                      <td className="py-3 pr-3">
+                      <td className="py-4 pr-3">
                         {job.interestLevel ? (INTEREST_LABELS[job.interestLevel] ?? job.interestLevel) : "—"}
                       </td>
                     )}
-                    <td className="py-3 pr-3">{job.source}</td>
-                    {show("appliedAt") && <td className="py-3 pr-3">{formatDate(job.appliedAt)}</td>}
+                    <td className="py-4 pr-3">{job.source}</td>
+                    {show("appliedAt") && <td className="py-4 pr-3">{formatDate(job.appliedAt)}</td>}
                     {show("resumeCoverLetter") && (
-                      <td className="py-3 pr-3" onClick={(e) => e.stopPropagation()}>
+                      <td className="py-4 pr-3" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center gap-2">
                           <label className="flex items-center gap-1 text-xs text-gray-700 cursor-pointer">
                             <input
@@ -1418,7 +1439,7 @@ export function JobTable({ jobs, newJobId, onAddJob }: Props) {
                       </td>
                     )}
                     {show("sourceUrl") && (
-                      <td className="py-3 pr-3">
+                      <td className="py-4 pr-3">
                         <a
                           href={job.sourceUrl}
                           target="_blank"
@@ -1431,12 +1452,10 @@ export function JobTable({ jobs, newJobId, onAddJob }: Props) {
                         </a>
                       </td>
                     )}
-                  </tr>,
-                  <tr key={`${job.id}-expand`} className={!isMounted ? "hidden" : ""}>
-                    <td
-                      colSpan={99}
-                      className="p-0 border-l border-r border-b border-gray-600 rounded-b-lg bg-gray-100"
-                    >
+                  </tr>
+                  {/* Expand panel — always in DOM for smooth open/close animation */}
+                  <tr>
+                    <td colSpan={99} className={expandTdClass}>
                       <div className={`grid transition-all duration-300 ease-in-out overflow-hidden ${isOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}>
                         <div className="min-h-0">
                           {isMounted && (
@@ -1449,10 +1468,10 @@ export function JobTable({ jobs, newJobId, onAddJob }: Props) {
                         </div>
                       </div>
                     </td>
-                  </tr>,
-                ];
-              })}
-            </tbody>
+                  </tr>
+                </tbody>
+              );
+            })}
           </table>
         </div>
       )}
