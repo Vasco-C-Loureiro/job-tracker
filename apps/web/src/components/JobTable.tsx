@@ -1024,9 +1024,45 @@ export function JobTable({ jobs }: Props) {
 
   return (
     <div>
-      {/* Fixed-space zone: banner above toolbar — table position never shifts when banner appears */}
+      {/* Fixed-space wrapper: search bar then banner — table position never shifts */}
       <div className="mb-3 flex flex-col gap-2">
-        {/* Bulk action banner — always in the DOM to occupy its height; invisible when nothing selected */}
+        {/* 1. Search + filter button */}
+        <div className="flex items-center gap-3">
+          <div className="relative flex-1 max-w-sm">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none">
+              &#x1F50D;
+            </span>
+            <input
+              ref={searchRef}
+              type="text"
+              placeholder="Search company, title, location, or tags…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-9 pr-8 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:border-blue-400"
+            />
+            {search && (
+              <button
+                onClick={() => { setSearch(""); searchRef.current?.focus(); }}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-200 text-lg leading-none"
+                aria-label="Clear search"
+              >
+                ×
+              </button>
+            )}
+          </div>
+          <div className="flex-1" />
+          <button
+            onClick={() => setFilterOpen((o) => !o)}
+            className={`px-4 py-2 rounded-md text-sm border transition-colors whitespace-nowrap ${
+              filterOpen || activeFilterCount > 0
+                ? "bg-blue-600 text-white border-blue-600"
+                : "bg-white text-gray-700 border-gray-300 hover:border-blue-400"
+            }`}
+          >
+            Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
+          </button>
+        </div>
+        {/* 2. Bulk action banner — always in the DOM to hold its height; invisible when nothing selected */}
         <div
           className={`flex flex-wrap items-center gap-2 px-3 py-2 border rounded-lg shadow-sm transition-opacity ${
             selectedIds.size > 0
@@ -1082,42 +1118,6 @@ export function JobTable({ jobs }: Props) {
             className="px-4 py-1.5 text-sm rounded-md bg-green-600 text-white font-medium hover:bg-green-700 disabled:opacity-50 disabled:cursor-wait transition-colors whitespace-nowrap"
           >
             {applying ? "Applying…" : "Apply changes"}
-          </button>
-        </div>
-        {/* Search + filter button */}
-        <div className="flex items-center gap-3">
-          <div className="relative flex-1 max-w-sm">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none">
-              &#x1F50D;
-            </span>
-            <input
-              ref={searchRef}
-              type="text"
-              placeholder="Search company, title, location, or tags…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-8 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:border-blue-400"
-            />
-            {search && (
-              <button
-                onClick={() => { setSearch(""); searchRef.current?.focus(); }}
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-200 text-lg leading-none"
-                aria-label="Clear search"
-              >
-                ×
-              </button>
-            )}
-          </div>
-          <div className="flex-1" />
-          <button
-            onClick={() => setFilterOpen((o) => !o)}
-            className={`px-4 py-2 rounded-md text-sm border transition-colors whitespace-nowrap ${
-              filterOpen || activeFilterCount > 0
-                ? "bg-blue-600 text-white border-blue-600"
-                : "bg-white text-gray-700 border-gray-300 hover:border-blue-400"
-            }`}
-          >
-            Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
           </button>
         </div>
       </div>
