@@ -145,6 +145,8 @@ export async function POST(request: NextRequest) {
       salary_currency: safeSalaryCurrency,
       salary_requested: safeSalaryRequested,
       description: safeDescription,
+      // AddJobModal should initialise its resumeSubmitted field to true to match
+      resume_submitted: true,
     })
     .select()
     .single();
