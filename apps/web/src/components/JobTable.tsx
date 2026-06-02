@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useMemo, useRef, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { ExternalLink } from "lucide-react";
 import type {
   JobApplicationListItem,
@@ -11,6 +10,7 @@ import type {
 } from "@job-tracker/shared";
 import { parseSalary } from "@job-tracker/shared";
 import { createSupabaseBrowserClient } from "@/lib/supabase";
+import { ExpandedJobPanel } from "@/components/ExpandedJobPanel";
 
 // ─── Column preferences ───────────────────────────────────────────────────────
 
@@ -593,8 +593,6 @@ type Props = {
 };
 
 export function JobTable({ jobs, newJobId, onAddJob }: Props) {
-  const router = useRouter();
-
   // Local copy — lets us optimistically remove deleted rows without a page reload
   const [localJobs, setLocalJobs] = useState<JobApplicationListItem[]>(jobs);
   useEffect(() => { setLocalJobs(jobs); }, [jobs]);
@@ -679,14 +677,46 @@ export function JobTable({ jobs, newJobId, onAddJob }: Props) {
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, [newJobId]);
 
+  // ─── Expand / collapse ────────────────────────────────────────────────────
+
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [closingId, setClosingId]   = useState<string | null>(null);
+
+  function toggleExpand(id: string) {
+    if (expandedId === id) {
+      setClosingId(id);
+      setExpandedId(null);
+      setTimeout(() => setClosingId(null), 300);
+    } else {
+      setClosingId(null);
+      setExpandedId(id);
+    }
+  }
+
+  function handleJobPatched(id: string, patch: Record<string, unknown>) {
+    setLocalJobs((prev) =>
+      prev.map((j) => {
+        if (j.id !== id) return j;
+        // Convert null values to undefined to match JobApplicationListItem shape
+        const normalised = Object.fromEntries(
+          Object.entries(patch).map(([k, v]) => [k, v === null ? undefined : v]),
+        );
+        return { ...j, ...normalised } as JobApplicationListItem;
+      }),
+    );
+    if ("status" in patch) {
+      setStatusPatch((prev) => { const n = { ...prev }; delete n[id]; return n; });
+    }
+  }
+
   // ─── Auth helper ──────────────────────────────────────────────────────────
 
-  async function getToken(): Promise<string> {
+  const getToken = useCallback(async (): Promise<string> => {
     const supabase = createSupabaseBrowserClient();
     const { data: { session } } = await supabase.auth.getSession();
     if (!session?.access_token) throw new Error("Not authenticated");
     return session.access_token;
-  }
+  }, []);
 
   // ─── Single-row handlers ──────────────────────────────────────────────────
 
@@ -1285,9 +1315,11 @@ export function JobTable({ jobs, newJobId, onAddJob }: Props) {
               </tr>
             </thead>
             <tbody>
-              {displayedJobs.map((job) => {
+              {displayedJobs.flatMap((job) => {
                 const isSelected = selectedIds.has(job.id);
-                return (
+                const isOpen    = expandedId === job.id;
+                const isMounted = expandedId === job.id || closingId === job.id;
+                return [
                   <tr
                     key={job.id}
                     className={`border-b border-gray-200 cursor-pointer transition-colors ${
@@ -1297,9 +1329,11 @@ export function JobTable({ jobs, newJobId, onAddJob }: Props) {
                         ? "bg-green-100 duration-[600ms]"
                         : fadingId === job.id
                         ? "duration-[600ms]"
+                        : isOpen
+                        ? "bg-gray-50"
                         : "hover:bg-gray-50"
                     }`}
-                    onClick={() => router.push(`/jobs/${job.id}`)}
+                    onClick={() => toggleExpand(job.id)}
                   >
                     <td className="py-2 pr-3" onClick={(e) => e.stopPropagation()}>
                       <input
@@ -1370,8 +1404,27 @@ export function JobTable({ jobs, newJobId, onAddJob }: Props) {
                         </a>
                       </td>
                     )}
-                  </tr>
-                );
+                  </tr>,
+                  ...(isMounted ? [
+                    <tr key={`${job.id}-expand`}>
+                      <td colSpan={99} className="p-0">
+                        <div
+                          style={{
+                            maxHeight: isOpen ? "2000px" : "0",
+                            overflow: "hidden",
+                            transition: "max-height 300ms ease-in-out",
+                          }}
+                        >
+                          <ExpandedJobPanel
+                            job={job}
+                            getToken={getToken}
+                            onJobPatched={handleJobPatched}
+                          />
+                        </div>
+                      </td>
+                    </tr>,
+                  ] : []),
+                ];
               })}
             </tbody>
           </table>

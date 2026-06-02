@@ -3,6 +3,35 @@ import { createSupabaseServiceClient } from "@/lib/supabase.server";
 import type { ApplicationStatus, RemoteType, JobType } from "@job-tracker/shared";
 import { parseSalary } from "@job-tracker/shared";
 
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const { id } = await params;
+  const authHeader = request.headers.get("Authorization");
+  if (!authHeader?.startsWith("Bearer ")) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const token = authHeader.slice(7);
+  const supabase = createSupabaseServiceClient();
+  const { data: userData, error: authError } = await supabase.auth.getUser(token);
+  if (authError || !userData.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { data, error } = await supabase
+    .from("job_applications")
+    .select("id, description")
+    .eq("id", id)
+    .eq("user_id", userData.user.id)
+    .maybeSingle();
+
+  if (error || !data) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+  return NextResponse.json(data);
+}
+
 function inferCurrency(salaryRaw: string | undefined): string | null {
   if (!salaryRaw) return null;
   if (salaryRaw.includes("£")) return "GBP";
@@ -24,7 +53,7 @@ const VALID_JOB_TYPES: JobType[] = [
 const VALID_INTEREST_LEVELS: InterestLevel[] = ["low", "medium", "high", "very-high"];
 
 // Fields the client is never allowed to overwrite
-const IMMUTABLE_FIELDS = ["id", "userId", "sourceUrl", "source", "savedAt"] as const;
+const IMMUTABLE_FIELDS = ["id", "userId", "source", "savedAt"] as const;
 
 export async function PATCH(
   request: NextRequest,
@@ -207,6 +236,10 @@ export async function PATCH(
       typeof b.companyApplicationUrl === "string" && b.companyApplicationUrl.trim()
         ? b.companyApplicationUrl.trim()
         : null;
+  }
+
+  if (has("sourceUrl")) {
+    update.source_url = typeof b.sourceUrl === "string" ? b.sourceUrl.trim() : "";
   }
 
   if (has("currentInterviewRound")) {
