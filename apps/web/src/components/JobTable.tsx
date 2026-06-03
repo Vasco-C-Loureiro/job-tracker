@@ -1361,7 +1361,7 @@ export function JobTable({ jobs, newJobId, onAddJob }: Props) {
         <p className="text-gray-500">No jobs match your search or filters.</p>
       ) : (
         <div className="overflow-x-auto w-full">
-          <table className="w-full table-fixed text-sm text-gray-900">
+          <table className="w-full text-sm text-gray-900">
             <thead>
               <tr className="text-left">
                 <th className="py-2 pb-3 pl-3 pr-3 w-10">
