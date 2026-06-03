@@ -1395,14 +1395,14 @@ export function JobTable({ jobs, newJobId, onAddJob }: Props) {
               // Keep connected card styling while panel is open or animating closed
               const visuallyExpanded = isOpen || isClosing;
 
-              // Card outline via ring/shadow on <tr> — no cell-border junction artifacts
+              // Per-cell borders: T+B all cells, L first only, R last only
               const outlineClasses = visuallyExpanded
                 ? isSelected
-                  ? "shadow-[0_-1px_0_0_rgb(96,165,250),-1px_0_0_0_rgb(96,165,250),1px_0_0_0_rgb(96,165,250)] rounded-tl-lg rounded-tr-lg"
-                  : "shadow-[0_-1px_0_0_rgb(75,85,99),-1px_0_0_0_rgb(75,85,99),1px_0_0_0_rgb(75,85,99)] rounded-tl-lg rounded-tr-lg"
+                  ? "[&>td]:border-t [&>td]:border-t-blue-400 [&>td:first-child]:border-l [&>td:first-child]:border-l-blue-400 [&>td:last-child]:border-r [&>td:last-child]:border-r-blue-400"
+                  : "[&>td]:border-t [&>td]:border-t-gray-600 [&>td:first-child]:border-l [&>td:first-child]:border-l-gray-600 [&>td:last-child]:border-r [&>td:last-child]:border-r-gray-600"
                 : isSelected
-                  ? "ring-1 ring-blue-400 rounded-lg"
-                  : "ring-1 ring-gray-600 rounded-lg";
+                  ? "[&>td]:border-t [&>td]:border-b [&>td]:border-t-blue-400 [&>td]:border-b-blue-400 [&>td:first-child]:border-l [&>td:first-child]:border-l-blue-400 [&>td:last-child]:border-r [&>td:last-child]:border-r-blue-400"
+                  : "[&>td]:border-t [&>td]:border-b [&>td]:border-t-gray-600 [&>td]:border-b-gray-600 [&>td:first-child]:border-l [&>td:first-child]:border-l-gray-600 [&>td:last-child]:border-r [&>td:last-child]:border-r-gray-600";
 
               // Rounded corners on first/last <td> for background clipping
               const cornerClasses = visuallyExpanded
