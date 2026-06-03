@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Loader2 } from "lucide-react";
 import type {
   JobApplicationListItem,
   ApplicationStatus,
@@ -1470,23 +1470,27 @@ export function JobTable({ jobs, newJobId, onAddJob }: Props) {
                       <td className="py-4 pr-3" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center gap-2">
                           <label className="flex items-center gap-1 text-xs text-gray-700 cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={docsPatch[job.id]?.resumeSubmitted ?? job.resumeSubmitted ?? false}
-                              disabled={patchingDocs.has(`${job.id}-resumeSubmitted`)}
-                              onChange={(e) => void handleDocChange(job.id, "resumeSubmitted", e.target.checked)}
-                              className="w-4 h-4 shrink-0 cursor-pointer"
-                            />
+                            {patchingDocs.has(`${job.id}-resumeSubmitted`)
+                              ? <Loader2 size={12} className="animate-spin text-blue-500 shrink-0" />
+                              : <input
+                                  type="checkbox"
+                                  checked={docsPatch[job.id]?.resumeSubmitted ?? job.resumeSubmitted ?? false}
+                                  onChange={(e) => void handleDocChange(job.id, "resumeSubmitted", e.target.checked)}
+                                  className="w-4 h-4 shrink-0 cursor-pointer"
+                                />
+                            }
                             R
                           </label>
                           <label className="flex items-center gap-1 text-xs text-gray-700 cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={docsPatch[job.id]?.coverLetterSubmitted ?? job.coverLetterSubmitted ?? false}
-                              disabled={patchingDocs.has(`${job.id}-coverLetterSubmitted`)}
-                              onChange={(e) => void handleDocChange(job.id, "coverLetterSubmitted", e.target.checked)}
-                              className="w-4 h-4 shrink-0 cursor-pointer"
-                            />
+                            {patchingDocs.has(`${job.id}-coverLetterSubmitted`)
+                              ? <Loader2 size={12} className="animate-spin text-blue-500 shrink-0" />
+                              : <input
+                                  type="checkbox"
+                                  checked={docsPatch[job.id]?.coverLetterSubmitted ?? job.coverLetterSubmitted ?? false}
+                                  onChange={(e) => void handleDocChange(job.id, "coverLetterSubmitted", e.target.checked)}
+                                  className="w-4 h-4 shrink-0 cursor-pointer"
+                                />
+                            }
                             CL
                           </label>
                         </div>
