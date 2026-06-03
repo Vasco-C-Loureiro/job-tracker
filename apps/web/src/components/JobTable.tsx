@@ -1395,24 +1395,21 @@ export function JobTable({ jobs, newJobId, onAddJob }: Props) {
               // Keep connected card styling while panel is open or animating closed
               const visuallyExpanded = isOpen || isClosing;
 
-              // Border sides: all cells get all four sides; inner L/R are transparent so
-              // only the outer rectangle is visible, matching the expanded panel's border exactly.
-              const borderSideClasses = visuallyExpanded
-                ? "[&>td]:border-t [&>td]:border-l [&>td]:border-r [&>td]:border-l-transparent [&>td]:border-r-transparent"
-                : "[&>td]:border-t [&>td]:border-b [&>td]:border-l [&>td]:border-r [&>td]:border-l-transparent [&>td]:border-r-transparent";
+              // Card outline via ring/shadow on <tr> — no cell-border junction artifacts
+              const outlineClasses = visuallyExpanded
+                ? isSelected
+                  ? "shadow-[0_-1px_0_0_rgb(96,165,250),-1px_0_0_0_rgb(96,165,250),1px_0_0_0_rgb(96,165,250)] rounded-tl-lg rounded-tr-lg"
+                  : "shadow-[0_-1px_0_0_rgb(75,85,99),-1px_0_0_0_rgb(75,85,99),1px_0_0_0_rgb(75,85,99)] rounded-tl-lg rounded-tr-lg"
+                : isSelected
+                  ? "ring-1 ring-blue-400 rounded-lg"
+                  : "ring-1 ring-gray-600 rounded-lg";
 
-              // Outer border colors: first/last child overrides restore color on the outer edges.
-              // Pseudo-class specificity ensures these win over the transparent rule above.
-              const outerBorderColor = isSelected
-                ? "[&>td]:border-t-blue-400 [&>td]:border-b-blue-400 [&>td:first-child]:border-l-blue-400 [&>td:last-child]:border-r-blue-400"
-                : "[&>td]:border-t-gray-600 [&>td]:border-b-gray-600 [&>td:first-child]:border-l-gray-600 [&>td:last-child]:border-r-gray-600";
-
-              // Rounded corners: only top when expanded, full when collapsed
+              // Rounded corners on first/last <td> for background clipping
               const cornerClasses = visuallyExpanded
                 ? "[&>td:first-child]:rounded-tl-lg [&>td:last-child]:rounded-tr-lg"
                 : "[&>td:first-child]:rounded-tl-lg [&>td:first-child]:rounded-bl-lg [&>td:last-child]:rounded-tr-lg [&>td:last-child]:rounded-br-lg";
 
-              // Background only — border colors handled above
+              // Background only
               const colorClasses = isSelected
                 ? "[&>td]:bg-blue-50"
                 : highlightedId === job.id
@@ -1422,7 +1419,7 @@ export function JobTable({ jobs, newJobId, onAddJob }: Props) {
                 : "[&>td]:bg-gray-100";
 
               const hoverClass = !isSelected ? "[&:hover>td]:bg-gray-200" : "";
-              const rowClass = `cursor-pointer [&>td]:min-h-[72px] ${borderSideClasses} ${outerBorderColor} ${cornerClasses} ${colorClasses} ${hoverClass}`;
+              const rowClass = `cursor-pointer [&>td]:min-h-[72px] ${outlineClasses} ${cornerClasses} ${colorClasses} ${hoverClass}`;
 
               // Expand panel td: visible + connected when open, invisible when closed
               const expandTdClass = visuallyExpanded
