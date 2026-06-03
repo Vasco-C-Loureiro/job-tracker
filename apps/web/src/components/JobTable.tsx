@@ -1423,7 +1423,7 @@ export function JobTable({ jobs, newJobId, onAddJob }: Props) {
 
               // Expand panel td: visible + connected when open, invisible when closed
               const expandTdClass = visuallyExpanded
-                ? "p-0 border-l border-r border-b border-gray-600 rounded-bl-lg rounded-br-lg bg-gray-100"
+                ? "p-0 border-l border-r border-b border-gray-600 rounded-bl-lg rounded-br-lg bg-gray-100 overflow-hidden"
                 : "p-0 border-0 bg-transparent";
 
               return (
