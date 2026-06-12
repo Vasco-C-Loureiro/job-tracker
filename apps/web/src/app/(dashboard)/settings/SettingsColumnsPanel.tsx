@@ -1,15 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { Lock } from "lucide-react";
-import { createSupabaseBrowserClient } from "@/lib/supabase";
-import { DEFAULT_VISIBLE_COLUMNS } from "@/lib/column-preferences";
-
-type Prefs = {
-  visible_columns: string[];
-  default_resume_submitted: boolean;
-  default_cover_letter_submitted: boolean;
-};
 
 type ColumnMeta = { key: string; label: string; description: string; locked?: boolean };
 
@@ -46,70 +37,30 @@ function ToggleSwitch({ checked, onChange }: { checked: boolean; onChange: (v: b
   );
 }
 
-export default function SettingsColumnsPanel() {
-  const [loading, setLoading] = useState(true);
-  const [localColumns, setLocalColumns] = useState<Set<string>>(
-    () => new Set(DEFAULT_VISIBLE_COLUMNS),
-  );
-  const [defaultResume, setDefaultResume] = useState(true);
-  const [defaultCoverLetter, setDefaultCoverLetter] = useState(false);
-  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+type Props = {
+  loading: boolean;
+  localColumns: Set<string>;
+  defaultResume: boolean;
+  defaultCoverLetter: boolean;
+  onColumnsChange: (cols: Set<string>) => void;
+  onDefaultResumeChange: (v: boolean) => void;
+  onDefaultCoverLetterChange: (v: boolean) => void;
+};
 
-  useEffect(() => {
-    async function load() {
-      try {
-        const supabase = createSupabaseBrowserClient();
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session?.access_token) return;
-        const res = await fetch("/api/preferences", {
-          headers: { Authorization: `Bearer ${session.access_token}` },
-        });
-        if (!res.ok) return;
-        const prefs = (await res.json()) as Prefs;
-        setLocalColumns(new Set(prefs.visible_columns));
-        setDefaultResume(prefs.default_resume_submitted);
-        setDefaultCoverLetter(prefs.default_cover_letter_submitted);
-      } finally {
-        setLoading(false);
-      }
-    }
-    void load();
-  }, []);
-
+export default function SettingsColumnsPanel({
+  loading,
+  localColumns,
+  defaultResume,
+  defaultCoverLetter,
+  onColumnsChange,
+  onDefaultResumeChange,
+  onDefaultCoverLetterChange,
+}: Props) {
   function toggle(key: string) {
-    setLocalColumns((prev) => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return next;
-    });
-  }
-
-  async function handleSave() {
-    setSaveState("saving");
-    try {
-      const supabase = createSupabaseBrowserClient();
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) throw new Error("Not authenticated");
-      const res = await fetch("/api/preferences", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
-          visible_columns: Array.from(localColumns),
-          default_resume_submitted: defaultResume,
-          default_cover_letter_submitted: defaultCoverLetter,
-        }),
-      });
-      if (!res.ok) throw new Error("Save failed");
-      setSaveState("saved");
-      setTimeout(() => setSaveState("idle"), 2000);
-    } catch {
-      setSaveState("error");
-      setTimeout(() => setSaveState("idle"), 2000);
-    }
+    const next = new Set(localColumns);
+    if (next.has(key)) next.delete(key);
+    else next.add(key);
+    onColumnsChange(next);
   }
 
   if (loading) {
@@ -202,34 +153,18 @@ export default function SettingsColumnsPanel() {
               <p className="text-sm font-medium text-gray-800">Resume submitted by default</p>
               <p className="text-xs text-gray-500 mt-0.5">Pre-check the R checkbox for new jobs</p>
             </div>
-            <ToggleSwitch checked={defaultResume} onChange={setDefaultResume} />
+            <ToggleSwitch checked={defaultResume} onChange={onDefaultResumeChange} />
           </div>
           <div className="flex items-center justify-between px-4 py-3 border border-gray-200 rounded-lg bg-white">
             <div>
               <p className="text-sm font-medium text-gray-800">Cover letter submitted by default</p>
               <p className="text-xs text-gray-500 mt-0.5">Pre-check the CL checkbox for new jobs</p>
             </div>
-            <ToggleSwitch checked={defaultCoverLetter} onChange={setDefaultCoverLetter} />
+            <ToggleSwitch checked={defaultCoverLetter} onChange={onDefaultCoverLetterChange} />
           </div>
         </div>
       </section>
 
-      {/* Save */}
-      <div className="flex items-center gap-4">
-        <button
-          onClick={() => void handleSave()}
-          disabled={saveState === "saving"}
-          className="px-5 py-2 rounded-md bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-wait transition-colors"
-        >
-          {saveState === "saving" ? "Saving…" : "Save"}
-        </button>
-        {saveState === "saved" && (
-          <span className="text-sm text-green-600 font-medium">Saved ✓</span>
-        )}
-        {saveState === "error" && (
-          <span className="text-sm text-red-600">Failed to save. Try again.</span>
-        )}
-      </div>
     </div>
   );
 }

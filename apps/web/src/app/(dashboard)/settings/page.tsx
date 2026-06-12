@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase";
 import SettingsColumnsPanel from "./SettingsColumnsPanel";
+import { DEFAULT_VISIBLE_COLUMNS } from "@/lib/column-preferences";
 
 type ArchivePrefs = {
   autoArchiveInactiveEnabled: boolean;
@@ -20,6 +21,9 @@ const ARCHIVE_DEFAULTS: ArchivePrefs = {
 
 export default function SettingsPage() {
   const [prefs, setPrefs] = useState<ArchivePrefs>(ARCHIVE_DEFAULTS);
+  const [localColumns, setLocalColumns] = useState<Set<string>>(() => new Set(DEFAULT_VISIBLE_COLUMNS));
+  const [defaultResume, setDefaultResume] = useState(true);
+  const [defaultCoverLetter, setDefaultCoverLetter] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
@@ -34,13 +38,20 @@ export default function SettingsPage() {
         headers: { Authorization: `Bearer ${session.access_token}` },
       });
       if (res.ok) {
-        const data = (await res.json()) as Partial<ArchivePrefs>;
+        const data = (await res.json()) as Partial<ArchivePrefs> & {
+          visible_columns?: string[];
+          default_resume_submitted?: boolean;
+          default_cover_letter_submitted?: boolean;
+        };
         setPrefs({
           autoArchiveInactiveEnabled: data.autoArchiveInactiveEnabled ?? ARCHIVE_DEFAULTS.autoArchiveInactiveEnabled,
           autoArchiveInactiveDays: data.autoArchiveInactiveDays ?? ARCHIVE_DEFAULTS.autoArchiveInactiveDays,
           autoArchiveRejectedEnabled: data.autoArchiveRejectedEnabled ?? ARCHIVE_DEFAULTS.autoArchiveRejectedEnabled,
           autoArchiveRejectedDays: data.autoArchiveRejectedDays ?? ARCHIVE_DEFAULTS.autoArchiveRejectedDays,
         });
+        if (Array.isArray(data.visible_columns)) setLocalColumns(new Set(data.visible_columns));
+        if (typeof data.default_resume_submitted === "boolean") setDefaultResume(data.default_resume_submitted);
+        if (typeof data.default_cover_letter_submitted === "boolean") setDefaultCoverLetter(data.default_cover_letter_submitted);
       }
       setLoading(false);
     }
@@ -63,7 +74,12 @@ export default function SettingsPage() {
         "Content-Type": "application/json",
         Authorization: `Bearer ${session.access_token}`,
       },
-      body: JSON.stringify(prefs),
+      body: JSON.stringify({
+        ...prefs,
+        visible_columns: Array.from(localColumns),
+        default_resume_submitted: defaultResume,
+        default_cover_letter_submitted: defaultCoverLetter,
+      }),
     });
     if (res.ok) {
       setMessage({ type: "success", text: "Saved." });
@@ -89,15 +105,20 @@ export default function SettingsPage() {
         <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
       </div>
 
-      {/* Dashboard columns + Defaults (Unit 20) */}
-      <SettingsColumnsPanel />
+      <SettingsColumnsPanel
+        loading={loading}
+        localColumns={localColumns}
+        defaultResume={defaultResume}
+        defaultCoverLetter={defaultCoverLetter}
+        onColumnsChange={setLocalColumns}
+        onDefaultResumeChange={setDefaultResume}
+        onDefaultCoverLetterChange={setDefaultCoverLetter}
+      />
 
-      {/* Archiving (Unit 21) */}
-      <div className="mt-10">
-        {loading ? (
-          <p className="text-sm text-gray-500">Loading…</p>
-        ) : (
-          <>
+      {!loading && (
+        <>
+          {/* Archiving (Unit 21) */}
+          <div className="mt-10">
             <section className="mb-8">
               <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-4">
                 Archiving
@@ -167,26 +188,27 @@ export default function SettingsPage() {
                 </div>
               </div>
             </section>
+          </div>
 
-            <div className="flex items-center gap-4">
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                className="px-5 py-2 bg-blue-600 text-white text-sm font-semibold rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          {/* Single save button for all settings */}
+          <div className="flex items-center gap-4 mt-8">
+            <button
+              onClick={() => void handleSave()}
+              disabled={saving}
+              className="px-5 py-2 bg-blue-600 text-white text-sm font-semibold rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {saving ? "Saving…" : "Save changes"}
+            </button>
+            {message && (
+              <span
+                className={`text-sm ${message.type === "success" ? "text-green-700" : "text-red-600"}`}
               >
-                {saving ? "Saving…" : "Save changes"}
-              </button>
-              {message && (
-                <span
-                  className={`text-sm ${message.type === "success" ? "text-green-700" : "text-red-600"}`}
-                >
-                  {message.text}
-                </span>
-              )}
-            </div>
-          </>
-        )}
-      </div>
+                {message.text}
+              </span>
+            )}
+          </div>
+        </>
+      )}
     </main>
   );
 }
