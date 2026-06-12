@@ -1,6 +1,40 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServiceClient } from "@/lib/supabase.server";
 
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const { id: jobId } = await params;
+
+  const token = req.headers.get("authorization")?.replace("Bearer ", "");
+  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const supabase = createSupabaseServiceClient();
+  const { data: { user } } = await supabase.auth.getUser(token);
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { data: job } = await supabase
+    .from("job_applications")
+    .select("id")
+    .eq("id", jobId)
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (!job) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  const { data, error } = await supabase
+    .from("interview_rounds")
+    .select(
+      "id, job_application_id, round_number, type, date, done, follow_up_sent, notes, created_at, updated_at",
+    )
+    .eq("job_application_id", jobId)
+    .order("round_number", { ascending: true });
+
+  if (error) return NextResponse.json({ error: "Failed to fetch" }, { status: 500 });
+  return NextResponse.json(data ?? []);
+}
+
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },

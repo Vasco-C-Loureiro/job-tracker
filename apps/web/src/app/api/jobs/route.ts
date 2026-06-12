@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServiceClient } from "@/lib/supabase.server";
-import type { RemoteType, JobType, SaveJobPayload } from "@job-tracker/shared";
+import type { RemoteType, JobType, ApplicationStatus, SaveJobPayload } from "@job-tracker/shared";
 import { parseSalary } from "@job-tracker/shared";
 
 type JobRow = {
@@ -174,6 +174,10 @@ const VALID_REMOTE_TYPES: RemoteType[] = ["remote", "hybrid", "onsite"];
 const VALID_JOB_TYPES: JobType[] = [
   "full-time", "part-time", "contract", "internship", "graduate", "fixed-term", "permanent",
 ];
+const VALID_STATUSES: ApplicationStatus[] = [
+  "saved", "applied", "oa", "interview", "offer", "rejected", "ghosted",
+];
+const VALID_INTEREST_LEVELS = ["low", "medium", "high", "very-high"];
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -227,31 +231,42 @@ export async function POST(request: NextRequest) {
   }
   const userId = userData.user.id;
 
-  // Validate — all four payload fields are required non-empty strings
-  const { company, title, sourceUrl, source } = body as Partial<SaveJobPayload>;
+  // Fetch user's doc submission defaults (fall back to hardcoded defaults on error)
+  let defaultResumeSubmitted = true;
+  let defaultCoverLetterSubmitted = false;
+  {
+    const { data: prefs } = await supabase
+      .from("user_preferences")
+      .select("default_resume_submitted, default_cover_letter_submitted")
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (prefs) {
+      defaultResumeSubmitted = prefs.default_resume_submitted ?? true;
+      defaultCoverLetterSubmitted = prefs.default_cover_letter_submitted ?? false;
+    }
+  }
+
+  // Validate — company, title, source required; sourceUrl may be empty string
+  const b = body as Record<string, unknown>;
+  const { company, title, sourceUrl, source } = b as Partial<SaveJobPayload>;
 
   if (
     typeof company !== "string" ||
     !company.trim() ||
     typeof title !== "string" ||
     !title.trim() ||
-    typeof sourceUrl !== "string" ||
-    !sourceUrl.trim() ||
     typeof source !== "string" ||
     !source.trim()
   ) {
     return NextResponse.json(
-      {
-        error:
-          "Missing or invalid fields: company, title, sourceUrl, source required",
-      },
+      { error: "Missing or invalid fields: company, title, source required" },
       { status: 400, headers: corsHeaders },
     );
   }
 
   // Optional fields — validate enums against allowlists, coerce bad values to undefined
   const { location, remoteType, jobType, salaryRaw, salaryMin, salaryMax, salaryCurrency, salaryRequested, description } =
-    body as Partial<SaveJobPayload>;
+    b as Partial<SaveJobPayload>;
 
   const safeLocation =
     typeof location === "string" && location.trim() ? location.trim() : undefined;
@@ -293,6 +308,24 @@ export async function POST(request: NextRequest) {
       ? salaryCurrency.trim()
       : inferCurrency(safeSalaryRaw);
 
+  // Additional fields accepted from manual "Add job" form
+  const safeStatus: ApplicationStatus =
+    typeof b.status === "string" && VALID_STATUSES.includes(b.status as ApplicationStatus)
+      ? (b.status as ApplicationStatus)
+      : "saved";
+  const safeNotes =
+    typeof b.notes === "string" && b.notes.trim() ? b.notes.trim() : undefined;
+  const safeAppliedAt =
+    typeof b.appliedAt === "string" && b.appliedAt.trim() ? b.appliedAt.trim() : undefined;
+  const safeInterestLevel =
+    typeof b.interestLevel === "string" && VALID_INTEREST_LEVELS.includes(b.interestLevel)
+      ? b.interestLevel
+      : undefined;
+  const safeTags =
+    Array.isArray(b.tags) && (b.tags as unknown[]).every((t) => typeof t === "string")
+      ? (b.tags as string[]).filter(Boolean)
+      : undefined;
+
   // camelCase → snake_case at the API boundary
   const { data, error } = await supabase
     .from("job_applications")
@@ -300,9 +333,9 @@ export async function POST(request: NextRequest) {
       user_id: userId,
       company: company.trim(),
       title: title.trim(),
-      source_url: sourceUrl.trim(),
+      source_url: typeof sourceUrl === "string" ? sourceUrl.trim() : "",
       source: source.trim(),
-      status: "saved",
+      status: safeStatus,
       location: safeLocation,
       remote_type: safeRemoteType,
       job_type: safeJobType,
@@ -312,6 +345,12 @@ export async function POST(request: NextRequest) {
       salary_currency: safeSalaryCurrency,
       salary_requested: safeSalaryRequested,
       description: safeDescription,
+      notes: safeNotes,
+      applied_at: safeAppliedAt,
+      interest_level: safeInterestLevel,
+      tags: safeTags,
+      resume_submitted: defaultResumeSubmitted,
+      cover_letter_submitted: defaultCoverLetterSubmitted,
     })
     .select()
     .single();
@@ -325,4 +364,54 @@ export async function POST(request: NextRequest) {
   }
 
   return NextResponse.json(data, { status: 201, headers: corsHeaders });
+}
+
+export async function DELETE(request: NextRequest) {
+  const authHeader = request.headers.get("Authorization");
+  if (!authHeader?.startsWith("Bearer ")) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const token = authHeader.slice(7);
+  const supabase = createSupabaseServiceClient();
+  const { data: userData, error: authError } = await supabase.auth.getUser(token);
+  if (authError || !userData.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const userId = userData.user.id;
+
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+  if (typeof body !== "object" || body === null || Array.isArray(body)) {
+    return NextResponse.json({ error: "Body must be a JSON object" }, { status: 400 });
+  }
+
+  const b = body as Record<string, unknown>;
+  if (
+    !Array.isArray(b.ids) ||
+    b.ids.length === 0 ||
+    !b.ids.every((id) => typeof id === "string")
+  ) {
+    return NextResponse.json(
+      { error: "ids must be a non-empty array of strings" },
+      { status: 400 },
+    );
+  }
+  const ids = b.ids as string[];
+
+  const { error, count } = await supabase
+    .from("job_applications")
+    .delete({ count: "exact" })
+    .in("id", ids)
+    .eq("user_id", userId);
+
+  if (error) {
+    console.error("Supabase delete error:", error);
+    return NextResponse.json({ error: "Failed to delete jobs" }, { status: 500 });
+  }
+
+  return NextResponse.json({ deleted: count ?? ids.length });
 }

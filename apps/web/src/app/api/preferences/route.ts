@@ -1,38 +1,63 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServiceClient } from "@/lib/supabase.server";
+import { DEFAULT_VISIBLE_COLUMNS } from "@/lib/column-preferences";
 
 type PreferencesRow = {
   user_id: string;
-  auto_archive_inactive_enabled: boolean;
-  auto_archive_inactive_days: number;
-  auto_archive_rejected_enabled: boolean;
-  auto_archive_rejected_days: number;
+  // U20 columns
+  visible_columns: string[] | null;
+  skip_bulk_delete_warning: boolean | null;
+  skip_bulk_archive_warning: boolean | null;
+  default_resume_submitted: boolean | null;
+  default_cover_letter_submitted: boolean | null;
+  // U21 columns
+  auto_archive_inactive_enabled: boolean | null;
+  auto_archive_inactive_days: number | null;
+  auto_archive_rejected_enabled: boolean | null;
+  auto_archive_rejected_days: number | null;
 };
 
 const DEFAULTS = {
+  visible_columns: DEFAULT_VISIBLE_COLUMNS,
+  skip_bulk_delete_warning: false,
+  skip_bulk_archive_warning: false,
+  default_resume_submitted: true,
+  default_cover_letter_submitted: false,
   autoArchiveInactiveEnabled: true,
   autoArchiveInactiveDays: 30,
   autoArchiveRejectedEnabled: true,
   autoArchiveRejectedDays: 7,
 };
 
-function rowToResponse(row: PreferencesRow) {
+function buildResponse(row: PreferencesRow) {
   return {
-    autoArchiveInactiveEnabled: row.auto_archive_inactive_enabled,
-    autoArchiveInactiveDays: row.auto_archive_inactive_days,
-    autoArchiveRejectedEnabled: row.auto_archive_rejected_enabled,
-    autoArchiveRejectedDays: row.auto_archive_rejected_days,
+    visible_columns: row.visible_columns ?? DEFAULT_VISIBLE_COLUMNS,
+    skip_bulk_delete_warning: row.skip_bulk_delete_warning ?? false,
+    skip_bulk_archive_warning: row.skip_bulk_archive_warning ?? false,
+    default_resume_submitted: row.default_resume_submitted ?? true,
+    default_cover_letter_submitted: row.default_cover_letter_submitted ?? false,
+    autoArchiveInactiveEnabled: row.auto_archive_inactive_enabled ?? true,
+    autoArchiveInactiveDays: row.auto_archive_inactive_days ?? 30,
+    autoArchiveRejectedEnabled: row.auto_archive_rejected_enabled ?? true,
+    autoArchiveRejectedDays: row.auto_archive_rejected_days ?? 7,
   };
 }
 
 const SELECT_COLS =
-  "user_id, auto_archive_inactive_enabled, auto_archive_inactive_days, " +
+  "user_id, visible_columns, skip_bulk_delete_warning, skip_bulk_archive_warning, " +
+  "default_resume_submitted, default_cover_letter_submitted, " +
+  "auto_archive_inactive_enabled, auto_archive_inactive_days, " +
   "auto_archive_rejected_enabled, auto_archive_rejected_days";
 
+function getToken(request: NextRequest): string | null {
+  const h = request.headers.get("Authorization");
+  if (!h?.startsWith("Bearer ")) return null;
+  return h.slice(7);
+}
+
 async function authenticate(request: NextRequest) {
-  const authHeader = request.headers.get("Authorization");
-  if (!authHeader || !authHeader.startsWith("Bearer ")) return null;
-  const token = authHeader.slice(7);
+  const token = getToken(request);
+  if (!token) return null;
   const supabase = createSupabaseServiceClient();
   const { data: userData, error } = await supabase.auth.getUser(token);
   if (error || !userData.user) return null;
@@ -52,7 +77,7 @@ export async function GET(request: NextRequest) {
 
   if (!data) return NextResponse.json(DEFAULTS);
 
-  return NextResponse.json(rowToResponse(data as unknown as PreferencesRow));
+  return NextResponse.json(buildResponse(data as unknown as PreferencesRow));
 }
 
 export async function PUT(request: NextRequest) {
@@ -72,7 +97,49 @@ export async function PUT(request: NextRequest) {
   }
 
   const b = body as Record<string, unknown>;
-  const upsert: Record<string, unknown> = { user_id: userId };
+  const upsert: Record<string, unknown> = {
+    user_id: userId,
+    updated_at: new Date().toISOString(),
+  };
+
+  // ── U20 fields (snake_case in body → snake_case in DB) ──────────────────────
+
+  if ("visible_columns" in b) {
+    if (!Array.isArray(b.visible_columns) || !b.visible_columns.every((c) => typeof c === "string")) {
+      return NextResponse.json({ error: "visible_columns must be string[]" }, { status: 400 });
+    }
+    upsert.visible_columns = b.visible_columns;
+  }
+
+  if ("skip_bulk_delete_warning" in b) {
+    if (typeof b.skip_bulk_delete_warning !== "boolean") {
+      return NextResponse.json({ error: "skip_bulk_delete_warning must be boolean" }, { status: 400 });
+    }
+    upsert.skip_bulk_delete_warning = b.skip_bulk_delete_warning;
+  }
+
+  if ("skip_bulk_archive_warning" in b) {
+    if (typeof b.skip_bulk_archive_warning !== "boolean") {
+      return NextResponse.json({ error: "skip_bulk_archive_warning must be boolean" }, { status: 400 });
+    }
+    upsert.skip_bulk_archive_warning = b.skip_bulk_archive_warning;
+  }
+
+  if ("default_resume_submitted" in b) {
+    if (typeof b.default_resume_submitted !== "boolean") {
+      return NextResponse.json({ error: "default_resume_submitted must be boolean" }, { status: 400 });
+    }
+    upsert.default_resume_submitted = b.default_resume_submitted;
+  }
+
+  if ("default_cover_letter_submitted" in b) {
+    if (typeof b.default_cover_letter_submitted !== "boolean") {
+      return NextResponse.json({ error: "default_cover_letter_submitted must be boolean" }, { status: 400 });
+    }
+    upsert.default_cover_letter_submitted = b.default_cover_letter_submitted;
+  }
+
+  // ── U21 fields (camelCase in body → snake_case in DB) ──────────────────────
 
   if ("autoArchiveInactiveEnabled" in b) {
     if (typeof b.autoArchiveInactiveEnabled !== "boolean") {
@@ -133,5 +200,5 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ error: "Failed to save preferences" }, { status: 500 });
   }
 
-  return NextResponse.json(data ? rowToResponse(data as unknown as PreferencesRow) : DEFAULTS);
+  return NextResponse.json(data ? buildResponse(data as unknown as PreferencesRow) : DEFAULTS);
 }

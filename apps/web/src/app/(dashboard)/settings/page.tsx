@@ -2,15 +2,16 @@
 
 import { useState, useEffect } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase";
+import SettingsColumnsPanel from "./SettingsColumnsPanel";
 
-type PrefsState = {
+type ArchivePrefs = {
   autoArchiveInactiveEnabled: boolean;
   autoArchiveInactiveDays: number;
   autoArchiveRejectedEnabled: boolean;
   autoArchiveRejectedDays: number;
 };
 
-const DEFAULTS: PrefsState = {
+const ARCHIVE_DEFAULTS: ArchivePrefs = {
   autoArchiveInactiveEnabled: true,
   autoArchiveInactiveDays: 30,
   autoArchiveRejectedEnabled: true,
@@ -18,7 +19,7 @@ const DEFAULTS: PrefsState = {
 };
 
 export default function SettingsPage() {
-  const [prefs, setPrefs] = useState<PrefsState>(DEFAULTS);
+  const [prefs, setPrefs] = useState<ArchivePrefs>(ARCHIVE_DEFAULTS);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
@@ -33,12 +34,12 @@ export default function SettingsPage() {
         headers: { Authorization: `Bearer ${session.access_token}` },
       });
       if (res.ok) {
-        const data = (await res.json()) as Partial<PrefsState>;
+        const data = (await res.json()) as Partial<ArchivePrefs>;
         setPrefs({
-          autoArchiveInactiveEnabled: data.autoArchiveInactiveEnabled ?? DEFAULTS.autoArchiveInactiveEnabled,
-          autoArchiveInactiveDays: data.autoArchiveInactiveDays ?? DEFAULTS.autoArchiveInactiveDays,
-          autoArchiveRejectedEnabled: data.autoArchiveRejectedEnabled ?? DEFAULTS.autoArchiveRejectedEnabled,
-          autoArchiveRejectedDays: data.autoArchiveRejectedDays ?? DEFAULTS.autoArchiveRejectedDays,
+          autoArchiveInactiveEnabled: data.autoArchiveInactiveEnabled ?? ARCHIVE_DEFAULTS.autoArchiveInactiveEnabled,
+          autoArchiveInactiveDays: data.autoArchiveInactiveDays ?? ARCHIVE_DEFAULTS.autoArchiveInactiveDays,
+          autoArchiveRejectedEnabled: data.autoArchiveRejectedEnabled ?? ARCHIVE_DEFAULTS.autoArchiveRejectedEnabled,
+          autoArchiveRejectedDays: data.autoArchiveRejectedDays ?? ARCHIVE_DEFAULTS.autoArchiveRejectedDays,
         });
       }
       setLoading(false);
@@ -73,7 +74,7 @@ export default function SettingsPage() {
     setSaving(false);
   }
 
-  function set<K extends keyof PrefsState>(key: K, value: PrefsState[K]) {
+  function set<K extends keyof ArchivePrefs>(key: K, value: ArchivePrefs[K]) {
     setPrefs((prev) => ({ ...prev, [key]: value }));
     setMessage(null);
   }
@@ -83,111 +84,109 @@ export default function SettingsPage() {
     "focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed";
 
   return (
-    <main className="p-8 font-sans max-w-2xl">
-      <h1 className="text-2xl font-bold text-gray-900 mb-8">Settings</h1>
+    <main className="p-8 font-sans max-w-4xl mx-auto">
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
+      </div>
 
-      {loading ? (
-        <p className="text-sm text-gray-500">Loading…</p>
-      ) : (
-        <>
-          {/* ── Defaults ──────────────────────────────────── */}
-          <section className="mb-8">
-            <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-4">
-              Defaults
-            </h2>
-            <p className="text-sm text-gray-400">Coming soon.</p>
-          </section>
+      {/* Dashboard columns + Defaults (Unit 20) */}
+      <SettingsColumnsPanel />
 
-          {/* ── Archiving ─────────────────────────────────── */}
-          <section className="mb-8">
-            <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-4">
-              Archiving
-            </h2>
+      {/* Archiving (Unit 21) */}
+      <div className="mt-10">
+        {loading ? (
+          <p className="text-sm text-gray-500">Loading…</p>
+        ) : (
+          <>
+            <section className="mb-8">
+              <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-4">
+                Archiving
+              </h2>
 
-            {/* Auto-archive inactive */}
-            <div className="mb-6">
-              <label className="flex items-center gap-3 mb-2 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={prefs.autoArchiveInactiveEnabled}
-                  onChange={(e) => set("autoArchiveInactiveEnabled", e.target.checked)}
-                  className="w-4 h-4 shrink-0"
-                />
-                <span className="text-sm font-medium text-gray-900">
-                  Auto-archive inactive applications
-                </span>
-              </label>
-              <div className="ml-7">
-                <label className="flex items-center gap-2 text-sm text-gray-700">
+              {/* Auto-archive inactive */}
+              <div className="mb-6">
+                <label className="flex items-center gap-3 mb-2 cursor-pointer select-none">
                   <input
-                    type="number"
-                    min={1}
-                    step={1}
-                    value={prefs.autoArchiveInactiveDays}
-                    disabled={!prefs.autoArchiveInactiveEnabled}
-                    onChange={(e) => {
-                      const v = Math.max(1, Math.floor(Number(e.target.value)) || 1);
-                      set("autoArchiveInactiveDays", v);
-                    }}
-                    className={numInputCls}
+                    type="checkbox"
+                    checked={prefs.autoArchiveInactiveEnabled}
+                    onChange={(e) => set("autoArchiveInactiveEnabled", e.target.checked)}
+                    className="w-4 h-4 shrink-0"
                   />
-                  Days of inactivity before marking as ghosted and archiving
+                  <span className="text-sm font-medium text-gray-900">
+                    Auto-archive inactive applications
+                  </span>
                 </label>
+                <div className="ml-7">
+                  <label className="flex items-center gap-2 text-sm text-gray-700">
+                    <input
+                      type="number"
+                      min={1}
+                      step={1}
+                      value={prefs.autoArchiveInactiveDays}
+                      disabled={!prefs.autoArchiveInactiveEnabled}
+                      onChange={(e) => {
+                        const v = Math.max(1, Math.floor(Number(e.target.value)) || 1);
+                        set("autoArchiveInactiveDays", v);
+                      }}
+                      className={numInputCls}
+                    />
+                    Days of inactivity before marking as ghosted and archiving
+                  </label>
+                </div>
               </div>
-            </div>
 
-            {/* Auto-archive rejected/ghosted */}
-            <div className="mb-6">
-              <label className="flex items-center gap-3 mb-2 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={prefs.autoArchiveRejectedEnabled}
-                  onChange={(e) => set("autoArchiveRejectedEnabled", e.target.checked)}
-                  className="w-4 h-4 shrink-0"
-                />
-                <span className="text-sm font-medium text-gray-900">
-                  Auto-archive rejected/ghosted applications
-                </span>
-              </label>
-              <div className="ml-7">
-                <label className="flex items-center gap-2 text-sm text-gray-700">
+              {/* Auto-archive rejected/ghosted */}
+              <div className="mb-6">
+                <label className="flex items-center gap-3 mb-2 cursor-pointer select-none">
                   <input
-                    type="number"
-                    min={1}
-                    step={1}
-                    value={prefs.autoArchiveRejectedDays}
-                    disabled={!prefs.autoArchiveRejectedEnabled}
-                    onChange={(e) => {
-                      const v = Math.max(1, Math.floor(Number(e.target.value)) || 1);
-                      set("autoArchiveRejectedDays", v);
-                    }}
-                    className={numInputCls}
+                    type="checkbox"
+                    checked={prefs.autoArchiveRejectedEnabled}
+                    onChange={(e) => set("autoArchiveRejectedEnabled", e.target.checked)}
+                    className="w-4 h-4 shrink-0"
                   />
-                  Days after rejection/ghosting before archiving
+                  <span className="text-sm font-medium text-gray-900">
+                    Auto-archive rejected/ghosted applications
+                  </span>
                 </label>
+                <div className="ml-7">
+                  <label className="flex items-center gap-2 text-sm text-gray-700">
+                    <input
+                      type="number"
+                      min={1}
+                      step={1}
+                      value={prefs.autoArchiveRejectedDays}
+                      disabled={!prefs.autoArchiveRejectedEnabled}
+                      onChange={(e) => {
+                        const v = Math.max(1, Math.floor(Number(e.target.value)) || 1);
+                        set("autoArchiveRejectedDays", v);
+                      }}
+                      className={numInputCls}
+                    />
+                    Days after rejection/ghosting before archiving
+                  </label>
+                </div>
               </div>
-            </div>
-          </section>
+            </section>
 
-          {/* ── Save ──────────────────────────────────────── */}
-          <div className="flex items-center gap-4">
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              className="px-5 py-2 bg-blue-600 text-white text-sm font-semibold rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {saving ? "Saving…" : "Save changes"}
-            </button>
-            {message && (
-              <span
-                className={`text-sm ${message.type === "success" ? "text-green-700" : "text-red-600"}`}
+            <div className="flex items-center gap-4">
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="px-5 py-2 bg-blue-600 text-white text-sm font-semibold rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {message.text}
-              </span>
-            )}
-          </div>
-        </>
-      )}
+                {saving ? "Saving…" : "Save changes"}
+              </button>
+              {message && (
+                <span
+                  className={`text-sm ${message.type === "success" ? "text-green-700" : "text-red-600"}`}
+                >
+                  {message.text}
+                </span>
+              )}
+            </div>
+          </>
+        )}
+      </div>
     </main>
   );
 }

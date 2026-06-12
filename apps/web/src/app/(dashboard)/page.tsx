@@ -1,7 +1,7 @@
 import type { JobApplicationListItem, JobType, RemoteType } from "@job-tracker/shared";
 import { createSupabaseServerClient } from "@/lib/supabase.server";
 import { redirect } from "next/navigation";
-import { JobTable } from "@/components/JobTable";
+import { DashboardView } from "@/components/DashboardView";
 
 type JobApplicationRow = {
   id: string;
@@ -102,7 +102,7 @@ export default async function Home() {
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Applications</h1>
       </div>
-      <JobTable jobs={jobs} />
+      <DashboardView initialJobs={jobs} />
     </main>
   );
 }

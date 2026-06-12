@@ -12,6 +12,7 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
+  Settings as SettingsIcon,
 } from "lucide-react";
 import SignOutButton from "@/app/_components/sign-out-button";
 
@@ -121,8 +122,28 @@ export function Sidebar() {
         })}
       </nav>
 
-      {/* Footer: sign out */}
-      <div className="shrink-0 p-2 border-t border-gray-100">
+      {/* Footer: settings + sign out */}
+      <div className="shrink-0 p-2 border-t border-gray-100 flex flex-col gap-0.5">
+        <div className="relative group/nav">
+          <Link
+            href="/settings"
+            className={`flex items-center gap-3 px-2.5 py-2 rounded-md text-sm transition-colors ${
+              isExpanded ? "" : "justify-center"
+            } ${
+              pathname === "/settings"
+                ? "bg-blue-50 text-blue-700 font-medium"
+                : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+            }`}
+          >
+            <SettingsIcon size={18} className="shrink-0" />
+            {isExpanded && <span className="truncate">Settings</span>}
+          </Link>
+          {!isExpanded && (
+            <div className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-3 z-50 px-2 py-1 rounded bg-gray-900 text-white text-xs whitespace-nowrap opacity-0 group-hover/nav:opacity-100 transition-opacity duration-150">
+              Settings
+            </div>
+          )}
+        </div>
         <SignOutButton collapsed={!isExpanded} />
       </div>
     </aside>
