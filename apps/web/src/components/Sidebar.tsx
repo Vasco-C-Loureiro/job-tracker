@@ -9,6 +9,7 @@ import {
   Calendar,
   BarChart2,
   Upload,
+  Settings,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
@@ -27,6 +28,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/import",     icon: Upload,    label: "Import"       },
   { href: "/calendar",   icon: Calendar,  label: "Calendar",  disabled: true },
   { href: "/analytics",  icon: BarChart2, label: "Analytics", disabled: true },
+  { href: "/settings",   icon: Settings,  label: "Settings"  },
 ];
 
 const STORAGE_KEY = "job-tracker-sidebar-expanded";
