@@ -30,7 +30,7 @@ async function authorise(req: NextRequest, roundId: string) {
 
   if (!job) return { ok: false, status: 404, error: "Not found" } as const;
 
-  return { ok: true, supabase } as const;
+  return { ok: true, supabase, jobApplicationId: round.job_application_id, userId: user.id } as const;
 }
 
 export async function PATCH(
@@ -75,6 +75,12 @@ export async function PATCH(
     console.error("Interview round update error:", error);
     return NextResponse.json({ error: "Update failed" }, { status: 500 });
   }
+
+  await auth.supabase
+    .from("job_applications")
+    .update({ updated_at: new Date().toISOString() })
+    .eq("id", auth.jobApplicationId)
+    .eq("user_id", auth.userId);
 
   return NextResponse.json({ ok: true });
 }
