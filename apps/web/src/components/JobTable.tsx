@@ -1529,18 +1529,13 @@ export function JobTable({ jobs, newJobId, onAddJob }: Props) {
                           saving={patchingId === job.id}
                         />
                         {showArchived && (
-                          <>
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700 whitespace-nowrap">
-                              Archived
-                            </span>
-                            <button
-                              onClick={() => void handleStillActive(job.id)}
-                              disabled={stillActivating.has(job.id)}
-                              className="text-xs px-2 py-0.5 rounded border border-amber-400 text-amber-700 hover:bg-amber-50 whitespace-nowrap disabled:opacity-50 disabled:cursor-wait"
-                            >
-                              {stillActivating.has(job.id) ? "…" : "Still Active"}
-                            </button>
-                          </>
+                          <button
+                            onClick={() => void handleStillActive(job.id)}
+                            disabled={stillActivating.has(job.id)}
+                            className="text-xs px-2 py-0.5 rounded border border-amber-400 text-amber-700 hover:bg-amber-50 whitespace-nowrap disabled:opacity-50 disabled:cursor-wait"
+                          >
+                            {stillActivating.has(job.id) ? "…" : "Still Active"}
+                          </button>
                         )}
                       </div>
                     </td>
