@@ -719,6 +719,10 @@ export function JobTable({ jobs, newJobId, onAddJob }: Props) {
   const [archiveActive, setArchiveActive] = useState(false);
   const [applying, setApplying] = useState(false);
   const [modal, setModal] = useState<{ type: "delete" | "archive"; count: number } | null>(null);
+  const [showArchived, setShowArchived] = useState(false);
+  const [archivedJobs, setArchivedJobs] = useState<JobApplicationListItem[] | null>(null);
+  const [archiveLoading, setArchiveLoading] = useState(false);
+  const [stillActivating, setStillActivating] = useState<Set<string>>(new Set());
 
   // New-row highlight — highlightedId shows green, fadingId holds the slow transition
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
@@ -752,7 +756,7 @@ export function JobTable({ jobs, newJobId, onAddJob }: Props) {
   }
 
   function handleJobPatched(id: string, patch: Record<string, unknown>) {
-    setLocalJobs((prev) =>
+    const applyPatch = (prev: JobApplicationListItem[]) =>
       prev.map((j) => {
         if (j.id !== id) return j;
         // Convert null values to undefined to match JobApplicationListItem shape
@@ -765,8 +769,9 @@ export function JobTable({ jobs, newJobId, onAddJob }: Props) {
           normalised.appliedAt = new Date().toISOString().split("T")[0];
         }
         return { ...j, ...normalised } as JobApplicationListItem;
-      }),
-    );
+      });
+    setLocalJobs(applyPatch);
+    setArchivedJobs((prev) => prev ? applyPatch(prev) : null);
     if ("status" in patch) {
       setStatusPatch((prev) => { const n = { ...prev }; delete n[id]; return n; });
     }
@@ -844,6 +849,54 @@ export function JobTable({ jobs, newJobId, onAddJob }: Props) {
 
   // ─── Bulk handlers ────────────────────────────────────────────────────────
 
+  async function fetchArchivedJobs() {
+    setArchiveLoading(true);
+    try {
+      const token = await getToken();
+      const res = await fetch("/api/jobs?archived=true", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Failed to fetch");
+      const data = (await res.json()) as JobApplicationListItem[];
+      setArchivedJobs(data);
+    } catch {
+      setArchivedJobs([]);
+    } finally {
+      setArchiveLoading(false);
+    }
+  }
+
+  async function handleStillActive(jobId: string) {
+    setStillActivating((prev) => new Set(prev).add(jobId));
+    try {
+      const token = await getToken();
+      const res = await fetch(`/api/jobs/${jobId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ isArchived: false, archivedAt: null }),
+      });
+      if (!res.ok) throw new Error("Unarchive failed");
+      setArchivedJobs((prev) => prev?.filter((j) => j.id !== jobId) ?? null);
+    } finally {
+      setStillActivating((prev) => { const n = new Set(prev); n.delete(jobId); return n; });
+    }
+  }
+
+  async function executeBulkArchive(ids: string[]) {
+    const token = await getToken();
+    const res = await fetch("/api/jobs", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ action: "archive", ids }),
+    });
+    if (!res.ok) throw new Error("Archive failed");
+    setLocalJobs((prev) => prev.filter((j) => !ids.includes(j.id)));
+    setSelectedIds(new Set());
+    setArchiveActive(false);
+    setBulkStatus("");
+    setBulkTags("");
+  }
+
   async function executeDelete(ids: string[]) {
     const token = await getToken();
     const res = await fetch("/api/jobs", {
@@ -875,9 +928,8 @@ export function JobTable({ jobs, newJobId, onAddJob }: Props) {
 
     if (archiveActive) {
       if (skipArchiveWarning) {
-        // TODO: implement archive API call in archive unit
-        setSelectedIds(new Set());
-        setArchiveActive(false);
+        setApplying(true);
+        try { await executeBulkArchive(ids); } finally { setApplying(false); }
       } else {
         setModal({ type: "archive", count: ids.length });
       }
@@ -948,28 +1000,31 @@ export function JobTable({ jobs, newJobId, onAddJob }: Props) {
     if (type === "delete") {
       try { await executeDelete(ids); } catch { /* silent */ }
     } else {
-      // TODO: implement archive API call in archive unit
-      setSelectedIds(new Set());
-      setArchiveActive(false);
+      try { await executeBulkArchive(ids); } catch { /* silent */ }
     }
   }
 
   // ─── Derived data ─────────────────────────────────────────────────────────
 
+  const baseJobs = useMemo(
+    () => (showArchived ? archivedJobs ?? [] : localJobs),
+    [showArchived, archivedJobs, localJobs],
+  );
+
   const allSources = useMemo(() => {
     const set = new Set<string>();
-    localJobs.forEach((j) => { if (j.source) set.add(j.source); });
+    baseJobs.forEach((j) => { if (j.source) set.add(j.source); });
     return Array.from(set).sort().map((s) => ({ value: s, label: s }));
-  }, [localJobs]);
+  }, [baseJobs]);
 
   const allTags = useMemo(() => {
     const set = new Set<string>();
-    localJobs.forEach((j) => j.tags?.forEach((t) => set.add(t)));
+    baseJobs.forEach((j) => j.tags?.forEach((t) => set.add(t)));
     return Array.from(set).sort().map((t) => ({ value: t, label: t }));
-  }, [localJobs]);
+  }, [baseJobs]);
 
   const maxSalary = useMemo(() => {
-    const maxVals = localJobs
+    const maxVals = baseJobs
       .map((j) => {
         if (j.salaryMax != null) return j.salaryMax;
         return parseSalary(j.salaryRaw)?.max ?? null;
@@ -977,7 +1032,7 @@ export function JobTable({ jobs, newJobId, onAddJob }: Props) {
       .filter((v): v is number => v !== null);
     if (maxVals.length === 0) return 0;
     return Math.ceil(Math.max(...maxVals) / 10000) * 10000;
-  }, [localJobs]);
+  }, [baseJobs]);
 
   const sliderMin = filters.salaryMin ?? 0;
   const sliderMax = filters.salaryMax ?? maxSalary;
@@ -1005,7 +1060,7 @@ export function JobTable({ jobs, newJobId, onAddJob }: Props) {
     const effectiveStatus = (j: JobApplicationListItem): ApplicationStatus =>
       statusPatch[j.id] ?? j.status;
 
-    let result = [...localJobs];
+    let result = [...baseJobs];
 
     if (search.trim()) {
       const q = search.trim().toLowerCase();
@@ -1097,7 +1152,7 @@ export function JobTable({ jobs, newJobId, onAddJob }: Props) {
       }
       return direction === "asc" ? cmp : -cmp;
     });
-  }, [localJobs, search, filters, sort, statusPatch]);
+  }, [baseJobs, search, filters, sort, statusPatch]);
 
   // ─── Selection helpers ────────────────────────────────────────────────────
 
@@ -1186,6 +1241,23 @@ export function JobTable({ jobs, newJobId, onAddJob }: Props) {
             }`}
           >
             Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
+          </button>
+          <button
+            onClick={() => {
+              const next = !showArchived;
+              setShowArchived(next);
+              setSelectedIds(new Set());
+              if (next && archivedJobs === null) void fetchArchivedJobs();
+            }}
+            disabled={archiveLoading}
+            className={`px-4 py-2 rounded-md text-sm border transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-wait ${
+              showArchived
+                ? "bg-amber-500 text-white border-amber-500"
+                : "bg-white text-gray-700 border-gray-300 hover:border-amber-400"
+            }`}
+          >
+            {archiveLoading && <Loader2 size={14} className="animate-spin mr-1 inline" />}
+            {showArchived ? "Hide archived" : "Show archived"}
           </button>
           {onAddJob && (
             <button
@@ -1340,7 +1412,7 @@ export function JobTable({ jobs, newJobId, onAddJob }: Props) {
 
             <div className="mt-5 pt-4 border-t border-gray-200 flex items-center justify-between">
               <span className="text-sm text-gray-500">
-                {displayedJobs.length} of {localJobs.length} job{localJobs.length !== 1 ? "s" : ""}
+                {displayedJobs.length} of {baseJobs.length} job{baseJobs.length !== 1 ? "s" : ""}
               </span>
               <button
                 onClick={() => setFilters(DEFAULT_FILTERS)}
@@ -1355,8 +1427,15 @@ export function JobTable({ jobs, newJobId, onAddJob }: Props) {
       </div>
 
       {/* Table */}
-      {localJobs.length === 0 ? (
-        <p className="text-gray-600">No jobs saved yet. Use the extension to save a job.</p>
+      {archiveLoading ? (
+        <div className="flex items-center gap-2 text-gray-500 text-sm py-8">
+          <Loader2 size={16} className="animate-spin" />
+          Loading archived jobs…
+        </div>
+      ) : baseJobs.length === 0 ? (
+        <p className="text-gray-600">
+          {showArchived ? "No archived jobs." : "No jobs saved yet. Use the extension to save a job."}
+        </p>
       ) : displayedJobs.length === 0 ? (
         <p className="text-gray-500">No jobs match your search or filters.</p>
       ) : (
@@ -1399,10 +1478,14 @@ export function JobTable({ jobs, newJobId, onAddJob }: Props) {
               const outlineClasses = visuallyExpanded
                 ? isSelected
                   ? "[&>td]:border-t [&>td]:border-t-blue-400 [&>td:first-child]:border-l [&>td:first-child]:border-l-blue-400 [&>td:last-child]:border-r [&>td:last-child]:border-r-blue-400"
-                  : "[&>td]:border-t [&>td]:border-t-gray-600 [&>td:first-child]:border-l [&>td:first-child]:border-l-gray-600 [&>td:last-child]:border-r [&>td:last-child]:border-r-gray-600"
+                  : showArchived
+                    ? "[&>td]:border-t [&>td]:border-t-amber-500 [&>td:first-child]:border-l [&>td:first-child]:border-l-amber-500 [&>td:last-child]:border-r [&>td:last-child]:border-r-amber-500"
+                    : "[&>td]:border-t [&>td]:border-t-gray-600 [&>td:first-child]:border-l [&>td:first-child]:border-l-gray-600 [&>td:last-child]:border-r [&>td:last-child]:border-r-gray-600"
                 : isSelected
                   ? "[&>td]:border-t [&>td]:border-b [&>td]:border-t-blue-400 [&>td]:border-b-blue-400 [&>td:first-child]:border-l [&>td:first-child]:border-l-blue-400 [&>td:last-child]:border-r [&>td:last-child]:border-r-blue-400"
-                  : "[&>td]:border-t [&>td]:border-b [&>td]:border-t-gray-600 [&>td]:border-b-gray-600 [&>td:first-child]:border-l [&>td:first-child]:border-l-gray-600 [&>td:last-child]:border-r [&>td:last-child]:border-r-gray-600";
+                  : showArchived
+                    ? "[&>td]:border-t [&>td]:border-b [&>td]:border-t-amber-500 [&>td]:border-b-amber-500 [&>td:first-child]:border-l [&>td:first-child]:border-l-amber-500 [&>td:last-child]:border-r [&>td:last-child]:border-r-amber-500"
+                    : "[&>td]:border-t [&>td]:border-b [&>td]:border-t-gray-600 [&>td]:border-b-gray-600 [&>td:first-child]:border-l [&>td:first-child]:border-l-gray-600 [&>td:last-child]:border-r [&>td:last-child]:border-r-gray-600";
 
               // Rounded corners on first/last <td> for background clipping
               const cornerClasses = visuallyExpanded
@@ -1423,7 +1506,7 @@ export function JobTable({ jobs, newJobId, onAddJob }: Props) {
 
               // Expand panel td: visible + connected when open, invisible when closed
               const expandTdClass = visuallyExpanded
-                ? "p-0 border-l border-r border-b border-gray-600 rounded-bl-lg rounded-br-lg bg-gray-100 overflow-hidden"
+                ? `p-0 border-l border-r border-b ${isSelected ? "border-blue-400" : showArchived ? "border-amber-500" : "border-gray-600"} rounded-bl-lg rounded-br-lg bg-gray-100 overflow-hidden`
                 : "p-0 border-0 bg-transparent";
 
               return (
@@ -1438,12 +1521,23 @@ export function JobTable({ jobs, newJobId, onAddJob }: Props) {
                       />
                     </td>
                     <td className="py-4 pr-3" onClick={(e) => e.stopPropagation()}>
-                      <StatusCell
-                        jobId={job.id}
-                        status={statusPatch[job.id] ?? job.status}
-                        onStatusChange={handleStatusChange}
-                        saving={patchingId === job.id}
-                      />
+                      <div className="flex flex-col gap-1.5 items-start">
+                        <StatusCell
+                          jobId={job.id}
+                          status={statusPatch[job.id] ?? job.status}
+                          onStatusChange={handleStatusChange}
+                          saving={patchingId === job.id}
+                        />
+                        {showArchived && (
+                          <button
+                            onClick={() => void handleStillActive(job.id)}
+                            disabled={stillActivating.has(job.id)}
+                            className="text-xs px-2 py-0.5 rounded border border-amber-400 text-amber-700 hover:bg-amber-50 whitespace-nowrap disabled:opacity-50 disabled:cursor-wait"
+                          >
+                            {stillActivating.has(job.id) ? "…" : "Still Active"}
+                          </button>
+                        )}
+                      </div>
                     </td>
                     <td className="py-4 pr-3 whitespace-normal break-words leading-snug">{job.company}</td>
                     <td className="py-4 pr-3 whitespace-normal break-words leading-snug text-blue-700">{job.title}</td>

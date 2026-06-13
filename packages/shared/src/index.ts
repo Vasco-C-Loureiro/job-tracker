@@ -53,8 +53,16 @@ export type JobApplication = {
   coverLetterSubmitted?: boolean;
   companyApplicationUrl?: string;
   isArchived: boolean;
-  archivedAt?: string;
+  archivedAt?: string | null;
   currentInterviewRound?: number;
+};
+
+export type UserPreferences = {
+  userId: string;
+  autoArchiveInactiveEnabled: boolean;
+  autoArchiveInactiveDays: number;
+  autoArchiveRejectedEnabled: boolean;
+  autoArchiveRejectedDays: number;
 };
 
 export type JobApplicationListItem = Omit<JobApplication, "description">;

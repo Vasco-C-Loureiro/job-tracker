@@ -9,9 +9,10 @@ import {
   Calendar,
   BarChart2,
   Upload,
+  Archive,
+  Settings,
   ChevronLeft,
   ChevronRight,
-  Settings as SettingsIcon,
 } from "lucide-react";
 import SignOutButton from "@/app/_components/sign-out-button";
 
@@ -26,6 +27,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/",           icon: Briefcase, label: "Applications" },
   { href: "/interviews", icon: Mail,      label: "Interviews"   },
   { href: "/import",     icon: Upload,    label: "Import"       },
+  { href: "/archived",   icon: Archive,   label: "Archived"     },
   { href: "/calendar",   icon: Calendar,  label: "Calendar",  disabled: true },
   { href: "/analytics",  icon: BarChart2, label: "Analytics", disabled: true },
 ];
@@ -133,7 +135,7 @@ export function Sidebar() {
                 : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
             }`}
           >
-            <SettingsIcon size={18} className="shrink-0" />
+            <Settings size={18} className="shrink-0" />
             {isExpanded && <span className="truncate">Settings</span>}
           </Link>
           {!isExpanded && (

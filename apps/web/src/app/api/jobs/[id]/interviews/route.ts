@@ -103,5 +103,11 @@ export async function POST(
     );
   }
 
+  await supabase
+    .from("job_applications")
+    .update({ updated_at: new Date().toISOString() })
+    .eq("id", jobId)
+    .eq("user_id", user.id);
+
   return NextResponse.json({ id: data.id }, { status: 201 });
 }

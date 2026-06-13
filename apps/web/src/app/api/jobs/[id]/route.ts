@@ -257,6 +257,22 @@ export async function PATCH(
     update.current_interview_round = b.currentInterviewRound ?? null;
   }
 
+  if (has("archivedAt")) {
+    update.archived_at = typeof b.archivedAt === "string" && b.archivedAt ? b.archivedAt : null;
+  }
+
+  if (has("isArchived")) {
+    if (typeof b.isArchived !== "boolean") {
+      return NextResponse.json({ error: "isArchived must be a boolean" }, { status: 400 });
+    }
+    update.is_archived = b.isArchived;
+    if (b.isArchived && !has("archivedAt")) {
+      update.archived_at = new Date().toISOString();
+    } else if (!b.isArchived) {
+      update.archived_at = null;
+    }
+  }
+
   // Auto-derive salary_min/max from salary_raw when not explicitly provided
   if (!has("salaryMin") && !has("salaryMax") && has("salaryRaw") && update.salary_raw) {
     const parsed = parseSalary(update.salary_raw as string);
@@ -272,16 +288,61 @@ export async function PATCH(
     if (inferred) update.salary_currency = inferred;
   }
 
-  // When status is set to "interview" and currentInterviewRound wasn't
-  // explicitly provided, auto-bump from 0 → 1 so the job appears on the kanban.
-  if (update.status === "interview" && !has("currentInterviewRound")) {
+  let activityLogEntry: { event_type: string; metadata: Record<string, unknown> } | null = null;
+
+  // "Still Active" unarchive: explicit isArchived:false with no status override
+  if (has("isArchived") && b.isArchived === false && !has("status")) {
+    const { data: lastEvent } = await supabase
+      .from("activity_log")
+      .select("event_type, metadata")
+      .eq("job_application_id", id)
+      .eq("user_id", userId)
+      .in("event_type", ["auto_archived_inactive", "auto_archived_rejected", "manual_bulk_archive"])
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    let restoredStatus: string | null = null;
+    if (lastEvent?.event_type === "auto_archived_inactive") {
+      const prevStatus = (lastEvent.metadata as Record<string, unknown> | null)
+        ?.previous_status as string | undefined;
+      if (prevStatus) {
+        update.status = prevStatus;
+        restoredStatus = prevStatus;
+      }
+    }
+    activityLogEntry = {
+      event_type: "unarchived",
+      metadata: { trigger: "manual_still_active", restored_status: restoredStatus },
+    };
+  }
+
+  // Pre-fetch current job state when status is changing (interview round auto-bump + auto-unarchive)
+  if (has("status")) {
     const { data: existing } = await supabase
       .from("job_applications")
-      .select("current_interview_round")
+      .select("is_archived, current_interview_round")
       .eq("id", id)
-      .single();
-    if ((existing?.current_interview_round ?? 0) === 0) {
-      update.current_interview_round = 1;
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (update.status === "interview" && !has("currentInterviewRound")) {
+      if ((existing?.current_interview_round ?? 0) === 0) {
+        update.current_interview_round = 1;
+      }
+    }
+
+    if (
+      !has("isArchived") &&
+      !["rejected", "ghosted"].includes(update.status as string) &&
+      existing?.is_archived === true
+    ) {
+      update.is_archived = false;
+      update.archived_at = null;
+      activityLogEntry = {
+        event_type: "unarchived",
+        metadata: { trigger: "status_change", new_status: update.status as string },
+      };
     }
   }
 
@@ -321,6 +382,15 @@ export async function PATCH(
     }
     console.error("Supabase update error:", error);
     return NextResponse.json({ error: "Failed to update job" }, { status: 500 });
+  }
+
+  if (activityLogEntry) {
+    await supabase.from("activity_log").insert({
+      user_id: userId,
+      job_application_id: id,
+      event_type: activityLogEntry.event_type,
+      metadata: activityLogEntry.metadata,
+    });
   }
 
   return NextResponse.json(data, { status: 200 });
