@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ChevronDown, ChevronRight, Zap, Trash2 } from "lucide-react";
-import type { Notification, AffectedJob, NotificationEventType } from "@job-tracker/shared";
+import type { Notification, AffectedJob, NotificationEventType, NotificationLinkType } from "@job-tracker/shared";
 import { createSupabaseBrowserClient } from "@/lib/supabase";
 import { Skeleton } from "@/components/ui/Skeleton";
 
@@ -121,33 +121,42 @@ export default function NotificationsPage() {
     });
   }
 
-  async function acceptNotification(id: string) {
+  async function acceptNotification(n: Notification) {
     const token = await getToken();
     if (!token) return;
+    const updatedBody = `${n.body ? n.body + " " : ""}· Accepted — application remains archived.`;
     await fetch("/api/notifications", {
       method: "PATCH",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ ids: [id] }),
+      body: JSON.stringify({ ids: [n.id], body: updatedBody }),
     });
-    setItems((prev) => prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)));
+    setItems((prev) =>
+      prev.map((item) => (item.id === n.id ? { ...item, isRead: true, body: updatedBody } : item)),
+    );
   }
 
-  async function revertNotification(notif: Notification) {
+  async function revertNotification(n: Notification) {
     const token = await getToken();
     if (!token) return;
-    if (notif.jobApplicationId) {
-      await fetch(`/api/jobs/${notif.jobApplicationId}`, {
+    if (n.jobApplicationId) {
+      await fetch(`/api/jobs/${n.jobApplicationId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ isArchived: false }),
       });
     }
+    const updatedBody = `${n.body ? n.body + " " : ""}· Reverted — application restored to dashboard.`;
+    const updatedLinkType: NotificationLinkType = "job_detail";
     await fetch("/api/notifications", {
       method: "PATCH",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ ids: [notif.id] }),
+      body: JSON.stringify({ ids: [n.id], link_type: updatedLinkType, body: updatedBody }),
     });
-    setItems((prev) => prev.map((item) => (item.id === notif.id ? { ...item, isRead: true } : item)));
+    setItems((prev) =>
+      prev.map((item) =>
+        item.id === n.id ? { ...item, isRead: true, linkType: updatedLinkType, body: updatedBody } : item,
+      ),
+    );
   }
 
   const loudUnreadItems = items.filter((n) => n.isLoud && !n.isRead);
@@ -282,7 +291,7 @@ export default function NotificationsPage() {
                           </button>
                         )}
                         <button
-                          onClick={() => void acceptNotification(n.id)}
+                          onClick={() => void acceptNotification(n)}
                           className="px-3 py-1.5 text-xs font-medium rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors"
                         >
                           Accept

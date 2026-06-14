@@ -105,9 +105,16 @@ export async function PATCH(request: NextRequest) {
 
     await query;
   } else if (Array.isArray(b.ids) && b.ids.length > 0) {
+    const updateFields: Record<string, unknown> = {
+      is_read: true,
+      read_at: new Date().toISOString(),
+    };
+    if (b.link_type) updateFields.link_type = b.link_type;
+    if (typeof b.body === "string") updateFields.body = b.body;
+
     await supabase
       .from("notifications")
-      .update({ is_read: true, read_at: new Date().toISOString() })
+      .update(updateFields)
       .in("id", b.ids)
       .eq("user_id", userId)
       .eq("is_read", false);
