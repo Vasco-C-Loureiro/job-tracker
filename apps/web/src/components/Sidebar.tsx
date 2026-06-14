@@ -10,6 +10,7 @@ import {
   BarChart2,
   Upload,
   Archive,
+  Bell,
   Settings,
   ChevronLeft,
   ChevronRight,
@@ -27,8 +28,9 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/",           icon: Briefcase, label: "Applications" },
   { href: "/interviews", icon: Mail,      label: "Interviews"   },
   { href: "/import",     icon: Upload,    label: "Import"       },
-  { href: "/archived",   icon: Archive,   label: "Archived"     },
-  { href: "/calendar",   icon: Calendar,  label: "Calendar",  disabled: true },
+  { href: "/archived",       icon: Archive,   label: "Archived"       },
+  { href: "/notifications",  icon: Bell,      label: "Notifications"  },
+  { href: "/calendar",       icon: Calendar,  label: "Calendar",  disabled: true },
   { href: "/analytics",  icon: BarChart2, label: "Analytics", disabled: true },
 ];
 
