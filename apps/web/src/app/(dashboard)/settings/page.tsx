@@ -10,6 +10,8 @@ type ArchivePrefs = {
   autoArchiveInactiveDays: number;
   autoArchiveRejectedEnabled: boolean;
   autoArchiveRejectedDays: number;
+  autoDeleteNotificationsEnabled: boolean;
+  autoDeleteNotificationsDays: number;
 };
 
 const ARCHIVE_DEFAULTS: ArchivePrefs = {
@@ -17,6 +19,8 @@ const ARCHIVE_DEFAULTS: ArchivePrefs = {
   autoArchiveInactiveDays: 30,
   autoArchiveRejectedEnabled: true,
   autoArchiveRejectedDays: 7,
+  autoDeleteNotificationsEnabled: false,
+  autoDeleteNotificationsDays: 7,
 };
 
 export default function SettingsPage() {
@@ -48,6 +52,8 @@ export default function SettingsPage() {
           autoArchiveInactiveDays: data.autoArchiveInactiveDays ?? ARCHIVE_DEFAULTS.autoArchiveInactiveDays,
           autoArchiveRejectedEnabled: data.autoArchiveRejectedEnabled ?? ARCHIVE_DEFAULTS.autoArchiveRejectedEnabled,
           autoArchiveRejectedDays: data.autoArchiveRejectedDays ?? ARCHIVE_DEFAULTS.autoArchiveRejectedDays,
+          autoDeleteNotificationsEnabled: data.autoDeleteNotificationsEnabled ?? ARCHIVE_DEFAULTS.autoDeleteNotificationsEnabled,
+          autoDeleteNotificationsDays: data.autoDeleteNotificationsDays ?? ARCHIVE_DEFAULTS.autoDeleteNotificationsDays,
         });
         if (Array.isArray(data.visible_columns)) setLocalColumns(new Set(data.visible_columns));
         if (typeof data.default_resume_submitted === "boolean") setDefaultResume(data.default_resume_submitted);
@@ -184,6 +190,47 @@ export default function SettingsPage() {
                       className={numInputCls}
                     />
                     Days after rejection/ghosting before archiving
+                  </label>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          {/* Notification cleanup (Unit 22) */}
+          <div className="mt-10">
+            <section className="mb-8">
+              <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-4">
+                Notification cleanup
+              </h2>
+
+              <div className="mb-6">
+                <label className="flex items-center gap-3 mb-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={prefs.autoDeleteNotificationsEnabled}
+                    onChange={(e) => set("autoDeleteNotificationsEnabled", e.target.checked)}
+                    className="w-4 h-4 shrink-0"
+                  />
+                  <span className="text-sm font-medium text-gray-900">
+                    Auto-delete read notifications
+                  </span>
+                </label>
+                <div className="ml-7">
+                  <label className="flex items-center gap-2 text-sm text-gray-700">
+                    <input
+                      type="number"
+                      min={1}
+                      max={365}
+                      step={1}
+                      value={prefs.autoDeleteNotificationsDays}
+                      disabled={!prefs.autoDeleteNotificationsEnabled}
+                      onChange={(e) => {
+                        const v = Math.max(1, Math.min(365, Math.floor(Number(e.target.value)) || 1));
+                        set("autoDeleteNotificationsDays", v);
+                      }}
+                      className={numInputCls}
+                    />
+                    Delete after (days)
                   </label>
                 </div>
               </div>
