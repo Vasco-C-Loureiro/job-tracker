@@ -20,7 +20,12 @@ type RawInterviewRoundRow = {
   updated_at: string;
 };
 
-export default async function InterviewsPage() {
+export default async function InterviewsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ highlight?: string }>;
+}) {
+  const { highlight } = await searchParams;
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
@@ -113,6 +118,7 @@ export default async function InterviewsPage() {
             offerJobs={offerJobs}
             rejectedJobs={rejectedJobs}
             allRounds={allRounds}
+            initialHighlight={highlight ?? ""}
           />
         </Suspense>
       )}

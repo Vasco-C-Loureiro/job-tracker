@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import {
   DndContext,
   DragEndEvent,
@@ -65,6 +65,7 @@ type Props = {
   offerJobs: JobApplicationRow[];
   rejectedJobs: JobApplicationRow[];
   allRounds: InterviewRoundRow[];
+  initialHighlight?: string;
 };
 
 const DEFAULT_ROUND_COLUMNS: KanbanColumn[] = [
@@ -127,6 +128,7 @@ export default function InterviewKanban({
   offerJobs,
   rejectedJobs,
   allRounds: initialRounds,
+  initialHighlight = "",
 }: Props) {
   const [jobs, setJobs] = useState<JobApplicationRow[]>([
     ...interviewJobs,
@@ -141,19 +143,19 @@ export default function InterviewKanban({
   const [draggingJobId, setDraggingJobId] = useState<string | null>(null);
   const [overColumnId, setOverColumnId] = useState<string | null>(null);
 
-  // Notification highlight — from ?highlight= query param
-  const searchParams = useSearchParams();
+  // Notification highlight — initialHighlight prop set by server component from searchParams
   const router = useRouter();
   const pathname = usePathname();
-  const [highlightIds, setHighlightIds] = useState<string[]>([]);
+  const [highlightIds, setHighlightIds] = useState<string[]>(
+    initialHighlight ? initialHighlight.split(",").filter(Boolean) : []
+  );
 
+  // Clean the URL once on mount if a highlight was passed in
   useEffect(() => {
-    const param = searchParams.get("highlight");
-    if (param) {
-      setHighlightIds(param.split(",").filter(Boolean));
+    if (initialHighlight) {
       router.replace(pathname, { scroll: false });
     }
-  }, [searchParams]);
+  }, []); // intentional empty deps — run once on mount only
 
   useEffect(() => {
     if (highlightIds.length === 0) return;
