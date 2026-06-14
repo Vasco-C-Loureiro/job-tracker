@@ -3,9 +3,22 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ChevronDown, ChevronRight } from "lucide-react";
-import type { Notification, AffectedJob } from "@job-tracker/shared";
+import type { Notification, AffectedJob, NotificationEventType } from "@job-tracker/shared";
 import { createSupabaseBrowserClient } from "@/lib/supabase";
 import { Skeleton } from "@/components/ui/Skeleton";
+
+const PILL_CONFIG: Record<NotificationEventType, { label: string; className: string }> = {
+  auto_archived_inactive:  { label: "Auto-archived", className: "bg-amber-100 text-amber-700"   },
+  auto_archived_rejected:  { label: "Auto-archived", className: "bg-amber-100 text-amber-700"   },
+  status_changed:          { label: "Status",        className: "bg-blue-100 text-blue-700"     },
+  unarchived:              { label: "Reactivated",   className: "bg-green-100 text-green-700"   },
+  manual_bulk_archive:     { label: "Archived",      className: "bg-orange-100 text-orange-700" },
+  job_deleted:             { label: "Deleted",       className: "bg-red-100 text-red-700"       },
+  job_created:             { label: "Saved",         className: "bg-green-100 text-green-700"   },
+  interview_round_added:   { label: "Interview",     className: "bg-purple-100 text-purple-700" },
+  interview_round_updated: { label: "Interview",     className: "bg-purple-100 text-purple-700" },
+  interview_round_deleted: { label: "Interview",     className: "bg-gray-100 text-gray-600"     },
+};
 
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -137,13 +150,14 @@ export default function NotificationsPage() {
                     onClick={() => toggleExpand(n.id)}
                     className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 text-left"
                   >
-                    <span
-                      className={`text-sm font-medium leading-snug ${
-                        isNone ? "text-gray-400" : "text-gray-900"
-                      }`}
-                    >
-                      {n.title}
-                    </span>
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className={`shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${PILL_CONFIG[n.eventType].className}`}>
+                        {PILL_CONFIG[n.eventType].label}
+                      </span>
+                      <span className={`text-sm font-medium leading-snug truncate ${isNone ? "text-gray-400" : "text-gray-900"}`}>
+                        {n.title}
+                      </span>
+                    </div>
                     <div className="flex items-center gap-3 shrink-0 ml-4">
                       <span className="text-xs text-gray-400">{timeAgo(n.createdAt)}</span>
                       {isExpanded ? (
