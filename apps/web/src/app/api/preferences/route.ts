@@ -15,6 +15,9 @@ type PreferencesRow = {
   auto_archive_inactive_days: number | null;
   auto_archive_rejected_enabled: boolean | null;
   auto_archive_rejected_days: number | null;
+  // U22 columns
+  auto_delete_notifications_enabled: boolean | null;
+  auto_delete_notifications_days: number | null;
 };
 
 const DEFAULTS = {
@@ -27,6 +30,8 @@ const DEFAULTS = {
   autoArchiveInactiveDays: 30,
   autoArchiveRejectedEnabled: true,
   autoArchiveRejectedDays: 7,
+  autoDeleteNotificationsEnabled: false,
+  autoDeleteNotificationsDays: 7,
 };
 
 function buildResponse(row: PreferencesRow) {
@@ -40,6 +45,8 @@ function buildResponse(row: PreferencesRow) {
     autoArchiveInactiveDays: row.auto_archive_inactive_days ?? 30,
     autoArchiveRejectedEnabled: row.auto_archive_rejected_enabled ?? true,
     autoArchiveRejectedDays: row.auto_archive_rejected_days ?? 7,
+    autoDeleteNotificationsEnabled: row.auto_delete_notifications_enabled ?? false,
+    autoDeleteNotificationsDays: row.auto_delete_notifications_days ?? 7,
   };
 }
 
@@ -47,7 +54,8 @@ const SELECT_COLS =
   "user_id, visible_columns, skip_bulk_delete_warning, skip_bulk_archive_warning, " +
   "default_resume_submitted, default_cover_letter_submitted, " +
   "auto_archive_inactive_enabled, auto_archive_inactive_days, " +
-  "auto_archive_rejected_enabled, auto_archive_rejected_days";
+  "auto_archive_rejected_enabled, auto_archive_rejected_days, " +
+  "auto_delete_notifications_enabled, auto_delete_notifications_days";
 
 function getToken(request: NextRequest): string | null {
   const h = request.headers.get("Authorization");
@@ -187,6 +195,32 @@ export async function PUT(request: NextRequest) {
       );
     }
     upsert.auto_archive_rejected_days = b.autoArchiveRejectedDays;
+  }
+
+  // ── U22 fields (camelCase in body → snake_case in DB) ──────────────────────
+
+  if ("autoDeleteNotificationsEnabled" in b) {
+    if (typeof b.autoDeleteNotificationsEnabled !== "boolean") {
+      return NextResponse.json(
+        { error: "autoDeleteNotificationsEnabled must be a boolean" },
+        { status: 400 },
+      );
+    }
+    upsert.auto_delete_notifications_enabled = b.autoDeleteNotificationsEnabled;
+  }
+
+  if ("autoDeleteNotificationsDays" in b) {
+    if (
+      typeof b.autoDeleteNotificationsDays !== "number" ||
+      !Number.isInteger(b.autoDeleteNotificationsDays) ||
+      b.autoDeleteNotificationsDays < 1
+    ) {
+      return NextResponse.json(
+        { error: "autoDeleteNotificationsDays must be a positive integer" },
+        { status: 400 },
+      );
+    }
+    upsert.auto_delete_notifications_days = b.autoDeleteNotificationsDays;
   }
 
   const { data, error } = await supabase
