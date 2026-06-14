@@ -49,6 +49,7 @@ interface LogEventParams {
   metadata: Record<string, unknown>
   notificationTitle: string
   notificationBody: string
+  linkTypeOverride?: NotificationLinkType
 }
 
 export async function logEvent(params: LogEventParams): Promise<void> {
@@ -75,7 +76,7 @@ export async function logEvent(params: LogEventParams): Promise<void> {
     is_loud: config.isLoud,
     is_read: config.readOnCreate,
     read_at: config.readOnCreate ? new Date().toISOString() : null,
-    link_type: config.linkType,
+    link_type: params.linkTypeOverride ?? config.linkType,
     affected_jobs: null,
   })
 }
