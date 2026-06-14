@@ -45,11 +45,11 @@ export function NotificationBell() {
       return;
     }
 
-    // Snapshot current pending items for display, then clear them.
+    // Snapshot current pending items for display; retain loud ones for next open.
     const snapshot = [...dropdownItems];
     setOpen(true);
     setDisplayedItems(snapshot);
-    setDropdownItems([]);
+    setDropdownItems((prev) => prev.filter((n) => n.isLoud));
 
     if (snapshot.length > 0) {
       const nonLoudIds = snapshot.filter((n) => !n.isLoud).map((n) => n.id);
