@@ -744,21 +744,21 @@ export function JobTable({ jobs, newJobId, onAddJob }: Props) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
-  const [notifHighlightId, setNotifHighlightId] = useState<string | null>(null);
+  const [notifHighlightIds, setNotifHighlightIds] = useState<string[]>([]);
 
   useEffect(() => {
-    const id = searchParams.get("highlight");
-    if (id) {
-      setNotifHighlightId(id);
+    const param = searchParams.get("highlight");
+    if (param) {
+      setNotifHighlightIds(param.split(",").filter(Boolean));
       router.replace(pathname, { scroll: false });
     }
   }, [searchParams]);
 
   useEffect(() => {
-    if (!notifHighlightId) return;
-    const el = document.getElementById(`job-row-${notifHighlightId}`);
+    if (notifHighlightIds.length === 0) return;
+    const el = document.getElementById(`job-row-${notifHighlightIds[0]}`);
     if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
-  }, [notifHighlightId]);
+  }, [notifHighlightIds]);
 
   // ─── Expand / collapse ────────────────────────────────────────────────────
 
@@ -904,7 +904,7 @@ export function JobTable({ jobs, newJobId, onAddJob }: Props) {
   }
 
   async function executeBulkArchive(ids: string[]) {
-    setNotifHighlightId(null);
+    setNotifHighlightIds([]);
     const token = await getToken();
     const res = await fetch("/api/jobs", {
       method: "PATCH",
@@ -920,7 +920,7 @@ export function JobTable({ jobs, newJobId, onAddJob }: Props) {
   }
 
   async function executeDelete(ids: string[]) {
-    setNotifHighlightId(null);
+    setNotifHighlightIds([]);
     const token = await getToken();
     const res = await fetch("/api/jobs", {
       method: "DELETE",
@@ -1542,10 +1542,10 @@ export function JobTable({ jobs, newJobId, onAddJob }: Props) {
                 <tbody key={job.id}>
                   <tr
                     id={`job-row-${job.id}`}
-                    className={`${rowClass}${notifHighlightId === job.id ? " highlight-pulse" : ""}`}
+                    className={`${rowClass}${notifHighlightIds.includes(job.id) ? " highlight-pulse" : ""}`}
                     onClick={() => {
                       toggleExpand(job.id);
-                      if (notifHighlightId === job.id) setNotifHighlightId(null);
+                      if (notifHighlightIds.includes(job.id)) setNotifHighlightIds([]);
                     }}
                   >
                     <td className="py-4 pl-3 pr-3" onClick={(e) => e.stopPropagation()}>

@@ -46,21 +46,21 @@ export function ArchivedView({ jobs }: { jobs: ArchivedJobRow[] }) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
-  const [highlightId, setHighlightId] = useState<string | null>(null);
+  const [highlightIds, setHighlightIds] = useState<string[]>([]);
 
   useEffect(() => {
-    const id = searchParams.get("highlight");
-    if (id) {
-      setHighlightId(id);
+    const param = searchParams.get("highlight");
+    if (param) {
+      setHighlightIds(param.split(",").filter(Boolean));
       router.replace(pathname, { scroll: false });
     }
   }, [searchParams]);
 
   useEffect(() => {
-    if (!highlightId) return;
-    const el = document.getElementById(`job-row-${highlightId}`);
+    if (highlightIds.length === 0) return;
+    const el = document.getElementById(`job-row-${highlightIds[0]}`);
     if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
-  }, [highlightId]);
+  }, [highlightIds]);
 
   return (
     <main className="p-8 font-sans">
@@ -95,8 +95,8 @@ export function ArchivedView({ jobs }: { jobs: ArchivedJobRow[] }) {
                 <tr
                   key={job.id}
                   id={`job-row-${job.id}`}
-                  className={`${i > 0 ? "border-t border-gray-100" : ""}${highlightId === job.id ? " highlight-pulse" : ""}`}
-                  onClick={() => { if (highlightId === job.id) setHighlightId(null); }}
+                  className={`${i > 0 ? "border-t border-gray-100" : ""}${highlightIds.includes(job.id) ? " highlight-pulse" : ""}`}
+                  onClick={() => { if (highlightIds.includes(job.id)) setHighlightIds([]); }}
                 >
                   <td className="py-3 pr-4">
                     <span
