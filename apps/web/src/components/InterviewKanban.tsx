@@ -575,7 +575,6 @@ export default function InterviewKanban({
                         <div
                           key={job.id}
                           id={`job-row-${job.id}`}
-                          className={highlightIds.includes(job.id) ? "highlight-pulse rounded-lg" : ""}
                           onClick={() => { if (highlightIds.includes(job.id)) setHighlightIds([]); }}
                         >
                           <InterviewCard
@@ -596,6 +595,7 @@ export default function InterviewKanban({
                             onReject={handleRejectAnimated}
                             isDraggable={true}
                             isBeingDragged={draggingJobId === job.id}
+                            className={highlightIds.includes(job.id) ? "highlight-pulse" : undefined}
                           />
                         </div>
                       ))}
@@ -644,7 +644,6 @@ export default function InterviewKanban({
                     <div
                       key={job.id}
                       id={`job-row-${job.id}`}
-                      className={highlightIds.includes(job.id) ? "highlight-pulse rounded-lg" : ""}
                       onClick={() => { if (highlightIds.includes(job.id)) setHighlightIds([]); }}
                     >
                       <InterviewCard
@@ -663,6 +662,7 @@ export default function InterviewKanban({
                         onReject={handleRejectAnimated}
                         isDraggable={true}
                         isBeingDragged={draggingJobId === job.id}
+                        className={highlightIds.includes(job.id) ? "highlight-pulse" : undefined}
                       />
                     </div>
                   ))}
