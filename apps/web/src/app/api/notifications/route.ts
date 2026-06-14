@@ -93,11 +93,17 @@ export async function PATCH(request: NextRequest) {
   const b = body as Record<string, unknown>;
 
   if (b.all === true) {
-    await supabase
+    let query = supabase
       .from("notifications")
       .update({ is_read: true, read_at: new Date().toISOString() })
       .eq("user_id", userId)
       .eq("is_read", false);
+
+    if (b.silentOnly === true) {
+      query = query.eq("is_loud", false);
+    }
+
+    await query;
   } else if (Array.isArray(b.ids) && b.ids.length > 0) {
     await supabase
       .from("notifications")

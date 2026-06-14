@@ -52,19 +52,23 @@ export function NotificationBell() {
     setDropdownItems([]);
 
     if (snapshot.length > 0) {
-      setUnreadCount((c) => Math.max(0, c - snapshot.length));
+      const nonLoudIds = snapshot.filter((n) => !n.isLoud).map((n) => n.id);
 
-      const supabase = createSupabaseBrowserClient();
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.access_token) {
-        await fetch("/api/notifications", {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({ ids: snapshot.map((n) => n.id) }),
-        });
+      setUnreadCount((prev) => Math.max(0, prev - nonLoudIds.length));
+
+      if (nonLoudIds.length > 0) {
+        const supabase = createSupabaseBrowserClient();
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.access_token) {
+          await fetch("/api/notifications", {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${session.access_token}`,
+            },
+            body: JSON.stringify({ ids: nonLoudIds }),
+          });
+        }
       }
     }
   }
