@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServiceClient } from "@/lib/supabase.server";
 import type { ApplicationStatus, RemoteType, JobType } from "@job-tracker/shared";
 import { parseSalary } from "@job-tracker/shared";
+import { logEvent } from "@/lib/activity";
 
 export async function GET(
   request: NextRequest,
@@ -288,7 +289,27 @@ export async function PATCH(
     if (inferred) update.salary_currency = inferred;
   }
 
-  let activityLogEntry: { event_type: string; metadata: Record<string, unknown> } | null = null;
+  // Pre-fetch current job state for notification text, interview bump, and auto-unarchive logic
+  let currentJob: {
+    company: string;
+    title: string;
+    status: string;
+    is_archived: boolean;
+    current_interview_round: number | null;
+    applied_at: string | null;
+  } | null = null;
+
+  if (has("status") || (has("isArchived") && b.isArchived === false)) {
+    const { data } = await supabase
+      .from("job_applications")
+      .select("company, title, status, is_archived, current_interview_round, applied_at")
+      .eq("id", id)
+      .eq("user_id", userId)
+      .maybeSingle();
+    currentJob = data;
+  }
+
+  let restoredStatus: string | null = null;
 
   // "Still Active" unarchive: explicit isArchived:false with no status override
   if (has("isArchived") && b.isArchived === false && !has("status")) {
@@ -302,7 +323,6 @@ export async function PATCH(
       .limit(1)
       .maybeSingle();
 
-    let restoredStatus: string | null = null;
     if (lastEvent?.event_type === "auto_archived_inactive") {
       const prevStatus = (lastEvent.metadata as Record<string, unknown> | null)
         ?.previous_status as string | undefined;
@@ -311,23 +331,14 @@ export async function PATCH(
         restoredStatus = prevStatus;
       }
     }
-    activityLogEntry = {
-      event_type: "unarchived",
-      metadata: { trigger: "manual_still_active", restored_status: restoredStatus },
-    };
   }
 
-  // Pre-fetch current job state when status is changing (interview round auto-bump + auto-unarchive)
-  if (has("status")) {
-    const { data: existing } = await supabase
-      .from("job_applications")
-      .select("is_archived, current_interview_round")
-      .eq("id", id)
-      .eq("user_id", userId)
-      .maybeSingle();
+  let autounarchiveFired = false;
 
+  // When status is changing, handle interview round auto-bump and auto-unarchive
+  if (has("status")) {
     if (update.status === "interview" && !has("currentInterviewRound")) {
-      if ((existing?.current_interview_round ?? 0) === 0) {
+      if ((currentJob?.current_interview_round ?? 0) === 0) {
         update.current_interview_round = 1;
       }
     }
@@ -335,27 +346,18 @@ export async function PATCH(
     if (
       !has("isArchived") &&
       !["rejected", "ghosted"].includes(update.status as string) &&
-      existing?.is_archived === true
+      currentJob?.is_archived === true
     ) {
       update.is_archived = false;
       update.archived_at = null;
-      activityLogEntry = {
-        event_type: "unarchived",
-        metadata: { trigger: "status_change", new_status: update.status as string },
-      };
+      autounarchiveFired = true;
     }
   }
 
   // When status is set to "applied" and applied_at wasn't explicitly provided,
   // auto-set it to today if it isn't already recorded.
   if (update.status === "applied" && !has("appliedAt")) {
-    const { data: current } = await supabase
-      .from("job_applications")
-      .select("applied_at")
-      .eq("id", id)
-      .eq("user_id", userId)
-      .single();
-    if (!current?.applied_at) {
+    if (!currentJob?.applied_at) {
       update.applied_at = new Date().toISOString().split("T")[0];
     }
   }
@@ -384,12 +386,35 @@ export async function PATCH(
     return NextResponse.json({ error: "Failed to update job" }, { status: 500 });
   }
 
-  if (activityLogEntry) {
-    await supabase.from("activity_log").insert({
-      user_id: userId,
-      job_application_id: id,
-      event_type: activityLogEntry.event_type,
-      metadata: activityLogEntry.metadata,
+  if (has("isArchived") && b.isArchived === false && !has("status") && currentJob) {
+    await logEvent({
+      supabase,
+      userId,
+      jobApplicationId: id,
+      eventType: "unarchived",
+      metadata: { trigger: "manual_still_active", restored_status: restoredStatus ?? null },
+      notificationTitle: `${currentJob.company} - ${currentJob.title} reactivated`,
+      notificationBody: "Removed from the archive and marked active again.",
+    });
+  } else if (autounarchiveFired && currentJob) {
+    await logEvent({
+      supabase,
+      userId,
+      jobApplicationId: id,
+      eventType: "unarchived",
+      metadata: { trigger: "status_change", new_status: b.status as string },
+      notificationTitle: `${currentJob.company} - ${currentJob.title} reactivated`,
+      notificationBody: `Reactivated from archive due to status change to ${b.status as string}.`,
+    });
+  } else if (has("status") && currentJob && (b.status as string) !== currentJob.status) {
+    await logEvent({
+      supabase,
+      userId,
+      jobApplicationId: id,
+      eventType: "status_changed",
+      metadata: { previous_status: currentJob.status, new_status: b.status },
+      notificationTitle: `${currentJob.company} - ${currentJob.title} status changed`,
+      notificationBody: `Status changed from ${currentJob.status} to ${b.status as string}.`,
     });
   }
 
