@@ -300,6 +300,7 @@ export default function InterviewKanban({
   }
 
   async function handleNextRoundAnimated(jobId: string) {
+    setHighlightIds([]);
     const job = jobs.find((j) => j.id === jobId);
     if (!job) return;
 
@@ -339,6 +340,7 @@ export default function InterviewKanban({
   }
 
   async function handleRejectAnimated(jobId: string) {
+    setHighlightIds([]);
     setRejectingJobId(jobId);
     await new Promise<void>((resolve) => setTimeout(resolve, 500));
     setRejectingJobId(null);
@@ -423,6 +425,7 @@ export default function InterviewKanban({
   }
 
   async function handleUnreject(jobId: string) {
+    setHighlightIds([]);
     setJobs((prev) =>
       prev.map((j) => (j.id === jobId ? { ...j, status: "interview" } : j)),
     );
@@ -456,6 +459,7 @@ export default function InterviewKanban({
   }
 
   async function handleDragEnd(event: DragEndEvent) {
+    setHighlightIds([]);
     dragWasExpanded.current = false;
     const { active, over } = event;
     setDraggingJobId(null);
