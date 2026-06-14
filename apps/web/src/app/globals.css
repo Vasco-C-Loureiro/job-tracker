@@ -117,6 +117,12 @@ body {
   50%       { background-color: transparent; }
 }
 
+/* For div-based cards (interview kanban) */
+.highlight-pulse {
+  animation: highlight-pulse 1.2s ease-in-out 3;
+}
+
+/* For table rows — td receives the animation since Chrome ignores background-color on tr */
 .highlight-pulse td {
   animation: highlight-pulse 1.2s ease-in-out 3;
 }

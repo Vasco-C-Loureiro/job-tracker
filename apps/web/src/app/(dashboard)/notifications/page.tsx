@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight, Zap, Trash2 } from "lucide-react";
 import type { Notification, AffectedJob, NotificationEventType } from "@job-tracker/shared";
 import { createSupabaseBrowserClient } from "@/lib/supabase";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -32,15 +32,17 @@ function timeAgo(dateStr: string): string {
 
 function getNavPath(n: Notification): string | null {
   if (n.linkType === "none") return null;
-  if (n.jobApplicationId === null) {
-    if (n.linkType === "archived_page") return "/archived";
-    if (n.linkType === "interview_page") return "/interviews";
-    if (n.linkType === "job_detail") return "/";
-    return null;
+
+  let highlightParam = "";
+  if (n.affectedJobs && n.affectedJobs.length > 0) {
+    highlightParam = `?highlight=${n.affectedJobs.map((j) => j.id).join(",")}`;
+  } else if (n.jobApplicationId) {
+    highlightParam = `?highlight=${n.jobApplicationId}`;
   }
-  if (n.linkType === "archived_page") return `/archived?highlight=${n.jobApplicationId}`;
-  if (n.linkType === "interview_page") return `/interviews?highlight=${n.jobApplicationId}`;
-  if (n.linkType === "job_detail") return `/?highlight=${n.jobApplicationId}`;
+
+  if (n.linkType === "archived_page") return `/archived${highlightParam}`;
+  if (n.linkType === "interview_page") return `/interviews${highlightParam}`;
+  if (n.linkType === "job_detail") return `/${highlightParam}`;
   return null;
 }
 
@@ -108,20 +110,37 @@ export default function NotificationsPage() {
     setExpandedId((prev) => (prev === id ? null : id));
   }
 
-  const loudItems = items.filter((n) => n.isLoud);
-  const activityItems = items.filter((n) => !n.isLoud);
+  async function deleteNotification(id: string) {
+    setItems((prev) => prev.filter((n) => n.id !== id));
+    const token = await getToken();
+    if (!token) return;
+    await fetch("/api/notifications", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ ids: [id] }),
+    });
+  }
+
+  const loudUnreadItems = items.filter((n) => n.isLoud && !n.isRead);
+  const activityItems = items.filter((n) => !n.isLoud || n.isRead);
 
   function renderRow(n: Notification) {
     const isExpanded = expandedId === n.id;
     const navPath = getNavPath(n);
     const isNone = n.linkType === "none";
     return (
-      <div key={n.id} className="border-b border-gray-100 last:border-0">
+      <div key={n.id} className="border-b border-gray-100 last:border-0 group">
         <button
           onClick={() => toggleExpand(n.id)}
           className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 text-left"
         >
           <div className="flex items-center gap-2 min-w-0">
+            {n.isLoud && (
+              <span className="shrink-0 inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-amber-50 text-amber-600 border border-amber-200">
+                <Zap className="w-2.5 h-2.5" />
+                Auto
+              </span>
+            )}
             <span className={`shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${PILL_CONFIG[n.eventType].className}`}>
               {PILL_CONFIG[n.eventType].label}
             </span>
@@ -131,6 +150,14 @@ export default function NotificationsPage() {
           </div>
           <div className="flex items-center gap-3 shrink-0 ml-4">
             <span className="text-xs text-gray-400">{timeAgo(n.createdAt)}</span>
+            <span
+              role="button"
+              onClick={(e) => { e.stopPropagation(); void deleteNotification(n.id); }}
+              className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-red-50 cursor-pointer"
+              aria-label="Delete notification"
+            >
+              <Trash2 className="w-3.5 h-3.5 text-gray-400 hover:text-red-500" />
+            </span>
             {isExpanded ? (
               <ChevronDown className="w-4 h-4 text-gray-400" />
             ) : (
@@ -195,13 +222,13 @@ export default function NotificationsPage() {
               <h2 className="text-base font-semibold text-gray-900">Notifications</h2>
               <p className="text-xs text-gray-500">Automated events that need your attention</p>
             </div>
-            {loudItems.length === 0 ? (
+            {loudUnreadItems.length === 0 ? (
               <div className="rounded-lg border border-gray-200 px-4 py-6 text-center text-sm text-gray-400">
                 No notifications — your applications are on track.
               </div>
             ) : (
               <div className="rounded-lg border border-gray-200 divide-y divide-gray-100">
-                {loudItems.map((n) => renderRow(n))}
+                {loudUnreadItems.map((n) => renderRow(n))}
               </div>
             )}
           </section>
@@ -212,7 +239,7 @@ export default function NotificationsPage() {
               <p className="text-xs text-gray-500">A record of your recent actions</p>
             </div>
             <p className="text-xs text-gray-400 mb-3">
-              Showing {activityItems.length} of {total - loudItems.length}
+              Showing {activityItems.length} of {total - loudUnreadItems.length}
             </p>
             {activityItems.length === 0 ? (
               <div className="rounded-lg border border-gray-200 px-4 py-6 text-center text-sm text-gray-400">
