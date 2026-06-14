@@ -112,10 +112,9 @@ body {
   animation: drag-lift 0.2s cubic-bezier(0.2, 0, 0.2, 1) forwards;
 }
 
-/* For div-based cards — outline is unaffected by parent overflow, follows border-radius */
-@keyframes highlight-pulse-outline {
-  0%, 100% { outline-color: rgb(251 191 36 / 0.9); }
-  50%       { outline-color: rgb(251 191 36 / 0.2); }
+@keyframes highlight-pulse-border {
+  0%, 100% { border-color: rgb(251 191 36 / 0.9); }
+  50%       { border-color: rgb(251 191 36 / 0.2); }
 }
 
 @keyframes highlight-pulse-bg {
@@ -123,13 +122,16 @@ body {
   50%       { background-color: transparent; }
 }
 
+/*
+  On div-based cards: pulses the existing border to amber.
+  On <tr> elements (dashboard/archived tables): no-op — tr has no border property,
+  so this animation does nothing there. Tables get their highlight via .highlight-pulse td.
+*/
 .highlight-pulse {
-  outline: 2px solid rgb(251 191 36 / 0.9);
-  outline-offset: 1px;
-  animation: highlight-pulse-outline 1.2s ease-in-out 3;
+  animation: highlight-pulse-border 1.2s ease-in-out 3;
 }
 
-/* For table rows — td gets background-color since Chrome ignores box-shadow on tr */
+/* For table rows — td cells get background-color pulse */
 .highlight-pulse td {
   animation: highlight-pulse-bg 1.2s ease-in-out 3;
 }
