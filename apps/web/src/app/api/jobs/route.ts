@@ -127,7 +127,7 @@ export async function PATCH(request: NextRequest) {
 
   const b = body as Record<string, unknown>;
 
-  if (b.action !== "archive") {
+  if (b.action !== "archive" && b.action !== "status") {
     return NextResponse.json({ error: "Invalid action" }, { status: 400 });
   }
 
@@ -137,6 +137,47 @@ export async function PATCH(request: NextRequest) {
       { error: "ids must be a non-empty array of strings" },
       { status: 400 },
     );
+  }
+
+  if (b.action === "status") {
+    const newStatus = b.status as string;
+    const validStatuses = ["saved", "applied", "oa", "interview", "rejected", "offer", "ghosted"];
+    if (!newStatus || !validStatuses.includes(newStatus)) {
+      return NextResponse.json({ error: "Invalid status" }, { status: 400 });
+    }
+
+    const { data: jobs } = await supabase
+      .from("job_applications")
+      .select("id, company, title, status")
+      .in("id", ids as string[])
+      .eq("user_id", userId);
+
+    const jobsToUpdate = (jobs ?? []).filter((j) => j.status !== newStatus);
+
+    if (jobsToUpdate.length === 0) {
+      return NextResponse.json({ success: true });
+    }
+
+    await supabase
+      .from("job_applications")
+      .update({ status: newStatus, updated_at: new Date().toISOString() })
+      .in("id", jobsToUpdate.map((j) => j.id))
+      .eq("user_id", userId);
+
+    const affectedJobs = jobsToUpdate.map((j) => ({ id: j.id, company: j.company, title: j.title }));
+    const previousStatusById = new Map(jobsToUpdate.map((j) => [j.id, j.status]));
+
+    await logBulkEvent({
+      supabase,
+      userId,
+      eventType: "status_changed",
+      affectedJobs,
+      getMetadata: (job) => ({ previous_status: previousStatusById.get(job.id) ?? null, new_status: newStatus }),
+      notificationTitle: buildBulkTitle(affectedJobs, `status changed to ${newStatus}`),
+      notificationBody: buildBulkBody(affectedJobs, `changed to ${newStatus}`),
+    });
+
+    return NextResponse.json({ success: true });
   }
 
   // Fetch jobs to archive (company + title needed for notification text)

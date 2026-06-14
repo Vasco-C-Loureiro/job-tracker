@@ -970,28 +970,34 @@ export function JobTable({ jobs, newJobId, onAddJob }: Props) {
         ? bulkTags.split(",").map((t) => t.trim()).filter(Boolean)
         : [];
 
-      await Promise.all(
-        ids.map(async (id) => {
-          const patches: Record<string, unknown> = {};
-          if (hasStatus) patches.status = bulkStatus;
-          if (hasNewTags) {
+      if (hasStatus) {
+        await fetch("/api/jobs", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ action: "status", ids, status: bulkStatus }),
+        });
+        ids.forEach((id) => {
+          setStatusPatch((prev) => ({ ...prev, [id]: bulkStatus as ApplicationStatus }));
+        });
+      }
+
+      if (hasNewTags) {
+        await Promise.all(
+          ids.map(async (id) => {
             const existing = localJobs.find((j) => j.id === id)?.tags ?? [];
-            patches.tags = Array.from(new Set([...existing, ...newTagList]));
-          }
-          const res = await fetch(`/api/jobs/${id}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-            body: JSON.stringify(patches),
-          });
-          if (!res.ok) return;
-          if (hasStatus)
-            setStatusPatch((prev) => ({ ...prev, [id]: bulkStatus as ApplicationStatus }));
-          if (hasNewTags)
+            const tags = Array.from(new Set([...existing, ...newTagList]));
+            const res = await fetch(`/api/jobs/${id}`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+              body: JSON.stringify({ tags }),
+            });
+            if (!res.ok) return;
             setLocalJobs((prev) =>
-              prev.map((j) => j.id === id ? { ...j, tags: patches.tags as string[] } : j),
+              prev.map((j) => j.id === id ? { ...j, tags } : j),
             );
-        }),
-      );
+          }),
+        );
+      }
     } finally {
       setSelectedIds(new Set());
       setBulkStatus("");
