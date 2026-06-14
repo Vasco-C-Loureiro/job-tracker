@@ -299,7 +299,7 @@ export async function PATCH(
     applied_at: string | null;
   } | null = null;
 
-  if (has("status") || (has("isArchived") && b.isArchived === false)) {
+  if (has("status") || (has("isArchived") && b.isArchived === false) || has("currentInterviewRound")) {
     const { data } = await supabase
       .from("job_applications")
       .select("company, title, status, is_archived, current_interview_round, applied_at")
@@ -415,6 +415,21 @@ export async function PATCH(
       metadata: { previous_status: currentJob.status, new_status: b.status },
       notificationTitle: `${currentJob.company} - ${currentJob.title} status changed`,
       notificationBody: `Status changed from ${currentJob.status} to ${b.status as string}.`,
+      linkTypeOverride: (["interview", "oa"] as string[]).includes(currentJob.status)
+        ? "interview_page"
+        : undefined,
+    });
+  }
+
+  if (has("currentInterviewRound") && currentJob) {
+    await logEvent({
+      supabase,
+      userId,
+      jobApplicationId: id,
+      eventType: "interview_round_updated",
+      metadata: { current_interview_round: b.currentInterviewRound },
+      notificationTitle: `${currentJob.company} - ${currentJob.title} interview updated`,
+      notificationBody: `Advanced to interview round ${b.currentInterviewRound as number}.`,
     });
   }
 
