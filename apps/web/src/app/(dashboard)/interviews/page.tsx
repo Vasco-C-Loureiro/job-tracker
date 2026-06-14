@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { createSupabaseServerClient } from "@/lib/supabase.server";
 import { redirect } from "next/navigation";
 import InterviewKanban from "@/components/InterviewKanban";
@@ -106,12 +107,14 @@ export default async function InterviewsPage() {
           </p>
         </div>
       ) : (
-        <InterviewKanban
-          interviewJobs={interviewJobs}
-          offerJobs={offerJobs}
-          rejectedJobs={rejectedJobs}
-          allRounds={allRounds}
-        />
+        <Suspense fallback={<div className="p-6 text-sm text-gray-400">Loading interviews...</div>}>
+          <InterviewKanban
+            interviewJobs={interviewJobs}
+            offerJobs={offerJobs}
+            rejectedJobs={rejectedJobs}
+            allRounds={allRounds}
+          />
+        </Suspense>
       )}
     </main>
   );
