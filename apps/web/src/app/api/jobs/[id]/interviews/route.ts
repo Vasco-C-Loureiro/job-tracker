@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServiceClient } from "@/lib/supabase.server";
+import { logEvent } from "@/lib/activity";
 
 export async function GET(
   req: NextRequest,
@@ -57,7 +58,7 @@ export async function POST(
   // Verify the job belongs to this user before inserting a round under it
   const { data: job } = await supabase
     .from("job_applications")
-    .select("id")
+    .select("id, company, title")
     .eq("id", jobId)
     .eq("user_id", user.id)
     .maybeSingle();
@@ -92,7 +93,7 @@ export async function POST(
       follow_up_sent: body.followUpSent ?? false,
       notes: body.notes ?? null,
     })
-    .select("id")
+    .select("id, round_number, type")
     .single();
 
   if (error) {
@@ -108,6 +109,16 @@ export async function POST(
     .update({ updated_at: new Date().toISOString() })
     .eq("id", jobId)
     .eq("user_id", user.id);
+
+  await logEvent({
+    supabase,
+    userId: user.id,
+    jobApplicationId: jobId,
+    eventType: "interview_round_added",
+    metadata: { round_number: data.round_number, type: data.type },
+    notificationTitle: `${job.company} - ${job.title} interview updated`,
+    notificationBody: "A new interview round was added.",
+  });
 
   return NextResponse.json({ id: data.id }, { status: 201 });
 }

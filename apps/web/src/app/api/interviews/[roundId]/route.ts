@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServiceClient } from "@/lib/supabase.server";
+import { logEvent } from "@/lib/activity";
 
 // Shared auth + ownership check used by both PATCH and DELETE
 async function authorise(req: NextRequest, roundId: string) {
@@ -15,7 +16,7 @@ async function authorise(req: NextRequest, roundId: string) {
   // Find the round and verify its parent job belongs to this user
   const { data: round } = await supabase
     .from("interview_rounds")
-    .select("id, job_application_id")
+    .select("id, job_application_id, round_number, type")
     .eq("id", roundId)
     .maybeSingle();
 
@@ -23,14 +24,21 @@ async function authorise(req: NextRequest, roundId: string) {
 
   const { data: job } = await supabase
     .from("job_applications")
-    .select("id")
+    .select("id, company, title")
     .eq("id", round.job_application_id)
     .eq("user_id", user.id)
     .maybeSingle();
 
   if (!job) return { ok: false, status: 404, error: "Not found" } as const;
 
-  return { ok: true, supabase, jobApplicationId: round.job_application_id, userId: user.id } as const;
+  return {
+    ok: true,
+    supabase,
+    jobApplicationId: round.job_application_id,
+    userId: user.id,
+    round: { roundNumber: round.round_number, type: round.type },
+    parentJob: { company: job.company, title: job.title },
+  } as const;
 }
 
 export async function PATCH(
@@ -82,6 +90,16 @@ export async function PATCH(
     .eq("id", auth.jobApplicationId)
     .eq("user_id", auth.userId);
 
+  await logEvent({
+    supabase: auth.supabase,
+    userId: auth.userId,
+    jobApplicationId: auth.jobApplicationId,
+    eventType: "interview_round_updated",
+    metadata: { round_number: body.roundNumber, type: body.type },
+    notificationTitle: `${auth.parentJob.company} - ${auth.parentJob.title} interview updated`,
+    notificationBody: "An interview round was updated.",
+  });
+
   return NextResponse.json({ ok: true });
 }
 
@@ -104,6 +122,16 @@ export async function DELETE(
     console.error("Interview round delete error:", error);
     return NextResponse.json({ error: "Delete failed" }, { status: 500 });
   }
+
+  await logEvent({
+    supabase: auth.supabase,
+    userId: auth.userId,
+    jobApplicationId: auth.jobApplicationId,
+    eventType: "interview_round_deleted",
+    metadata: { round_number: auth.round.roundNumber, type: auth.round.type },
+    notificationTitle: `${auth.parentJob.company} - ${auth.parentJob.title} interview updated`,
+    notificationBody: `Interview round ${auth.round.roundNumber} (${auth.round.type}) was removed.`,
+  });
 
   return NextResponse.json({ ok: true });
 }
