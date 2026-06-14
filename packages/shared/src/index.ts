@@ -102,6 +102,48 @@ export type ExtractJobResponse =
 
 export { parseSalary } from "./utils";
 
+// ─── Notifications ───────────────────────────────────────────────────────────
+
+export type NotificationLinkType =
+  | 'job_detail'
+  | 'archived_page'
+  | 'interview_page'
+  | 'none'
+
+export type NotificationEventType =
+  | 'auto_archived_inactive'
+  | 'auto_archived_rejected'
+  | 'status_changed'
+  | 'unarchived'
+  | 'manual_bulk_archive'
+  | 'job_deleted'
+  | 'job_created'
+  | 'interview_round_added'
+  | 'interview_round_updated'
+  | 'interview_round_deleted'
+
+export type AffectedJob = {
+  id: string
+  company: string
+  title: string
+}
+
+export type Notification = {
+  id: string
+  userId: string
+  activityLogId: string | null
+  jobApplicationId: string | null
+  eventType: NotificationEventType
+  title: string
+  body: string | null
+  isLoud: boolean
+  isRead: boolean
+  readAt: string | null
+  linkType: NotificationLinkType
+  affectedJobs: AffectedJob[] | null
+  createdAt: string
+}
+
 // ─── Interview Rounds ─────────────────────────────────────────────────────────
 
 export type InterviewType =
