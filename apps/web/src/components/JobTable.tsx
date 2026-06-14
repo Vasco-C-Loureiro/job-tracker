@@ -11,6 +11,7 @@ import type {
 import { parseSalary } from "@job-tracker/shared";
 import { createSupabaseBrowserClient } from "@/lib/supabase";
 import { ExpandedJobPanel } from "@/components/ExpandedJobPanel";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 
 // ─── Column preferences ───────────────────────────────────────────────────────
 
@@ -739,6 +740,26 @@ export function JobTable({ jobs, newJobId, onAddJob }: Props) {
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, [newJobId]);
 
+  // Notification highlight — from ?highlight= query param
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  const [notifHighlightId, setNotifHighlightId] = useState<string | null>(
+    searchParams.get("highlight"),
+  );
+
+  useEffect(() => {
+    if (searchParams.get("highlight")) {
+      router.replace(pathname, { scroll: false });
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!notifHighlightId) return;
+    const el = document.getElementById(`job-row-${notifHighlightId}`);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [notifHighlightId]);
+
   // ─── Expand / collapse ────────────────────────────────────────────────────
 
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -883,6 +904,7 @@ export function JobTable({ jobs, newJobId, onAddJob }: Props) {
   }
 
   async function executeBulkArchive(ids: string[]) {
+    setNotifHighlightId(null);
     const token = await getToken();
     const res = await fetch("/api/jobs", {
       method: "PATCH",
@@ -898,6 +920,7 @@ export function JobTable({ jobs, newJobId, onAddJob }: Props) {
   }
 
   async function executeDelete(ids: string[]) {
+    setNotifHighlightId(null);
     const token = await getToken();
     const res = await fetch("/api/jobs", {
       method: "DELETE",
@@ -1511,7 +1534,14 @@ export function JobTable({ jobs, newJobId, onAddJob }: Props) {
 
               return (
                 <tbody key={job.id}>
-                  <tr className={rowClass} onClick={() => toggleExpand(job.id)}>
+                  <tr
+                    id={`job-row-${job.id}`}
+                    className={`${rowClass}${notifHighlightId === job.id ? " highlight-pulse" : ""}`}
+                    onClick={() => {
+                      toggleExpand(job.id);
+                      if (notifHighlightId === job.id) setNotifHighlightId(null);
+                    }}
+                  >
                     <td className="py-4 pl-3 pr-3" onClick={(e) => e.stopPropagation()}>
                       <input
                         type="checkbox"
