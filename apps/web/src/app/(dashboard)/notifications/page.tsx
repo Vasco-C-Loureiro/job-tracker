@@ -76,7 +76,7 @@ export default function NotificationsPage() {
       fetch("/api/notifications", {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ all: true }),
+        body: JSON.stringify({ all: true, silentOnly: true }),
       }),
     ]);
 
@@ -119,6 +119,35 @@ export default function NotificationsPage() {
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify({ ids: [id] }),
     });
+  }
+
+  async function acceptNotification(id: string) {
+    const token = await getToken();
+    if (!token) return;
+    await fetch("/api/notifications", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ ids: [id] }),
+    });
+    setItems((prev) => prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)));
+  }
+
+  async function revertNotification(notif: Notification) {
+    const token = await getToken();
+    if (!token) return;
+    if (notif.jobApplicationId) {
+      await fetch(`/api/jobs/${notif.jobApplicationId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ isArchived: false }),
+      });
+    }
+    await fetch("/api/notifications", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ ids: [notif.id] }),
+    });
+    setItems((prev) => prev.map((item) => (item.id === notif.id ? { ...item, isRead: true } : item)));
   }
 
   const loudUnreadItems = items.filter((n) => n.isLoud && !n.isRead);
@@ -228,7 +257,40 @@ export default function NotificationsPage() {
               </div>
             ) : (
               <div className="rounded-lg border border-gray-200 divide-y divide-gray-100">
-                {loudUnreadItems.map((n) => renderRow(n))}
+                {loudUnreadItems.map((n) => (
+                  <div key={n.id} className="p-4 border-b border-gray-100 last:border-0">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <span className={`shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${PILL_CONFIG[n.eventType].className}`}>
+                            {PILL_CONFIG[n.eventType].label}
+                          </span>
+                          <span className="text-xs text-gray-400">{timeAgo(n.createdAt)}</span>
+                        </div>
+                        <p className="text-sm font-medium text-gray-900">{n.title}</p>
+                        {n.body && (
+                          <p className="text-xs text-gray-500 mt-1">{n.body}</p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0 mt-0.5">
+                        {n.jobApplicationId && (
+                          <button
+                            onClick={() => void revertNotification(n)}
+                            className="px-3 py-1.5 text-xs font-medium rounded-md border border-gray-300 text-gray-600 hover:bg-gray-50 transition-colors"
+                          >
+                            Revert
+                          </button>
+                        )}
+                        <button
+                          onClick={() => void acceptNotification(n.id)}
+                          className="px-3 py-1.5 text-xs font-medium rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                        >
+                          Accept
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </section>
