@@ -114,3 +114,47 @@ export async function PATCH(request: NextRequest) {
 
   return NextResponse.json({ success: true });
 }
+
+export async function DELETE(request: NextRequest) {
+  const authHeader = request.headers.get("Authorization");
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const token = authHeader.slice(7);
+  const supabase = createSupabaseServiceClient();
+  const { data: userData, error: authError } = await supabase.auth.getUser(token);
+  if (authError || !userData.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const userId = userData.user.id;
+
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+
+  if (typeof body !== "object" || body === null || Array.isArray(body)) {
+    return NextResponse.json({ error: "Body must be a JSON object" }, { status: 400 });
+  }
+
+  const b = body as Record<string, unknown>;
+
+  if (!Array.isArray(b.ids) || b.ids.length === 0) {
+    return NextResponse.json({ error: "Body must contain a non-empty 'ids' array" }, { status: 400 });
+  }
+
+  const { error } = await supabase
+    .from("notifications")
+    .delete()
+    .in("id", b.ids)
+    .eq("user_id", userId);
+
+  if (error) {
+    console.error("Notification delete error:", error);
+    return NextResponse.json({ error: "Failed to delete notifications" }, { status: 500 });
+  }
+
+  return NextResponse.json({ success: true });
+}
