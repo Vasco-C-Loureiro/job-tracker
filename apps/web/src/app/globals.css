@@ -112,17 +112,22 @@ body {
   animation: drag-lift 0.2s cubic-bezier(0.2, 0, 0.2, 1) forwards;
 }
 
-@keyframes highlight-pulse {
+@keyframes highlight-pulse-ring {
+  0%, 100% { box-shadow: 0 0 0 2px rgb(251 191 36 / 0.9); }
+  50%       { box-shadow: 0 0 0 4px rgb(251 191 36 / 0.3); }
+}
+
+@keyframes highlight-pulse-bg {
   0%, 100% { background-color: rgb(251 191 36 / 0.2); }
   50%       { background-color: transparent; }
 }
 
-/* For div-based cards (interview kanban) */
+/* For div-based cards (interview kanban) — box-shadow renders outside child content */
 .highlight-pulse {
-  animation: highlight-pulse 1.2s ease-in-out 3;
+  animation: highlight-pulse-ring 1.2s ease-in-out 3;
 }
 
-/* For table rows — td receives the animation since Chrome ignores background-color on tr */
+/* For table rows — td receives background-color since Chrome ignores box-shadow on tr */
 .highlight-pulse td {
-  animation: highlight-pulse 1.2s ease-in-out 3;
+  animation: highlight-pulse-bg 1.2s ease-in-out 3;
 }
