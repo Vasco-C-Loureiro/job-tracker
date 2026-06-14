@@ -145,15 +145,15 @@ export default function InterviewKanban({
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
-  const [highlightId, setHighlightId] = useState<string | null>(
-    searchParams.get("highlight"),
-  );
+  const [highlightId, setHighlightId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (searchParams.get("highlight")) {
+    const id = searchParams.get("highlight");
+    if (id) {
+      setHighlightId(id);
       router.replace(pathname, { scroll: false });
     }
-  }, []);
+  }, [searchParams]);
 
   useEffect(() => {
     if (!highlightId) return;
