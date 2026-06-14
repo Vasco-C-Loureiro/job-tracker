@@ -108,6 +108,62 @@ export default function NotificationsPage() {
     setExpandedId((prev) => (prev === id ? null : id));
   }
 
+  const loudItems = items.filter((n) => n.isLoud);
+  const activityItems = items.filter((n) => !n.isLoud);
+
+  function renderRow(n: Notification) {
+    const isExpanded = expandedId === n.id;
+    const navPath = getNavPath(n);
+    const isNone = n.linkType === "none";
+    return (
+      <div key={n.id} className="border-b border-gray-100 last:border-0">
+        <button
+          onClick={() => toggleExpand(n.id)}
+          className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 text-left"
+        >
+          <div className="flex items-center gap-2 min-w-0">
+            <span className={`shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${PILL_CONFIG[n.eventType].className}`}>
+              {PILL_CONFIG[n.eventType].label}
+            </span>
+            <span className={`text-sm font-medium leading-snug truncate ${isNone ? "text-gray-400" : "text-gray-900"}`}>
+              {n.title}
+            </span>
+          </div>
+          <div className="flex items-center gap-3 shrink-0 ml-4">
+            <span className="text-xs text-gray-400">{timeAgo(n.createdAt)}</span>
+            {isExpanded ? (
+              <ChevronDown className="w-4 h-4 text-gray-400" />
+            ) : (
+              <ChevronRight className="w-4 h-4 text-gray-400" />
+            )}
+          </div>
+        </button>
+        {isExpanded && (
+          <div className="px-4 pb-4 pt-1 bg-gray-50 text-sm text-gray-600">
+            {n.body && <p className="mb-2">{n.body}</p>}
+            {n.affectedJobs && n.affectedJobs.length > 0 && (
+              <ul className="mb-2 space-y-0.5">
+                {n.affectedJobs.map((job: AffectedJob) => (
+                  <li key={job.id} className="text-xs text-gray-500">
+                    {job.company} - {job.title}
+                  </li>
+                ))}
+              </ul>
+            )}
+            {navPath && (
+              <Link
+                href={navPath}
+                className="text-xs text-blue-600 hover:underline mt-2 inline-block"
+              >
+                View
+              </Link>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <main className="p-8 font-sans">
       <div className="mb-6">
@@ -134,78 +190,49 @@ export default function NotificationsPage() {
         </div>
       ) : (
         <div className="max-w-2xl">
-          <p className="text-xs text-gray-400 mb-4">
-            Showing {items.length} of {total}
-          </p>
+          <section className="mb-8">
+            <div className="mb-3">
+              <h2 className="text-base font-semibold text-gray-900">Notifications</h2>
+              <p className="text-xs text-gray-500">Automated events that need your attention</p>
+            </div>
+            {loudItems.length === 0 ? (
+              <div className="rounded-lg border border-gray-200 px-4 py-6 text-center text-sm text-gray-400">
+                No notifications — your applications are on track.
+              </div>
+            ) : (
+              <div className="rounded-lg border border-gray-200 divide-y divide-gray-100">
+                {loudItems.map((n) => renderRow(n))}
+              </div>
+            )}
+          </section>
 
-          <div className="border border-gray-200 rounded-lg overflow-hidden">
-            {items.map((n) => {
-              const isExpanded = expandedId === n.id;
-              const navPath = getNavPath(n);
-              const isNone = n.linkType === "none";
-
-              return (
-                <div key={n.id} className="border-b border-gray-100 last:border-0">
-                  <button
-                    onClick={() => toggleExpand(n.id)}
-                    className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 text-left"
-                  >
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span className={`shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${PILL_CONFIG[n.eventType].className}`}>
-                        {PILL_CONFIG[n.eventType].label}
-                      </span>
-                      <span className={`text-sm font-medium leading-snug truncate ${isNone ? "text-gray-400" : "text-gray-900"}`}>
-                        {n.title}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-3 shrink-0 ml-4">
-                      <span className="text-xs text-gray-400">{timeAgo(n.createdAt)}</span>
-                      {isExpanded ? (
-                        <ChevronDown className="w-4 h-4 text-gray-400" />
-                      ) : (
-                        <ChevronRight className="w-4 h-4 text-gray-400" />
-                      )}
-                    </div>
-                  </button>
-
-                  {isExpanded && (
-                    <div className="px-4 pb-4 pt-1 bg-gray-50 text-sm text-gray-600">
-                      {n.body && <p className="mb-2">{n.body}</p>}
-                      {n.affectedJobs && n.affectedJobs.length > 0 && (
-                        <ul className="mb-2 space-y-0.5">
-                          {n.affectedJobs.map((job: AffectedJob) => (
-                            <li key={job.id} className="text-xs text-gray-500">
-                              {job.company} - {job.title}
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                      {navPath && (
-                        <Link
-                          href={navPath}
-                          className="text-xs text-blue-600 hover:underline mt-2 inline-block"
-                        >
-                          View
-                        </Link>
-                      )}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-
-          {hasMore && (
-            <div className="mt-4 flex justify-center">
+          <section>
+            <div className="mb-3">
+              <h2 className="text-base font-semibold text-gray-900">Activity</h2>
+              <p className="text-xs text-gray-500">A record of your recent actions</p>
+            </div>
+            <p className="text-xs text-gray-400 mb-3">
+              Showing {activityItems.length} of {total - loudItems.length}
+            </p>
+            {activityItems.length === 0 ? (
+              <div className="rounded-lg border border-gray-200 px-4 py-6 text-center text-sm text-gray-400">
+                No activity recorded yet.
+              </div>
+            ) : (
+              <div className="rounded-lg border border-gray-200 divide-y divide-gray-100">
+                {activityItems.map((n) => renderRow(n))}
+              </div>
+            )}
+            {hasMore && (
               <button
                 onClick={() => void loadMore()}
                 disabled={loadingMore}
-                className="text-sm text-blue-600 hover:underline disabled:opacity-50"
+                className="mt-4 w-full text-sm text-gray-500 hover:text-gray-700 py-2 disabled:opacity-50"
               >
                 {loadingMore ? "Loading…" : "Load more"}
               </button>
-            </div>
-          )}
+            )}
+          </section>
         </div>
       )}
     </main>
