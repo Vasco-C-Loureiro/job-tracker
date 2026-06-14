@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServiceClient } from "@/lib/supabase.server";
 import type { RemoteType, JobType, ApplicationStatus, SaveJobPayload } from "@job-tracker/shared";
 import { parseSalary } from "@job-tracker/shared";
+import { logEvent, logBulkEvent, buildBulkTitle, buildBulkBody } from "@/lib/activity";
 
 type JobRow = {
   id: string;
@@ -138,19 +139,19 @@ export async function PATCH(request: NextRequest) {
     );
   }
 
-  // Fetch current statuses so we can record them in activity_log
-  const { data: jobs } = await supabase
+  // Fetch jobs to archive (company + title needed for notification text)
+  const { data: jobsToArchive } = await supabase
     .from("job_applications")
-    .select("id, status")
+    .select("id, company, title, status")
     .in("id", ids as string[])
     .eq("user_id", userId);
 
-  if (!jobs || jobs.length === 0) {
+  if (!jobsToArchive || jobsToArchive.length === 0) {
     return NextResponse.json({ archived: 0 });
   }
 
   const now = new Date().toISOString();
-  const archivableIds = jobs.map((j) => j.id);
+  const archivableIds = jobsToArchive.map((j) => j.id);
 
   await supabase
     .from("job_applications")
@@ -158,14 +159,18 @@ export async function PATCH(request: NextRequest) {
     .in("id", archivableIds)
     .eq("user_id", userId);
 
-  await supabase.from("activity_log").insert(
-    jobs.map((j) => ({
-      user_id: userId,
-      job_application_id: j.id,
-      event_type: "manual_bulk_archive",
-      metadata: { status: j.status },
-    })),
-  );
+  const statusById = new Map(jobsToArchive.map((j) => [j.id, j.status]));
+  const affectedJobs = jobsToArchive.map((j) => ({ id: j.id, company: j.company, title: j.title }));
+
+  await logBulkEvent({
+    supabase,
+    userId,
+    eventType: "manual_bulk_archive",
+    affectedJobs,
+    getMetadata: (job) => ({ status: statusById.get(job.id) ?? null }),
+    notificationTitle: buildBulkTitle(affectedJobs, "archived"),
+    notificationBody: buildBulkBody(affectedJobs, "archived"),
+  });
 
   return NextResponse.json({ archived: archivableIds.length });
 }
@@ -363,6 +368,16 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  await logEvent({
+    supabase,
+    userId,
+    jobApplicationId: data.id,
+    eventType: "job_created",
+    metadata: {},
+    notificationTitle: `${data.company} - ${data.title} added`,
+    notificationBody: "Saved to your tracker.",
+  });
+
   return NextResponse.json(data, { status: 201, headers: corsHeaders });
 }
 
@@ -402,6 +417,12 @@ export async function DELETE(request: NextRequest) {
   }
   const ids = b.ids as string[];
 
+  const { data: jobsToDelete } = await supabase
+    .from("job_applications")
+    .select("id, company, title")
+    .in("id", ids)
+    .eq("user_id", userId);
+
   const { error, count } = await supabase
     .from("job_applications")
     .delete({ count: "exact" })
@@ -412,6 +433,16 @@ export async function DELETE(request: NextRequest) {
     console.error("Supabase delete error:", error);
     return NextResponse.json({ error: "Failed to delete jobs" }, { status: 500 });
   }
+
+  await logBulkEvent({
+    supabase,
+    userId,
+    eventType: "job_deleted",
+    affectedJobs: jobsToDelete ?? [],
+    getMetadata: () => ({}),
+    notificationTitle: buildBulkTitle(jobsToDelete ?? [], "deleted"),
+    notificationBody: buildBulkBody(jobsToDelete ?? [], "deleted"),
+  });
 
   return NextResponse.json({ deleted: count ?? ids.length });
 }
