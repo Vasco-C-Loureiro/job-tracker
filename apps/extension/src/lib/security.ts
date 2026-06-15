@@ -22,20 +22,14 @@ export function safeOpenUrl(url: string): void {
   chrome.tabs.create({ url })
 }
 
-/**
- * Constructs the dashboard URL with a highlight query param and opens it.
- * Validates the job ID as a UUID and the base URL as https:// before opening.
- */
 export function openDashboardHighlight(jobId: string): void {
   if (!isValidJobId(jobId)) return
-
-  const base = process.env.PLASMO_PUBLIC_DASHBOARD_URL
+  const base = process.env.PLASMO_PUBLIC_WEB_URL
   if (!base) return
-
   try {
     const url = new URL(base)
     url.searchParams.set('highlight', jobId)
-    safeOpenUrl(url.toString())
+    chrome.tabs.create({ url: url.toString() })
   } catch {
     // URL construction failed — do nothing
   }
