@@ -30,35 +30,12 @@ function rowToEvent(row: CalendarEventRow): CalendarEvent {
   };
 }
 
-export async function GET(req: NextRequest) {
-  const token = req.headers.get("authorization")?.replace("Bearer ", "");
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const { id } = await params;
 
-  const supabase = createSupabaseServiceClient();
-  const { data: { user } } = await supabase.auth.getUser(token);
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const from = req.nextUrl.searchParams.get("from");
-  const to = req.nextUrl.searchParams.get("to");
-
-  let query = supabase
-    .from("calendar_events")
-    .select("*")
-    .eq("user_id", user.id)
-    .order("date", { ascending: true })
-    .order("time", { ascending: true, nullsFirst: true });
-
-  if (from) query = query.gte("date", from);
-  if (to) query = query.lte("date", to);
-
-  const { data, error } = await query.returns<CalendarEventRow[]>();
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
-  return NextResponse.json({ events: (data ?? []).map(rowToEvent) });
-}
-
-export async function POST(req: NextRequest) {
   const token = req.headers.get("authorization")?.replace("Bearer ", "");
   if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -75,25 +52,58 @@ export async function POST(req: NextRequest) {
     color?: string | null;
   };
 
-  if (!body.title || !body.date) {
-    return NextResponse.json({ error: "title and date are required" }, { status: 400 });
-  }
+  const update: Record<string, unknown> = {
+    updated_at: new Date().toISOString(),
+  };
+
+  if ("title" in body) update.title = body.title;
+  if ("date" in body) update.date = body.date;
+  if ("time" in body) update.time = body.time ?? null;
+  if ("endTime" in body) update.end_time = body.endTime ?? null;
+  if ("description" in body) update.description = body.description ?? null;
+  if ("color" in body) update.color = body.color ?? null;
 
   const { data, error } = await supabase
     .from("calendar_events")
-    .insert({
-      user_id: user.id,
-      title: body.title,
-      date: body.date,
-      time: body.time ?? null,
-      end_time: body.endTime ?? null,
-      description: body.description ?? null,
-      color: body.color ?? null,
-    })
+    .update(update)
+    .eq("id", id)
+    .eq("user_id", user.id)
     .select()
     .single();
 
+  if (error?.code === "PGRST116" || data === null) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  return NextResponse.json(rowToEvent(data as CalendarEventRow), { status: 201 });
+  return NextResponse.json(rowToEvent(data as CalendarEventRow));
+}
+
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const { id } = await params;
+
+  const token = req.headers.get("authorization")?.replace("Bearer ", "");
+  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const supabase = createSupabaseServiceClient();
+  const { data: { user } } = await supabase.auth.getUser(token);
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { data, error } = await supabase
+    .from("calendar_events")
+    .delete()
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .select()
+    .single();
+
+  if (error?.code === "PGRST116" || data === null) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  return NextResponse.json({ success: true });
 }
