@@ -32,3 +32,20 @@ export function parseSalary(salary: string | undefined): { min: number; max: num
 
   return { min: first, max: first };
 }
+
+/**
+ * Normalises a URL for duplicate detection.
+ * Keeps only origin + pathname, strips query string and fragment, lowercases.
+ *
+ * Matches the SQL expression:
+ *   LOWER(regexp_replace(source_url, '[?#].*$', ''))
+ */
+export function normalizeUrl(url: string): string {
+  try {
+    const parsed = new URL(url);
+    return (parsed.origin + parsed.pathname).toLowerCase();
+  } catch {
+    // Unparseable URL — degrade gracefully
+    return url.toLowerCase().trim();
+  }
+}

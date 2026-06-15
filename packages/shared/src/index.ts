@@ -100,7 +100,7 @@ export type ExtractJobResponse =
   | { ok: true; payload: SaveJobPayload }
   | { ok: false; reason: ExtractJobFailureReason };
 
-export { parseSalary } from "./utils";
+export { parseSalary, normalizeUrl } from "./utils";
 
 // ─── Notifications ───────────────────────────────────────────────────────────
 
@@ -143,6 +143,23 @@ export type Notification = {
   affectedJobs: AffectedJob[] | null
   createdAt: string
 }
+
+// ─── Duplicate Detection ─────────────────────────────────────────────────────
+
+export type DuplicateCheckMatch = {
+  id: string;
+  company: string;
+  title: string;
+  status: string;
+  savedAt: string;        // ISO date string
+  isArchived: boolean;
+  archivedAt: string | null;
+};
+
+export type DuplicateCheckResult = {
+  isDuplicate: boolean;
+  matches: DuplicateCheckMatch[];
+};
 
 // ─── Interview Rounds ─────────────────────────────────────────────────────────
 
