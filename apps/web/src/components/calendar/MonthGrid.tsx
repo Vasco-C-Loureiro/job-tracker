@@ -2,6 +2,7 @@
 
 import type { CalendarFeedEvent } from "@job-tracker/shared";
 import { monthMatrix, isoWeek, isSameMonthAs, ymd, sortDayEvents } from "@/lib/calendar/grid";
+import { groupAppliedForDay } from "@/lib/calendar/grouping";
 import { EventPill } from "./EventPill";
 
 const DAY_HEADERS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -82,10 +83,13 @@ export function MonthGrid({ anchor, events, onWeekClick, onDayClick, compact = f
           {row.map((day) => {
             const isCurrentMonth = isSameMonthAs(day, anchor);
             const isToday = ymd(day) === todayStr;
-            const dayEvents = sortDayEvents(events.filter(e => e.date === ymd(day)));
+            const allDayEvents = sortDayEvents(events.filter(e => e.date === ymd(day)));
+            const nonApplied   = allDayEvents.filter(e => e.source !== "applied");
+            const appliedGroup = groupAppliedForDay(allDayEvents);
             const MAX_PILLS = 3;
-            const visible = dayEvents.slice(0, MAX_PILLS);
-            const overflow = dayEvents.length - MAX_PILLS;
+            const slotsForNonApplied = appliedGroup ? MAX_PILLS - 1 : MAX_PILLS;
+            const visibleNonApplied  = nonApplied.slice(0, slotsForNonApplied);
+            const overflowNonApplied = nonApplied.length - slotsForNonApplied;
             return (
               <button
                 key={day.toISOString()}
@@ -101,11 +105,19 @@ export function MonthGrid({ anchor, events, onWeekClick, onDayClick, compact = f
               >
                 <span className="leading-none self-center mb-1">{day.getDate()}</span>
                 <div className="mt-0.5 flex flex-col gap-0.5 min-w-0 w-full">
-                  {visible.map(event => (
+                  {visibleNonApplied.map(event => (
                     <EventPill key={event.id} event={event} />
                   ))}
-                  {overflow > 0 && (
-                    <div className="text-xs text-gray-400 px-1">+{overflow} more</div>
+                  {appliedGroup && (
+                    <div
+                      className={`${appliedGroup.pillClasses} text-xs font-medium rounded px-1.5 py-0.5 truncate leading-tight cursor-default select-none`}
+                      title={appliedGroup.companies.join(", ")}
+                    >
+                      {appliedGroup.label}
+                    </div>
+                  )}
+                  {overflowNonApplied > 0 && (
+                    <div className="text-xs text-gray-400 px-1">+{overflowNonApplied} more</div>
                   )}
                 </div>
               </button>
