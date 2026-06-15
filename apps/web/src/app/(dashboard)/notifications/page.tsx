@@ -237,14 +237,23 @@ export default function NotificationsPage() {
 
       {loading ? (
         <div className="max-w-2xl flex flex-col gap-0">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="py-3 px-4 border-b border-gray-100">
-              <div className="flex items-center justify-between">
-                <Skeleton className="h-4 w-64" />
+          <Skeleton className="h-5 w-36 mb-1" />
+          <Skeleton className="h-4 w-72 mb-4" />
+          <div className="rounded-lg border border-gray-200 h-16 bg-gray-100 animate-pulse mb-8" />
+
+          <Skeleton className="h-5 w-24 mb-1" />
+          <Skeleton className="h-4 w-64 mb-3" />
+          <div className="rounded-lg border border-gray-200 divide-y divide-gray-100">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="px-4 py-3 flex items-center justify-between">
+                <div className="flex items-center gap-2 min-w-0">
+                  <Skeleton className="h-6 w-20 rounded-full" />
+                  <Skeleton className="h-4 w-64" />
+                </div>
                 <Skeleton className="h-3 w-14 ml-4" />
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       ) : total === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">
