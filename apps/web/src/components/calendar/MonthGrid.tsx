@@ -1,7 +1,8 @@
 "use client";
 
 import type { CalendarFeedEvent } from "@job-tracker/shared";
-import { monthMatrix, isoWeek, isSameMonthAs, ymd } from "@/lib/calendar/grid";
+import { monthMatrix, isoWeek, isSameMonthAs, ymd, sortDayEvents } from "@/lib/calendar/grid";
+import { EventPill } from "./EventPill";
 
 const DAY_HEADERS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
@@ -13,7 +14,7 @@ interface MonthGridProps {
   compact?: boolean;
 }
 
-export function MonthGrid({ anchor, events: _events, onWeekClick, onDayClick, compact = false }: MonthGridProps) {
+export function MonthGrid({ anchor, events, onWeekClick, onDayClick, compact = false }: MonthGridProps) {
   const weeks = monthMatrix(anchor);
   const todayStr = ymd(new Date());
 
@@ -81,20 +82,32 @@ export function MonthGrid({ anchor, events: _events, onWeekClick, onDayClick, co
           {row.map((day) => {
             const isCurrentMonth = isSameMonthAs(day, anchor);
             const isToday = ymd(day) === todayStr;
+            const dayEvents = sortDayEvents(events.filter(e => e.date === ymd(day)));
+            const MAX_PILLS = 3;
+            const visible = dayEvents.slice(0, MAX_PILLS);
+            const overflow = dayEvents.length - MAX_PILLS;
             return (
               <button
                 key={day.toISOString()}
                 type="button"
                 onClick={() => onDayClick?.(day)}
                 className={[
-                  "flex flex-col items-center min-h-[4.5rem] pt-1 px-0.5 rounded text-sm",
+                  "flex flex-col items-start min-h-[5rem] pt-1 px-0.5 rounded text-sm overflow-hidden",
                   isCurrentMonth ? "text-gray-800" : "text-gray-300 bg-gray-50/50",
                   isToday
                     ? "ring-1 ring-blue-400 bg-blue-50 font-semibold"
                     : "hover:bg-gray-100",
                 ].join(" ")}
               >
-                <span className="leading-none">{day.getDate()}</span>
+                <span className="leading-none self-center mb-1">{day.getDate()}</span>
+                <div className="mt-0.5 flex flex-col gap-0.5 min-w-0 w-full">
+                  {visible.map(event => (
+                    <EventPill key={event.id} event={event} />
+                  ))}
+                  {overflow > 0 && (
+                    <div className="text-xs text-gray-400 px-1">+{overflow} more</div>
+                  )}
+                </div>
               </button>
             );
           })}
