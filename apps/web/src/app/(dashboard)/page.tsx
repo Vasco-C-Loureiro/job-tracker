@@ -3,6 +3,8 @@ import { createSupabaseServerClient } from "@/lib/supabase.server";
 import { redirect } from "next/navigation";
 import { DashboardView } from "@/components/DashboardView";
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 type JobApplicationRow = {
   id: string;
   user_id: string;
@@ -62,8 +64,19 @@ function rowToListItem(row: JobApplicationRow): JobApplicationListItem {
   };
 }
 
-export default async function Home() {
-  const supabase = await createSupabaseServerClient();
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<{ highlight?: string }>;
+}) {
+  const [supabase, { highlight: rawHighlight }] = await Promise.all([
+    createSupabaseServerClient(),
+    searchParams,
+  ]);
+  const highlightId: string | null =
+    typeof rawHighlight === "string" && UUID_REGEX.test(rawHighlight)
+      ? rawHighlight
+      : null;
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -102,7 +115,7 @@ export default async function Home() {
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Applications</h1>
       </div>
-      <DashboardView initialJobs={jobs} />
+      <DashboardView initialJobs={jobs} highlightId={highlightId} />
     </main>
   );
 }

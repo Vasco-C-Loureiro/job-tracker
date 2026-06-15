@@ -649,9 +649,10 @@ type Props = {
   jobs: JobApplicationListItem[];
   newJobId?: string;
   onAddJob?: () => void;
+  highlightId?: string | null;
 };
 
-export function JobTable({ jobs, newJobId, onAddJob }: Props) {
+export function JobTable({ jobs, newJobId, onAddJob, highlightId }: Props) {
   // Local copy — lets us optimistically remove deleted rows without a page reload
   const [localJobs, setLocalJobs] = useState<JobApplicationListItem[]>(jobs);
   useEffect(() => { setLocalJobs(jobs); }, [jobs]);
@@ -744,7 +745,9 @@ export function JobTable({ jobs, newJobId, onAddJob }: Props) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
-  const [notifHighlightIds, setNotifHighlightIds] = useState<string[]>([]);
+  const [notifHighlightIds, setNotifHighlightIds] = useState<string[]>(
+    highlightId ? [highlightId] : []
+  );
 
   useEffect(() => {
     const param = searchParams.get("highlight");

@@ -5,9 +5,9 @@ import type { JobApplicationListItem } from "@job-tracker/shared";
 import { JobTable } from "@/components/JobTable";
 import { AddJobModal } from "@/components/AddJobModal";
 
-type Props = { initialJobs: JobApplicationListItem[] };
+type Props = { initialJobs: JobApplicationListItem[]; highlightId?: string | null };
 
-export function DashboardView({ initialJobs }: Props) {
+export function DashboardView({ initialJobs, highlightId }: Props) {
   const [jobs, setJobs]         = useState<JobApplicationListItem[]>(initialJobs);
   const [modalOpen, setModalOpen] = useState(false);
   const [newJobId, setNewJobId]   = useState<string | undefined>(undefined);
@@ -23,6 +23,7 @@ export function DashboardView({ initialJobs }: Props) {
         jobs={jobs}
         newJobId={newJobId}
         onAddJob={() => setModalOpen(true)}
+        highlightId={highlightId}
       />
       <AddJobModal
         isOpen={modalOpen}
