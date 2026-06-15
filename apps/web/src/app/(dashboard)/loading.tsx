@@ -3,7 +3,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 function SkeletonRow() {
   return (
     <>
-      <tr className="[&>td]:bg-gray-100">
+      <tr className="[&>td]:bg-gray-100 [&>td]:border-t [&>td]:border-b [&>td]:border-gray-200 [&>td:first-child]:border-l [&>td:first-child]:rounded-tl-lg [&>td:first-child]:rounded-bl-lg [&>td:last-child]:border-r [&>td:last-child]:rounded-tr-lg [&>td:last-child]:rounded-br-lg">
         <td className="py-4 pl-3 pr-3">
           <Skeleton className="w-4 h-4" />
         </td>
