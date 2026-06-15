@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServiceClient } from "@/lib/supabase.server";
 import type { RemoteType, JobType, ApplicationStatus, SaveJobPayload } from "@job-tracker/shared";
-import { parseSalary } from "@job-tracker/shared";
+import { parseSalary, normalizeUrl } from "@job-tracker/shared";
 import { logEvent, logBulkEvent, buildBulkTitle, buildBulkBody } from "@/lib/activity";
 
 type JobRow = {
@@ -380,6 +380,7 @@ export async function POST(request: NextRequest) {
       company: company.trim(),
       title: title.trim(),
       source_url: typeof sourceUrl === "string" ? sourceUrl.trim() : "",
+      source_url_normalized: normalizeUrl(typeof sourceUrl === "string" ? sourceUrl.trim() : ""),
       source: source.trim(),
       status: safeStatus,
       location: safeLocation,
