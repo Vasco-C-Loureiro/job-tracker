@@ -1,13 +1,32 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { CalendarView, CalendarMode, CalendarFeedEvent } from "@job-tracker/shared";
+import { fetchCalendarFeed } from "@/lib/calendar/feed";
 
 export function CalendarApp() {
   const [view, setView] = useState<CalendarView>("month");
   const [focusedDate, setFocusedDate] = useState<Date>(new Date());
   const [mode, setMode] = useState<CalendarMode>("calendar");
   const [events, setEvents] = useState<CalendarFeedEvent[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      const data = await fetchCalendarFeed();
+      if (!cancelled) {
+        setEvents(data);
+        setLoading(false);
+      }
+    };
+    void load();
+    window.addEventListener("focus", load);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("focus", load);
+    };
+  }, []);
 
   return (
     <div className="mx-6 my-6">
@@ -24,7 +43,9 @@ export function CalendarApp() {
 
       {/* Main view area */}
       <div className="relative">
-        {mode === "upcoming" ? (
+        {loading ? (
+          <div className="text-sm text-gray-400">Loading calendar…</div>
+        ) : mode === "upcoming" ? (
           <div className="text-gray-400">Upcoming list (P21)</div>
         ) : (
           <>
