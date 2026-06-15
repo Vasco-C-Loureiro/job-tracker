@@ -761,6 +761,10 @@ export function JobTable({ jobs, newJobId, onAddJob, highlightId }: Props) {
     if (notifHighlightIds.length === 0) return;
     const el = document.getElementById(`job-row-${notifHighlightIds[0]}`);
     if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+    const timer = setTimeout(() => {
+      setNotifHighlightIds([]);
+    }, 4000);
+    return () => clearTimeout(timer);
   }, [notifHighlightIds]);
 
   // ─── Expand / collapse ────────────────────────────────────────────────────
