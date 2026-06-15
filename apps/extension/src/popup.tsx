@@ -1,4 +1,6 @@
 import type {
+  DuplicateCheckMatch,
+  DuplicateCheckResult,
   ExtractJobRequest,
   ExtractJobResponse,
   JobType,
@@ -16,6 +18,7 @@ import {
   refreshTokens,
   signInWithEmail
 } from "./lib/auth"
+import { isValidJobId, openDashboardHighlight } from "./lib/security"
 
 const API_URL = `${process.env.PLASMO_PUBLIC_DASHBOARD_URL}/api/jobs`
 const DASHBOARD_URL = process.env.PLASMO_PUBLIC_DASHBOARD_URL
@@ -25,6 +28,7 @@ type AuthState = "checking" | "signed-out" | "signed-in"
 type SaveState =
   | { kind: "idle" }
   | { kind: "saving" }
+  | { kind: "duplicate" }
   | { kind: "preview"; payload: SaveJobPayload }
   | { kind: "success"; payload: SaveJobPayload }
   | { kind: "error"; message: string }
@@ -101,6 +105,7 @@ function IndexPopup() {
   const [password, setPassword] = useState("")
   const [signInError, setSignInError] = useState("")
   const [signingIn, setSigningIn] = useState(false)
+  const [duplicateMatches, setDuplicateMatches] = useState<DuplicateCheckMatch[]>([])
 
   useEffect(() => {
     const init = async () => {
@@ -154,6 +159,48 @@ function IndexPopup() {
     setAuthState("signed-out")
   }
 
+  const checkDuplicate = async (payload: SaveJobPayload) => {
+    const token = await getValidToken()
+    if (!token) {
+      setSaveState({ kind: "preview", payload })
+      return
+    }
+
+    const apiBase = process.env.PLASMO_PUBLIC_DASHBOARD_URL
+
+    try {
+      const res = await fetch(`${apiBase}/api/jobs/duplicate-check`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          url: payload.sourceUrl ?? "",
+          title: payload.title ?? "",
+          company: payload.company ?? "",
+        }),
+      })
+
+      if (!res.ok) {
+        setSaveState({ kind: "preview", payload })
+        return
+      }
+
+      const result: DuplicateCheckResult = await res.json()
+
+      if (result.isDuplicate && result.matches.length > 0) {
+        setDuplicateMatches(result.matches)
+        setSaveState({ kind: "duplicate" })
+      } else {
+        setSaveState({ kind: "preview", payload })
+      }
+    } catch {
+      // Network error — fail open, proceed to preview
+      setSaveState({ kind: "preview", payload })
+    }
+  }
+
   const handleSave = async () => {
     setSaveState({ kind: "saving" })
 
@@ -202,7 +249,7 @@ function IndexPopup() {
     setSalaryCurrency(currencyCode)
     setSalaryRaw(raw)
     setPreviewFields(payload)
-    setSaveState({ kind: "preview", payload })
+    await checkDuplicate(payload)
   }
 
   if (authState === "checking") {
@@ -376,7 +423,38 @@ function IndexPopup() {
     setInitiallyMissingFields(new Set())
     setSalaryCurrency("GBP")
     setSalaryRaw("")
+    setDuplicateMatches([])
     setSaveState({ kind: "idle" })
+  }
+
+  const handleRestoreAndView = async (jobId: string) => {
+    if (!isValidJobId(jobId)) return
+
+    const token = await getValidToken()
+    if (!token) return
+
+    const apiBase = process.env.PLASMO_PUBLIC_DASHBOARD_URL
+
+    try {
+      const res = await fetch(`${apiBase}/api/jobs/${jobId}`, {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ isArchived: false }),
+      })
+
+      if (res.ok) {
+        openDashboardHighlight(jobId)
+        setSaveState({ kind: "idle" })
+        setDuplicateMatches([])
+      } else {
+        console.error("[restore] failed:", res.status)
+      }
+    } catch (err) {
+      console.error("[restore] network error:", err)
+    }
   }
 
   function updateField<K extends keyof SaveJobPayload>(
@@ -422,6 +500,172 @@ function IndexPopup() {
       </button>
     </div>
   )
+
+  if (saveState.kind === "duplicate") {
+    return (
+      <div style={{ width: 300, fontFamily: "system-ui, -apple-system, sans-serif" }}>
+        {topBar}
+        <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 16 }}>
+          <div>
+            <h2 style={{ fontSize: 14, fontWeight: 600, color: "#111827", margin: "0 0 4px" }}>
+              Already saved
+            </h2>
+            <p style={{ fontSize: 12, color: "#6b7280", margin: 0 }}>
+              This job matches one you've saved before.
+            </p>
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {duplicateMatches.map((match) => (
+              <div
+                key={match.id}
+                style={{
+                  border: "1px solid #e5e7eb",
+                  borderRadius: 6,
+                  background: "#f9fafb",
+                  padding: 10,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 8,
+                }}>
+                <div>
+                  <div style={{ fontSize: 12, fontWeight: 500, color: "#111827", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {match.company}
+                  </div>
+                  <div style={{ fontSize: 12, color: "#4b5563", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {match.title}
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <span style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    borderRadius: 9999,
+                    padding: "1px 8px",
+                    fontSize: 10,
+                    fontWeight: 500,
+                    background: "white",
+                    border: "1px solid #e5e7eb",
+                    color: "#374151",
+                    textTransform: "capitalize",
+                  }}>
+                    {match.status}
+                  </span>
+                  {match.isArchived && (
+                    <span style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      borderRadius: 9999,
+                      padding: "1px 8px",
+                      fontSize: 10,
+                      fontWeight: 500,
+                      background: "#fffbeb",
+                      border: "1px solid #fde68a",
+                      color: "#92400e",
+                    }}>
+                      Archived
+                    </span>
+                  )}
+                  <span style={{ fontSize: 10, color: "#9ca3af", marginLeft: "auto" }}>
+                    Saved {new Date(match.savedAt).toLocaleDateString()}
+                  </span>
+                </div>
+
+                {match.isArchived && (
+                  <p style={{
+                    fontSize: 10,
+                    color: "#92400e",
+                    background: "#fffbeb",
+                    borderRadius: 4,
+                    padding: "4px 8px",
+                    margin: 0,
+                  }}>
+                    This job was archived — restore it instead of saving a duplicate?
+                  </p>
+                )}
+
+                {match.isArchived ? (
+                  <button
+                    onClick={() => handleRestoreAndView(match.id)}
+                    style={{
+                      width: "100%",
+                      padding: "6px 12px",
+                      fontSize: 12,
+                      fontWeight: 500,
+                      cursor: "pointer",
+                      background: "#f59e0b",
+                      color: "white",
+                      border: "none",
+                      borderRadius: 6,
+                    }}>
+                    Restore &amp; View on Dashboard
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => openDashboardHighlight(match.id)}
+                    style={{
+                      width: "100%",
+                      padding: "6px 12px",
+                      fontSize: 12,
+                      fontWeight: 500,
+                      cursor: "pointer",
+                      background: "white",
+                      color: "#374151",
+                      border: "1px solid #d1d5db",
+                      borderRadius: 6,
+                    }}>
+                    View on Dashboard
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+
+          <div style={{ display: "flex", gap: 8 }}>
+            <button
+              onClick={() => {
+                setSaveState({ kind: "idle" })
+                setDuplicateMatches([])
+              }}
+              style={{
+                flex: 1,
+                padding: "7px 12px",
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: "pointer",
+                background: "white",
+                color: "#374151",
+                border: "1px solid #d1d5db",
+                borderRadius: 6,
+              }}>
+              Cancel
+            </button>
+            <button
+              onClick={() => {
+                setDuplicateMatches([])
+                if (previewFields) {
+                  setSaveState({ kind: "preview", payload: previewFields })
+                }
+              }}
+              style={{
+                flex: 1,
+                padding: "7px 12px",
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: "pointer",
+                background: "#2563eb",
+                color: "white",
+                border: "none",
+                borderRadius: 6,
+              }}>
+              Save Anyway
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   if (saveState.kind === "preview" && previewFields) {
     const hasTitle = !!previewFields.title
