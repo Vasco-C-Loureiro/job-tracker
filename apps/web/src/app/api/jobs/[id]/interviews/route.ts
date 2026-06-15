@@ -71,6 +71,7 @@ export async function POST(
     roundNumber: number;
     type: string;
     date?: string | null;
+    time?: string | null;
     location?: string | null;
     contactName?: string | null;
     contactRole?: string | null;
@@ -86,6 +87,7 @@ export async function POST(
       round_number: body.roundNumber,
       type: body.type,
       date: body.date ?? null,
+      time: body.time ?? null,
       location: body.location ?? null,
       contact_name: body.contactName ?? null,
       contact_role: body.contactRole ?? null,
