@@ -18,6 +18,8 @@ type PreferencesRow = {
   // U22 columns
   auto_delete_notifications_enabled: boolean | null;
   auto_delete_notifications_days: number | null;
+  // U25 columns
+  show_applied_dates: boolean | null;
 };
 
 const DEFAULTS = {
@@ -47,6 +49,7 @@ function buildResponse(row: PreferencesRow) {
     autoArchiveRejectedDays: row.auto_archive_rejected_days ?? 7,
     autoDeleteNotificationsEnabled: row.auto_delete_notifications_enabled ?? false,
     autoDeleteNotificationsDays: row.auto_delete_notifications_days ?? 7,
+    showAppliedDates: row.show_applied_dates ?? false,
   };
 }
 
@@ -55,7 +58,8 @@ const SELECT_COLS =
   "default_resume_submitted, default_cover_letter_submitted, " +
   "auto_archive_inactive_enabled, auto_archive_inactive_days, " +
   "auto_archive_rejected_enabled, auto_archive_rejected_days, " +
-  "auto_delete_notifications_enabled, auto_delete_notifications_days";
+  "auto_delete_notifications_enabled, auto_delete_notifications_days, " +
+  "show_applied_dates";
 
 function getToken(request: NextRequest): string | null {
   const h = request.headers.get("Authorization");
@@ -221,6 +225,15 @@ export async function PUT(request: NextRequest) {
       );
     }
     upsert.auto_delete_notifications_days = b.autoDeleteNotificationsDays;
+  }
+
+  // ── U25 fields (camelCase in body → snake_case in DB) ──────────────────────
+
+  if ("showAppliedDates" in b) {
+    if (typeof b.showAppliedDates !== "boolean") {
+      return NextResponse.json({ error: "showAppliedDates must be a boolean" }, { status: 400 });
+    }
+    upsert.show_applied_dates = b.showAppliedDates;
   }
 
   const { data, error } = await supabase

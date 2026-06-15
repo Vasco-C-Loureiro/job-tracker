@@ -28,6 +28,7 @@ export default function SettingsPage() {
   const [localColumns, setLocalColumns] = useState<Set<string>>(() => new Set(DEFAULT_VISIBLE_COLUMNS));
   const [defaultResume, setDefaultResume] = useState(true);
   const [defaultCoverLetter, setDefaultCoverLetter] = useState(false);
+  const [showAppliedDates, setShowAppliedDates] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
@@ -46,6 +47,7 @@ export default function SettingsPage() {
           visible_columns?: string[];
           default_resume_submitted?: boolean;
           default_cover_letter_submitted?: boolean;
+          showAppliedDates?: boolean;
         };
         setPrefs({
           autoArchiveInactiveEnabled: data.autoArchiveInactiveEnabled ?? ARCHIVE_DEFAULTS.autoArchiveInactiveEnabled,
@@ -58,6 +60,7 @@ export default function SettingsPage() {
         if (Array.isArray(data.visible_columns)) setLocalColumns(new Set(data.visible_columns));
         if (typeof data.default_resume_submitted === "boolean") setDefaultResume(data.default_resume_submitted);
         if (typeof data.default_cover_letter_submitted === "boolean") setDefaultCoverLetter(data.default_cover_letter_submitted);
+        if (typeof data.showAppliedDates === "boolean") setShowAppliedDates(data.showAppliedDates);
       }
       setLoading(false);
     }
@@ -85,6 +88,7 @@ export default function SettingsPage() {
         visible_columns: Array.from(localColumns),
         default_resume_submitted: defaultResume,
         default_cover_letter_submitted: defaultCoverLetter,
+        showAppliedDates,
       }),
     });
     if (res.ok) {
@@ -233,6 +237,32 @@ export default function SettingsPage() {
                     Delete after (days)
                   </label>
                 </div>
+              </div>
+            </section>
+          </div>
+
+          {/* Calendar (Unit 25) */}
+          <div className="mt-10">
+            <section className="mb-8">
+              <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-4">
+                Calendar
+              </h2>
+
+              <div className="mb-6">
+                <label className="flex items-center gap-3 mb-1 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={showAppliedDates}
+                    onChange={(e) => { setShowAppliedDates(e.target.checked); setMessage(null); }}
+                    className="w-4 h-4 shrink-0"
+                  />
+                  <span className="text-sm font-medium text-gray-900">
+                    Show applied dates on calendar
+                  </span>
+                </label>
+                <p className="ml-7 text-xs text-gray-500">
+                  Display dates when you applied to jobs as events on the calendar.
+                </p>
               </div>
             </section>
           </div>
