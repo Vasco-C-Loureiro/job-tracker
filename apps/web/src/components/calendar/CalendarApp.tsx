@@ -57,7 +57,10 @@ export function CalendarApp() {
               <MonthView
                 focusedDate={focusedDate}
                 events={events}
-                onWeekClick={() => {}}
+                onWeekClick={(weekStart) => {
+                  setFocusedDate(weekStart);
+                  setView("week");
+                }}
                 onDayClick={() => {}}
                 onPrevClick={() => {}}
                 onNextClick={() => {}}
@@ -74,14 +77,29 @@ export function CalendarApp() {
               <YearMonthsView
                 focusedDate={focusedDate}
                 events={events}
-                onMonthClick={() => {}}
+                onMonthClick={(monthIdx) => {
+                  setFocusedDate(prev => {
+                    const d = new Date(prev);
+                    d.setMonth(monthIdx);
+                    d.setDate(1);
+                    return d;
+                  });
+                  setView("month");
+                }}
               />
             )}
             {view === "year"        && (
               <YearView
                 focusedDate={focusedDate}
                 events={events}
-                onYearClick={() => {}}
+                onYearClick={(year) => {
+                  setFocusedDate(prev => {
+                    const d = new Date(prev);
+                    d.setFullYear(year);
+                    return d;
+                  });
+                  setView("year-months");
+                }}
                 onPrevClick={() => {}}
                 onNextClick={() => {}}
               />
