@@ -11,6 +11,7 @@ type RoundState = {
   roundNumber: number;
   type: string;
   date: string;
+  time: string;
   location: string;
   contactName: string;
   contactRole: string;
@@ -27,6 +28,7 @@ function rowToRoundState(r: InterviewRoundRow): RoundState {
     roundNumber: r.round_number,
     type: r.type,
     date: r.date ? r.date.slice(0, 10) : "",
+    time: r.time?.slice(0, 5) ?? "",
     location: r.location ?? "",
     contactName: r.contact_name ?? "",
     contactRole: r.contact_role ?? "",
@@ -279,6 +281,7 @@ export default function InterviewCard({
         roundNumber: nextNum,
         type: "screening",
         date: "",
+        time: "",
         location: "",
         contactName: "",
         contactRole: "",
@@ -341,6 +344,7 @@ export default function InterviewCard({
       roundNumber: round.roundNumber,
       type: round.type,
       date: round.date || null,
+      time: round.time || null,
       location: round.location || null,
       contactName: round.contactName || null,
       contactRole: round.contactRole || null,
@@ -431,6 +435,7 @@ export default function InterviewCard({
         round_number: r.roundNumber,
         type: r.type,
         date: r.date || null,
+        time: r.time || null,
         location: r.location || null,
         contact_name: r.contactName || null,
         contact_role: r.contactRole || null,
@@ -531,6 +536,7 @@ export default function InterviewCard({
               {currentRound?.date && (
                 <p className="text-xs text-gray-400 mt-1">
                   {new Date(currentRound.date).toLocaleDateString("en-GB")}
+                  {currentRound.time && ` · ${currentRound.time.slice(0, 5)}`}
                 </p>
               )}
               {currentRound?.location && (
@@ -698,6 +704,15 @@ export default function InterviewCard({
                               onChange={(e) => updateLocalRound(idx, "date", e.target.value)}
                             />
                           </div>
+                          <div>
+                            <label className={labelCls}>Time</label>
+                            <input
+                              type="time"
+                              className={inputCls}
+                              value={round.time}
+                              onChange={(e) => updateLocalRound(idx, "time", e.target.value)}
+                            />
+                          </div>
                           {/* Row 2: Contact name + Contact role */}
                           <div>
                             <label className={labelCls}>Contact name</label>
@@ -769,7 +784,7 @@ export default function InterviewCard({
                         {round.date && (
                           <>
                             <span className="text-gray-300">·</span>
-                            <span>{formatDate(round.date)}</span>
+                            <span>{formatDate(round.date)}{round.time && ` · ${round.time.slice(0, 5)}`}</span>
                           </>
                         )}
                         {round.contactName && (
