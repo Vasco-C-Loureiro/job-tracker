@@ -6,6 +6,7 @@ import { fetchCalendarFeed } from "@/lib/calendar/feed";
 import { MonthView } from "./MonthView";
 import { WeekView } from "./WeekView";
 import { YearView } from "./YearView";
+import { YearMonthsView } from "./YearMonthsView";
 
 export function CalendarApp() {
   const [view, setView] = useState<CalendarView>("month");
@@ -69,7 +70,13 @@ export function CalendarApp() {
                 onDayClick={() => {}}
               />
             )}
-            {view === "year-months" && <div className="text-gray-400">Year-with-months view (P16) — {focusedDate.getFullYear()}</div>}
+            {view === "year-months" && (
+              <YearMonthsView
+                focusedDate={focusedDate}
+                events={events}
+                onMonthClick={() => {}}
+              />
+            )}
             {view === "year"        && (
               <YearView
                 focusedDate={focusedDate}

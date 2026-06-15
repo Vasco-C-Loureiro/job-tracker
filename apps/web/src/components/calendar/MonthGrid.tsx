@@ -2,7 +2,8 @@
 
 import type { CalendarFeedEvent } from "@job-tracker/shared";
 import { monthMatrix, isoWeek, isSameMonthAs, ymd, sortDayEvents } from "@/lib/calendar/grid";
-import { groupAppliedForDay } from "@/lib/calendar/grouping";
+import { groupAppliedForDay, appliedDotCount } from "@/lib/calendar/grouping";
+import { resolveColorKey, colorClasses } from "@/lib/calendar/colors";
 import { EventPill } from "./EventPill";
 
 const DAY_HEADERS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -36,18 +37,48 @@ export function MonthGrid({ anchor, events, onWeekClick, onDayClick, compact = f
             {row.map((day) => {
               const isCurrentMonth = isSameMonthAs(day, anchor);
               const isToday = ymd(day) === todayStr;
+              const dayEvs     = events.filter(e => e.date === ymd(day));
+              const nonApplied = dayEvs.filter(e => e.source !== "applied");
+              const appliedEvs = dayEvs.filter(e => e.source === "applied");
+
+              // Deduplicate non-applied dots by colour token
+              const tokensSeen = new Set<string>();
+              const nonAppliedDots = nonApplied.reduce<string[]>((acc, ev) => {
+                const token = resolveColorKey(ev);
+                if (!tokensSeen.has(token)) { tokensSeen.add(token); acc.push(token); }
+                return acc;
+              }, []).slice(0, 3);
+
+              const numAppliedDots = appliedEvs.length > 0 ? appliedDotCount(appliedEvs.length) : 0;
+
               return (
                 <button
                   key={day.toISOString()}
                   type="button"
                   onClick={() => onDayClick?.(day)}
                   className={[
-                    "flex items-center justify-center h-6 w-full text-[11px] rounded",
+                    "flex flex-col items-center h-7 w-full text-[11px] rounded pt-0.5",
                     isCurrentMonth ? "text-gray-700" : "text-gray-300",
                     isToday ? "ring-1 ring-blue-400 bg-blue-50 font-semibold" : "hover:bg-gray-100",
                   ].join(" ")}
                 >
-                  {day.getDate()}
+                  <span className="leading-none">{day.getDate()}</span>
+                  {dayEvs.length > 0 && (
+                    <div className="flex flex-row flex-wrap gap-0.5 mt-0.5 justify-center">
+                      {nonAppliedDots.map(token => (
+                        <span
+                          key={token}
+                          className={`w-1.5 h-1.5 rounded-full ${colorClasses(token, "dot")}`}
+                        />
+                      ))}
+                      {numAppliedDots > 0 && Array.from({ length: numAppliedDots }).map((_, i) => (
+                        <span
+                          key={`applied-${i}`}
+                          className={`w-1.5 h-1.5 rounded-full ${colorClasses("applied", "dot")}${i > 0 ? " -ml-1" : ""}`}
+                        />
+                      ))}
+                    </div>
+                  )}
                 </button>
               );
             })}
