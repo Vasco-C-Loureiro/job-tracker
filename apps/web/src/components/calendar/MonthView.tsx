@@ -8,6 +8,7 @@ interface MonthViewProps {
   focusedDate: Date;
   events: CalendarFeedEvent[];
   onWeekClick?: (weekStart: Date) => void;
+  onWeekHover?: (weekStart: Date) => void;
   onDayClick?: (day: Date) => void;
   onPrevClick?: () => void;
   onNextClick?: () => void;
@@ -17,6 +18,7 @@ export function MonthView({
   focusedDate,
   events,
   onWeekClick,
+  onWeekHover,
   onDayClick,
   onPrevClick,
   onNextClick,
@@ -62,6 +64,7 @@ export function MonthView({
             anchor={current}
             events={events}
             onWeekClick={onWeekClick}
+            onWeekHover={onWeekHover}
             onDayClick={onDayClick}
           />
         </div>

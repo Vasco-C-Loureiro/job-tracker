@@ -12,11 +12,12 @@ interface MonthGridProps {
   anchor: Date;
   events: CalendarFeedEvent[];
   onWeekClick?: (weekStart: Date) => void;
+  onWeekHover?: (weekStart: Date) => void;
   onDayClick?: (day: Date) => void;
   compact?: boolean;
 }
 
-export function MonthGrid({ anchor, events, onWeekClick, onDayClick, compact = false }: MonthGridProps) {
+export function MonthGrid({ anchor, events, onWeekClick, onWeekHover, onDayClick, compact = false }: MonthGridProps) {
   const weeks = monthMatrix(anchor);
   const todayStr = ymd(new Date());
 
@@ -106,6 +107,7 @@ export function MonthGrid({ anchor, events, onWeekClick, onDayClick, compact = f
           <button
             type="button"
             onClick={() => onWeekClick?.(row[0])}
+            onMouseEnter={() => onWeekHover?.(row[0])}
             className="text-center text-xs text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded py-1 cursor-pointer"
           >
             {isoWeek(row[0])}
