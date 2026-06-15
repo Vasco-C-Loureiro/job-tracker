@@ -13,9 +13,10 @@ interface YearMonthsViewProps {
   focusedDate: Date;
   events: CalendarFeedEvent[];
   onMonthClick?: (monthIndex: number) => void;
+  onMonthHover?: (monthIndex: number) => void;
 }
 
-export function YearMonthsView({ focusedDate, events, onMonthClick }: YearMonthsViewProps) {
+export function YearMonthsView({ focusedDate, events, onMonthClick, onMonthHover }: YearMonthsViewProps) {
   const year = focusedDate.getFullYear();
 
   return (
@@ -28,6 +29,7 @@ export function YearMonthsView({ focusedDate, events, onMonthClick }: YearMonths
             key={monthIdx}
             className="cursor-pointer hover:bg-gray-50 rounded-lg p-2 transition-colors"
             onClick={() => onMonthClick?.(monthIdx)}
+            onMouseEnter={() => onMonthHover?.(monthIdx)}
             role="button"
             tabIndex={0}
             onKeyDown={(e) => e.key === "Enter" && onMonthClick?.(monthIdx)}

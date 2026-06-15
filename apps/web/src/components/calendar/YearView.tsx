@@ -6,11 +6,12 @@ interface YearViewProps {
   focusedDate: Date;
   events: CalendarFeedEvent[];
   onYearClick?: (year: number) => void;
+  onYearHover?: (year: number) => void;
   onPrevClick?: () => void;
   onNextClick?: () => void;
 }
 
-export function YearView({ focusedDate, events: _events, onYearClick, onPrevClick, onNextClick }: YearViewProps) {
+export function YearView({ focusedDate, events: _events, onYearClick, onYearHover, onPrevClick, onNextClick }: YearViewProps) {
   const focusedYear = focusedDate.getFullYear();
   const currentYear = new Date().getFullYear();
 
@@ -44,6 +45,7 @@ export function YearView({ focusedDate, events: _events, onYearClick, onPrevClic
               }}
               role="button"
               tabIndex={0}
+              onMouseEnter={() => onYearHover?.(year)}
               onKeyDown={(e) => {
                 if (e.key !== "Enter") return;
                 if (isPeeking && idx === 0) { onPrevClick?.(); return; }

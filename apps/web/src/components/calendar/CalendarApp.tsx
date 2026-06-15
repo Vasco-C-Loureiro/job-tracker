@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import type { CalendarView, CalendarMode, CalendarFeedEvent } from "@job-tracker/shared";
 import { fetchCalendarFeed } from "@/lib/calendar/feed";
+import { ZOOM_IN, ZOOM_OUT } from "@/lib/calendar/zoom";
 import { MonthView } from "./MonthView";
 import { WeekView } from "./WeekView";
 import { YearView } from "./YearView";
@@ -14,6 +15,14 @@ export function CalendarApp() {
   const [mode, setMode] = useState<CalendarMode>("calendar");
   const [events, setEvents] = useState<CalendarFeedEvent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hoveredPeriod, setHoveredPeriod] = useState<
+    | { type: "month"; value: number }
+    | { type: "week"; value: Date }
+    | { type: "year"; value: number }
+    | null
+  >(null);
+  const calendarRef = useRef<HTMLDivElement>(null);
+  const lastZoomTime = useRef(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -32,8 +41,48 @@ export function CalendarApp() {
     };
   }, []);
 
+  const zoomIn = useCallback(() => {
+    const nextView = ZOOM_IN[view];
+    if (!nextView) return;
+    setFocusedDate(prev => {
+      if (view === "year" && hoveredPeriod?.type === "year") {
+        const d = new Date(prev); d.setFullYear(hoveredPeriod.value); return d;
+      }
+      if (view === "year-months" && hoveredPeriod?.type === "month") {
+        const d = new Date(prev); d.setMonth(hoveredPeriod.value); d.setDate(1); return d;
+      }
+      if (view === "month" && hoveredPeriod?.type === "week") {
+        return new Date(hoveredPeriod.value);
+      }
+      return prev;
+    });
+    setView(nextView);
+  }, [view, hoveredPeriod]);
+
+  const zoomOut = useCallback(() => {
+    const nextView = ZOOM_OUT[view];
+    if (!nextView) return;
+    setView(nextView);
+  }, [view]);
+
+  useEffect(() => {
+    const el = calendarRef.current;
+    if (!el) return;
+    function handleWheel(e: WheelEvent) {
+      if (!e.ctrlKey) return;
+      e.preventDefault();
+      const now = Date.now();
+      if (now - lastZoomTime.current < 300) return;
+      lastZoomTime.current = now;
+      if (e.deltaY < 0) zoomIn();
+      else zoomOut();
+    }
+    el.addEventListener("wheel", handleWheel, { passive: false });
+    return () => el.removeEventListener("wheel", handleWheel);
+  }, [zoomIn, zoomOut]);
+
   return (
-    <div className="mx-6 my-6">
+    <div ref={calendarRef} className="mx-6 my-6">
 
       {/* Top bar: mode toggle placeholder + date display */}
       <div className="mb-4 flex items-center justify-between">
@@ -61,6 +110,7 @@ export function CalendarApp() {
                   setFocusedDate(weekStart);
                   setView("week");
                 }}
+                onWeekHover={(weekStart) => setHoveredPeriod({ type: "week", value: weekStart })}
                 onDayClick={() => {}}
                 onPrevClick={() => {}}
                 onNextClick={() => {}}
@@ -86,6 +136,7 @@ export function CalendarApp() {
                   });
                   setView("month");
                 }}
+                onMonthHover={(idx) => setHoveredPeriod({ type: "month", value: idx })}
               />
             )}
             {view === "year"        && (
@@ -100,6 +151,7 @@ export function CalendarApp() {
                   });
                   setView("year-months");
                 }}
+                onYearHover={(year) => setHoveredPeriod({ type: "year", value: year })}
                 onPrevClick={() => {}}
                 onNextClick={() => {}}
               />
