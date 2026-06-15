@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import type { CalendarView, CalendarMode, CalendarFeedEvent } from "@job-tracker/shared";
 import { fetchCalendarFeed } from "@/lib/calendar/feed";
+import { MonthView } from "./MonthView";
 
 export function CalendarApp() {
   const [view, setView] = useState<CalendarView>("month");
@@ -49,7 +50,16 @@ export function CalendarApp() {
           <div className="text-gray-400">Upcoming list (P21)</div>
         ) : (
           <>
-            {view === "month"       && <div className="text-gray-400">Month view (P10) — {focusedDate.toDateString()}</div>}
+            {view === "month"       && (
+              <MonthView
+                focusedDate={focusedDate}
+                events={events}
+                onWeekClick={() => {}}
+                onDayClick={() => {}}
+                onPrevClick={() => {}}
+                onNextClick={() => {}}
+              />
+            )}
             {view === "week"        && <div className="text-gray-400">Week view (P14) — {focusedDate.toDateString()}</div>}
             {view === "year-months" && <div className="text-gray-400">Year-with-months view (P16) — {focusedDate.getFullYear()}</div>}
             {view === "year"        && <div className="text-gray-400">Year view (P15) — {focusedDate.getFullYear()}</div>}
