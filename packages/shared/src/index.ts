@@ -63,6 +63,7 @@ export type UserPreferences = {
   autoArchiveInactiveDays: number;
   autoArchiveRejectedEnabled: boolean;
   autoArchiveRejectedDays: number;
+  showAppliedDates?: boolean;
 };
 
 export type JobApplicationListItem = Omit<JobApplication, "description">;
@@ -182,6 +183,7 @@ export type InterviewRound = {
   roundNumber: number;
   type: InterviewType;
   date?: string;
+  time?: string | null;
   location?: string;
   contactName?: string;
   contactRole?: string;
@@ -191,3 +193,41 @@ export type InterviewRound = {
   createdAt: string;
   updatedAt: string;
 };
+
+// ─── Calendar ─────────────────────────────────────────────────────────────────
+
+export type CalendarView = "year" | "year-months" | "month" | "week";
+export type CalendarMode = "calendar" | "upcoming";
+
+export interface CalendarEvent {
+  id: string;
+  userId: string;
+  title: string;
+  date: string;          // 'yyyy-MM-dd'
+  time: string | null;   // 'HH:mm'
+  endTime: string | null;
+  description: string | null;
+  color: string | null;  // colour token key, not raw hex
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type CalendarFeedSource = "manual" | "interview_round" | "deadline" | "applied";
+
+export interface CalendarFeedEvent {
+  /** Stable identity: eventId for manual, roundId for rounds,
+   *  "deadline:{jobId}" for deadlines, "applied:{jobId}" for applied. */
+  id: string;
+  source: CalendarFeedSource;
+  title: string;              // one-sentence human summary
+  date: string;               // 'yyyy-MM-dd'
+  time: string | null;        // 'HH:mm' | null
+  endTime: string | null;
+  description: string | null;
+  roundType: InterviewType | null;  // set when source === "interview_round"
+  color: string | null;             // manual event's stored colour token; null for auto-sourced events
+  jobId: string | null;
+  roundId: string | null;
+  eventId: string | null;
+  company: string | null;           // set for applied + deadline events; used for grouping display
+}
