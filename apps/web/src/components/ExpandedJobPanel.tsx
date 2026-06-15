@@ -17,6 +17,7 @@ type RoundRow = {
   round_number: number;
   type: string;
   date?: string | null;
+  time?: string | null;
   done: boolean;
   follow_up_sent: boolean;
   notes?: string | null;
@@ -30,6 +31,7 @@ type Round = {
   roundNumber: number;
   type: InterviewType;
   date: string;
+  time: string;
   done: boolean;
   followUpSent: boolean;
   notes: string;
@@ -109,6 +111,12 @@ function RoundCard({
           value={round.date}
           onChange={(e) => onPatch({ date: e.target.value })}
         />
+        <input
+          type="time"
+          className={fc}
+          value={round.time}
+          onChange={(e) => onPatch({ time: e.target.value })}
+        />
         <label className="flex items-center gap-2 text-xs text-gray-700 cursor-pointer">
           <input
             type="checkbox"
@@ -175,6 +183,7 @@ export function ExpandedJobPanel({ job, getToken, onJobPatched }: Props) {
               roundNumber: r.round_number,
               type: r.type as InterviewType,
               date: r.date ?? "",
+              time: r.time?.slice(0, 5) ?? "",
               done: r.done,
               followUpSent: r.follow_up_sent,
               notes: r.notes ?? "",
@@ -233,6 +242,7 @@ export function ExpandedJobPanel({ job, getToken, onJobPatched }: Props) {
           roundNumber,
           type: "screening",
           date: "",
+          time: "",
           done: false,
           followUpSent: false,
           notes: "",
@@ -257,6 +267,7 @@ export function ExpandedJobPanel({ job, getToken, onJobPatched }: Props) {
           roundNumber: updated.roundNumber,
           type: updated.type,
           date: updated.date || null,
+          time: updated.time || null,
           done: updated.done,
           followUpSent: updated.followUpSent,
           notes: updated.notes || null,
