@@ -5,6 +5,7 @@ import type { CalendarView, CalendarMode, CalendarFeedEvent } from "@job-tracker
 import { fetchCalendarFeed } from "@/lib/calendar/feed";
 import { MonthView } from "./MonthView";
 import { WeekView } from "./WeekView";
+import { YearView } from "./YearView";
 
 export function CalendarApp() {
   const [view, setView] = useState<CalendarView>("month");
@@ -69,7 +70,15 @@ export function CalendarApp() {
               />
             )}
             {view === "year-months" && <div className="text-gray-400">Year-with-months view (P16) — {focusedDate.getFullYear()}</div>}
-            {view === "year"        && <div className="text-gray-400">Year view (P15) — {focusedDate.getFullYear()}</div>}
+            {view === "year"        && (
+              <YearView
+                focusedDate={focusedDate}
+                events={events}
+                onYearClick={() => {}}
+                onPrevClick={() => {}}
+                onNextClick={() => {}}
+              />
+            )}
           </>
         )}
       </div>
