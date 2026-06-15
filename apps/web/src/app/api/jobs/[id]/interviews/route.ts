@@ -27,7 +27,7 @@ export async function GET(
   const { data, error } = await supabase
     .from("interview_rounds")
     .select(
-      "id, job_application_id, round_number, type, date, done, follow_up_sent, notes, created_at, updated_at",
+      "id, job_application_id, round_number, type, date, time, done, follow_up_sent, notes, created_at, updated_at",
     )
     .eq("job_application_id", jobId)
     .order("round_number", { ascending: true });

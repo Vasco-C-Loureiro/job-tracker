@@ -44,6 +44,7 @@ export type InterviewRoundRow = {
   round_number: number;
   type: string;
   date?: string | null;
+  time?: string | null;
   location?: string | null;
   contact_name?: string | null;
   contact_role?: string | null;
