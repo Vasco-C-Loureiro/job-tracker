@@ -1,0 +1,46 @@
+"use client";
+
+import { useState } from "react";
+import type { CalendarView, CalendarMode, CalendarFeedEvent } from "@job-tracker/shared";
+
+export function CalendarApp() {
+  const [view, setView] = useState<CalendarView>("month");
+  const [focusedDate, setFocusedDate] = useState<Date>(new Date());
+  const [mode, setMode] = useState<CalendarMode>("calendar");
+  const [events, setEvents] = useState<CalendarFeedEvent[]>([]);
+
+  return (
+    <div className="mx-6 my-6">
+
+      {/* Top bar: mode toggle placeholder + date display */}
+      <div className="mb-4 flex items-center justify-between">
+        <p className="text-sm text-gray-500">
+          Mode: {mode}
+        </p>
+        <p className="text-sm text-gray-400">
+          Focused: {focusedDate.toDateString()}
+        </p>
+      </div>
+
+      {/* Main view area */}
+      <div className="relative">
+        {mode === "upcoming" ? (
+          <div className="text-gray-400">Upcoming list (P21)</div>
+        ) : (
+          <>
+            {view === "month"       && <div className="text-gray-400">Month view (P10) — {focusedDate.toDateString()}</div>}
+            {view === "week"        && <div className="text-gray-400">Week view (P14) — {focusedDate.toDateString()}</div>}
+            {view === "year-months" && <div className="text-gray-400">Year-with-months view (P16) — {focusedDate.getFullYear()}</div>}
+            {view === "year"        && <div className="text-gray-400">Year view (P15) — {focusedDate.getFullYear()}</div>}
+          </>
+        )}
+      </div>
+
+      {/* Bottom-right nav buttons slot — P19 fills this in */}
+      <div className="fixed bottom-6 right-6">
+        {/* <CalendarNavButtons /> */}
+      </div>
+
+    </div>
+  );
+}

@@ -30,7 +30,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/import",     icon: Upload,    label: "Import"       },
   { href: "/archived",       icon: Archive,   label: "Archived"       },
   { href: "/notifications",  icon: Bell,      label: "Notifications"  },
-  { href: "/calendar",       icon: Calendar,  label: "Calendar",  disabled: true },
+  { href: "/calendar",       icon: Calendar,  label: "Calendar"  },
   { href: "/analytics",  icon: BarChart2, label: "Analytics", disabled: true },
 ];
 
