@@ -42,9 +42,10 @@ interface MonthGridProps {
   onWeekHover?: (weekStart: Date) => void;
   onDayClick?: (day: Date) => void;
   compact?: boolean;
+  showWeekNumbers?: boolean;
 }
 
-export function MonthGrid({ anchor, events, onWeekClick, onWeekHover, onDayClick, compact = false }: MonthGridProps) {
+export function MonthGrid({ anchor, events, onWeekClick, onWeekHover, onDayClick, compact = false, showWeekNumbers = true }: MonthGridProps) {
   const weeks = monthMatrix(anchor);
   const todayStr = ymd(new Date());
 
@@ -116,10 +117,12 @@ export function MonthGrid({ anchor, events, onWeekClick, onWeekHover, onDayClick
   return (
     <div className="select-none">
       {/* Header row: Wk + day names */}
-      <div className="grid grid-cols-[2.5rem_repeat(7,1fr)] mb-1">
-        <div className="text-center text-xs font-semibold text-white bg-slate-700 py-1 rounded-l-md">Wk</div>
+      <div className={`grid ${showWeekNumbers ? "grid-cols-[2.5rem_repeat(7,1fr)]" : "grid-cols-7"} mb-1`}>
+        {showWeekNumbers && (
+          <div className="text-center text-xs font-semibold text-white bg-slate-700 py-1 rounded-l-md">Wk</div>
+        )}
         {DAY_HEADERS.map((d, i) => (
-          <div key={d} className={`text-center text-xs font-semibold text-white bg-slate-700 py-1${i === 6 ? " rounded-r-md" : ""}`}>
+          <div key={d} className={`text-center text-xs font-semibold text-white bg-slate-700 py-1${!showWeekNumbers && i === 0 ? " rounded-l-md" : ""}${i === 6 ? " rounded-r-md" : ""}`}>
             {d}
           </div>
         ))}
@@ -127,16 +130,18 @@ export function MonthGrid({ anchor, events, onWeekClick, onWeekHover, onDayClick
       {/* Week rows */}
       <div className="border-l border-t border-gray-100">
       {weeks.map((row) => (
-        <div key={row[0].toISOString()} className="grid grid-cols-[2.5rem_repeat(7,1fr)]">
+        <div key={row[0].toISOString()} className={`grid ${showWeekNumbers ? "grid-cols-[2.5rem_repeat(7,1fr)]" : "grid-cols-7"}`}>
           {/* Week number */}
-          <button
-            type="button"
-            onClick={() => onWeekClick?.(row[0])}
-            onMouseEnter={() => onWeekHover?.(row[0])}
-            className="text-center text-[13px] font-semibold text-slate-400 bg-slate-50 hover:text-slate-800 hover:bg-gray-50 rounded py-1 cursor-pointer border-r border-b border-gray-100"
-          >
-            {isoWeek(row[0])}
-          </button>
+          {showWeekNumbers && (
+            <button
+              type="button"
+              onClick={() => onWeekClick?.(row[0])}
+              onMouseEnter={() => onWeekHover?.(row[0])}
+              className="text-center text-[13px] font-semibold text-slate-400 bg-slate-50 hover:text-slate-800 hover:bg-gray-50 rounded py-1 cursor-pointer border-r border-b border-gray-100"
+            >
+              {isoWeek(row[0])}
+            </button>
+          )}
           {/* Day cells */}
           {row.map((day) => {
             const isCurrentMonth = isSameMonthAs(day, anchor);
