@@ -8,6 +8,34 @@ import { EventPill } from "./EventPill";
 
 const DAY_HEADERS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
+function DotCluster({ dots }: { dots: { className: string }[] }) {
+  if (dots.length === 0) return null;
+
+  if (dots.length === 1) {
+    return <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${dots[0].className}`} />;
+  }
+
+  if (dots.length === 2) {
+    return (
+      <div className="flex gap-px flex-shrink-0">
+        {dots.map((d, i) => (
+          <span key={i} className={`w-1.5 h-1.5 rounded-full ${d.className}`} />
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col items-center gap-px flex-shrink-0">
+      <span className={`w-1.5 h-1.5 rounded-full ${dots[0].className}`} />
+      <div className="flex gap-px">
+        <span className={`w-1.5 h-1.5 rounded-full ${dots[1].className}`} />
+        <span className={`w-1.5 h-1.5 rounded-full ${dots[2].className}`} />
+      </div>
+    </div>
+  );
+}
+
 interface MonthGridProps {
   anchor: Date;
   events: CalendarFeedEvent[];
@@ -52,34 +80,24 @@ export function MonthGrid({ anchor, events, onWeekClick, onWeekHover, onDayClick
 
               const numAppliedDots = appliedEvs.length > 0 ? appliedDotCount(appliedEvs.length) : 0;
 
+              const dots = [
+                ...nonAppliedDots.map(token => ({ className: colorClasses(token, "dot") })),
+                ...Array.from({ length: numAppliedDots }, () => ({ className: colorClasses("applied", "dot") })),
+              ].slice(0, 3);
+
               return (
                 <button
                   key={day.toISOString()}
                   type="button"
                   onClick={() => onDayClick?.(day)}
                   className={[
-                    "flex flex-col items-center h-5 w-full text-[10px] rounded",
+                    "flex items-center justify-center h-5 w-full text-[10px] rounded gap-0.5",
                     isCurrentMonth ? "text-gray-700" : "text-gray-300",
                     isToday ? "ring-1 ring-blue-400 bg-blue-50 font-semibold" : "hover:bg-gray-100",
                   ].join(" ")}
                 >
                   <span className="leading-none">{day.getDate()}</span>
-                  {dayEvs.length > 0 && (
-                    <div className="flex flex-row flex-wrap gap-0.5 mt-0.5 justify-center">
-                      {nonAppliedDots.map(token => (
-                        <span
-                          key={token}
-                          className={`w-1.5 h-1.5 rounded-full ${colorClasses(token, "dot")}`}
-                        />
-                      ))}
-                      {numAppliedDots > 0 && Array.from({ length: numAppliedDots }).map((_, i) => (
-                        <span
-                          key={`applied-${i}`}
-                          className={`w-1.5 h-1.5 rounded-full ${colorClasses("applied", "dot")}${i > 0 ? " -ml-1" : ""}`}
-                        />
-                      ))}
-                    </div>
-                  )}
+                  <DotCluster dots={dots} />
                 </button>
               );
             })}
