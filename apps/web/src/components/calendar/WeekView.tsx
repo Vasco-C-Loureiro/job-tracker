@@ -54,7 +54,7 @@ export function WeekView({ focusedDate, events, onDayClick }: WeekViewProps) {
                     className={`${appliedGroup.pillClasses} rounded-md px-3 py-2 text-sm font-medium`}
                     title={appliedGroup.companies.join(", ")}
                   >
-                    {appliedGroup.label}
+                    Applied to {appliedGroup.label}{appliedGroup.countSuffix ?? ""}
                   </div>
                 )}
               </div>

@@ -99,7 +99,7 @@ export function UpcomingList({ events }: UpcomingListProps) {
                   <span className={`mt-1.5 w-2 h-2 rounded-full flex-shrink-0 ${colorClasses("applied", "dot")}`} />
                   <div>
                     <span className="text-sm font-medium text-blue-700">
-                      {appliedGroup.label}
+                      Applied to {appliedGroup.label}{appliedGroup.countSuffix ?? ""}
                     </span>
                   </div>
                 </div>

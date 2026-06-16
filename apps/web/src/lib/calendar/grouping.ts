@@ -3,7 +3,10 @@ import { colorClasses } from "@/lib/calendar/colors";
 
 export interface AppliedGroup {
   count: number;
+  /** First company name only — rendering prepends "Applied to". */
   label: string;
+  /** ", +N" for count > 1; null for count === 1. */
+  countSuffix: string | null;
   companies: string[];
   pillClasses: string;
 }
@@ -18,14 +21,11 @@ export function groupAppliedForDay(dayEvents: CalendarFeedEvent[]): AppliedGroup
 
   const companies = applied.map(e => e.company ?? "Unknown");
   const count = applied.length;
-  const label =
-    count === 1
-      ? companies[0]
-      : `Applied to ${companies[0]}, +${count - 1} more`;
 
   return {
     count,
-    label,
+    label: companies[0],
+    countSuffix: count > 1 ? `, +${count - 1}` : null,
     companies,
     pillClasses: colorClasses("applied", "pill"),
   };
