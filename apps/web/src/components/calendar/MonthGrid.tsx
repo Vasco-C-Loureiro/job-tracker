@@ -146,7 +146,7 @@ export function MonthGrid({ anchor, events, onWeekClick, onWeekHover, onDayClick
                       className={`${appliedGroup.pillClasses} text-xs font-medium rounded px-1.5 py-0.5 leading-tight cursor-default select-none flex items-center min-w-0 overflow-hidden`}
                       title={appliedGroup.companies.join(", ")}
                     >
-                      <span className="truncate min-w-0 flex-1">Applied to {appliedGroup.label}</span>
+                      <span className="truncate min-w-0 shrink">Applied to {appliedGroup.label}</span>
                       {appliedGroup.countSuffix && (
                         <span className="flex-shrink-0">{appliedGroup.countSuffix}</span>
                       )}
