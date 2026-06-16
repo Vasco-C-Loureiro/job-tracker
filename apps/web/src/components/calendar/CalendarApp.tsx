@@ -253,9 +253,14 @@ export function CalendarApp() {
                           });
                           setView("year-months");
                         }}
+                        onYearSelect={(year) => {
+                          setFocusedDate(prev => {
+                            const d = new Date(prev);
+                            d.setFullYear(year);
+                            return d;
+                          });
+                        }}
                         onYearHover={(year) => setHoveredPeriod({ type: "year", value: year })}
-                        onPrevClick={prev}
-                        onNextClick={next}
                       />
                     )}
                   </>
@@ -265,7 +270,7 @@ export function CalendarApp() {
           </div>
           </motion.div>
 
-          <CalendarNavButtons onPrev={prev} onNext={next} />
+          {view !== "year" && <CalendarNavButtons onPrev={prev} onNext={next} />}
         </>
       )}
 
