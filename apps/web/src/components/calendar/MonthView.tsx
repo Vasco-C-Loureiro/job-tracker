@@ -1,6 +1,8 @@
 "use client";
 
+import { useRef, useEffect, useState } from "react";
 import { addMonths, subMonths, format } from "date-fns";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { CalendarFeedEvent } from "@job-tracker/shared";
 import { MonthGrid } from "./MonthGrid";
 
@@ -27,62 +29,86 @@ export function MonthView({
   const current = focusedDate;
   const next    = addMonths(focusedDate, 1);
 
+  const mainRef = useRef<HTMLDivElement>(null);
+  const [mainWidth, setMainWidth] = useState<number>(700);
+  useEffect(() => {
+    const el = mainRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => setMainWidth(el.offsetWidth));
+    ro.observe(el);
+    setMainWidth(el.offsetWidth);
+    return () => ro.disconnect();
+  }, []);
+
   return (
-    <div className="px-4 py-2 overflow-hidden">
-      {/* Month title */}
-      <h2 className="text-lg font-semibold text-gray-800 mb-4 pl-1">
+    <div className="overflow-hidden py-2">
+
+      {/* Month title — aligned with the main panel */}
+      <h2 className="text-lg font-semibold text-gray-800 mb-4 mx-36 pl-1">
         {format(current, "MMMM yyyy")}
       </h2>
 
-      {/*
-        3-panel track: each panel is `calc(100% - 3rem)` wide so neighbours
-        peek in ~1.5rem on each side. Track is offset left by one panel+gap
-        to centre the current panel.
-      */}
-      <div
-        className="flex flex-row gap-4"
-        style={{ transform: "translateX(calc(-1 * (100% - 3rem) - 1rem))" }}
-      >
-        {/* Previous month — peeking left edge */}
-        <div
-          className="w-[calc(100%-3rem)] max-w-[calc(100%-3rem)] shrink-0 overflow-hidden opacity-60 hover:opacity-80 cursor-pointer"
-          onClick={onPrevClick}
-          aria-label={`Go to ${format(prev, "MMMM yyyy")}`}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(e) => e.key === "Enter" && onPrevClick?.()}
-        >
-          <p className="text-sm font-medium text-gray-400 mb-3 pl-1">
-            {format(prev, "MMMM yyyy")}
-          </p>
-          <MonthGrid anchor={prev} events={events} />
-        </div>
+      {/* Main panel + side peeks container */}
+      <div className="relative mx-36">
 
-        {/* Current month — centred */}
-        <div className="w-[calc(100%-3rem)] max-w-[calc(100%-3rem)] shrink-0 overflow-hidden">
+        {/* Main calendar */}
+        <div ref={mainRef}>
           <MonthGrid
             anchor={current}
             events={events}
+            showWeekNumbers={true}
             onWeekClick={onWeekClick}
             onWeekHover={onWeekHover}
             onDayClick={onDayClick}
           />
         </div>
 
-        {/* Next month — peeking right edge */}
+        {/* Left peek: previous month */}
         <div
-          className="w-[calc(100%-3rem)] max-w-[calc(100%-3rem)] shrink-0 overflow-hidden opacity-60 hover:opacity-80 cursor-pointer"
-          onClick={onNextClick}
-          aria-label={`Go to ${format(next, "MMMM yyyy")}`}
+          className="absolute right-full top-0 w-32 h-full overflow-hidden cursor-pointer opacity-70 hover:opacity-90 transition-opacity mr-2"
+          onClick={onPrevClick}
           role="button"
           tabIndex={0}
+          aria-label={`Go to ${format(prev, "MMMM yyyy")}`}
+          onKeyDown={(e) => e.key === "Enter" && onPrevClick?.()}
+        >
+          <div className="absolute right-0 top-0" style={{ width: mainWidth }}>
+            <MonthGrid
+              anchor={prev}
+              events={events}
+              showWeekNumbers={false}
+            />
+          </div>
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="bg-white/80 rounded-full p-1.5 shadow-sm">
+              <ChevronLeft size={18} className="text-gray-500" />
+            </div>
+          </div>
+        </div>
+
+        {/* Right peek: next month */}
+        <div
+          className="absolute left-full top-0 w-32 h-full overflow-hidden cursor-pointer opacity-70 hover:opacity-90 transition-opacity ml-2"
+          onClick={onNextClick}
+          role="button"
+          tabIndex={0}
+          aria-label={`Go to ${format(next, "MMMM yyyy")}`}
           onKeyDown={(e) => e.key === "Enter" && onNextClick?.()}
         >
-          <p className="text-sm font-medium text-gray-400 mb-3 pl-1">
-            {format(next, "MMMM yyyy")}
-          </p>
-          <MonthGrid anchor={next} events={events} />
+          <div className="absolute left-0 top-0" style={{ width: mainWidth }}>
+            <MonthGrid
+              anchor={next}
+              events={events}
+              showWeekNumbers={false}
+            />
+          </div>
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="bg-white/80 rounded-full p-1.5 shadow-sm">
+              <ChevronRight size={18} className="text-gray-500" />
+            </div>
+          </div>
         </div>
+
       </div>
     </div>
   );

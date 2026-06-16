@@ -276,7 +276,7 @@ export function CalendarApp() {
           </div>
           </motion.div>
 
-          {view !== "year" && <CalendarNavButtons onPrev={prev} onNext={next} />}
+          {view !== "year" && view !== "month" && <CalendarNavButtons onPrev={prev} onNext={next} />}
         </>
       )}
 
