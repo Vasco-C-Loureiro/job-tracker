@@ -254,10 +254,11 @@ export function CalendarApp() {
                           setView("year-months");
                         }}
                         onYearSelect={(year) => {
-                          setFocusedDate(prev => {
-                            const d = new Date(prev);
-                            d.setFullYear(year);
-                            return d;
+                          setDirection(year > focusedDate.getFullYear() ? 1 : -1);
+                          setFocusedDate(d => {
+                            const n = new Date(d);
+                            n.setFullYear(year);
+                            return n;
                           });
                         }}
                         onYearHover={(year) => setHoveredPeriod({ type: "year", value: year })}
