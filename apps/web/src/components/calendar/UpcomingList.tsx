@@ -1,6 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { format } from "date-fns";
+import { ArrowRight } from "lucide-react";
 import type { CalendarFeedEvent } from "@job-tracker/shared";
 import { resolveColorKey, colorClasses } from "@/lib/calendar/colors";
 import { ymd, sortDayEvents } from "@/lib/calendar/grid";
@@ -88,6 +90,23 @@ export function UpcomingList({ events }: UpcomingListProps) {
                         <p className="text-xs text-gray-400 mt-0.5 line-clamp-2">
                           {event.description}
                         </p>
+                      )}
+                      {event.source === "interview_round" && (
+                        <div className="flex items-center gap-2 mt-0.5">
+                          {(event.company || event.jobTitle) && (
+                            <p className="text-xs text-gray-400">
+                              {event.company}{event.jobTitle ? ` · ${event.jobTitle}` : ""}
+                            </p>
+                          )}
+                          {event.jobId && (
+                            <Link
+                              href={`/interviews?highlight=${event.jobId}`}
+                              className="text-gray-400 hover:text-gray-600 flex-shrink-0"
+                            >
+                              <ArrowRight size={12} />
+                            </Link>
+                          )}
+                        </div>
                       )}
                     </div>
                   </div>
