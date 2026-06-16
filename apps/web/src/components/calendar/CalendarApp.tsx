@@ -170,6 +170,11 @@ export function CalendarApp() {
             Upcoming
           </button>
         </div>
+        {view === "year-months" && (
+          <span className="text-2xl font-semibold text-gray-800">
+            {focusedDate.getFullYear()}
+          </span>
+        )}
       </div>
 
       {/* Main view area */}

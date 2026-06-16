@@ -21,7 +21,6 @@ export function YearMonthsView({ focusedDate, events, onMonthClick, onMonthHover
 
   return (
     <div className="px-4 pt-4 pb-2">
-      <h2 className="text-2xl font-semibold text-gray-800 mb-4">{year}</h2>
       <div className="grid grid-cols-4 gap-3">
         {MONTH_NAMES.map((name, monthIdx) => {
           const anchor = startOfMonth(setMonth(setYear(new Date(), year), monthIdx));
