@@ -65,7 +65,7 @@ export function MonthView({
 
         {/* Left peek: previous month */}
         <div
-          className="absolute right-full top-0 w-32 h-full overflow-hidden cursor-pointer opacity-70 hover:opacity-90 transition-opacity mr-2"
+          className="absolute right-full top-0 w-32 h-full overflow-hidden cursor-pointer opacity-25 hover:opacity-40 transition-opacity mr-2"
           onClick={onPrevClick}
           role="button"
           tabIndex={0}
@@ -88,7 +88,7 @@ export function MonthView({
 
         {/* Right peek: next month */}
         <div
-          className="absolute left-full top-0 w-32 h-full overflow-hidden cursor-pointer opacity-70 hover:opacity-90 transition-opacity ml-2"
+          className="absolute left-full top-0 w-32 h-full overflow-hidden cursor-pointer opacity-25 hover:opacity-40 transition-opacity ml-2"
           onClick={onNextClick}
           role="button"
           tabIndex={0}
