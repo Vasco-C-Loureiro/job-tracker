@@ -45,8 +45,11 @@ export function UpcomingList({ events }: UpcomingListProps) {
         const dayEvents = sortDayEvents(byDate.get(dateStr)!);
         const nonApplied = dayEvents.filter(e => e.source !== "applied");
         const appliedGroup = groupAppliedForDay(dayEvents);
-        // Use T12:00:00 to avoid DST/timezone shifts flipping the date
-        const date = new Date(`${dateStr}T12:00:00`);
+        const cleanDateStr = dateStr.substring(0, 10);
+        const [y, m, d] = cleanDateStr.split("-").map(Number);
+        const date = new Date(y, m - 1, d); // local date, no timezone shift
+
+        if (isNaN(date.getTime())) return null;
 
         return (
           <div key={dateStr}>
