@@ -45,7 +45,7 @@ export function MonthView({
       >
         {/* Previous month — peeking left edge */}
         <div
-          className="min-w-[calc(100%-3rem)] shrink-0 opacity-60 hover:opacity-80 cursor-pointer"
+          className="w-[calc(100%-3rem)] max-w-[calc(100%-3rem)] shrink-0 overflow-hidden opacity-60 hover:opacity-80 cursor-pointer"
           onClick={onPrevClick}
           aria-label={`Go to ${format(prev, "MMMM yyyy")}`}
           role="button"
@@ -59,7 +59,7 @@ export function MonthView({
         </div>
 
         {/* Current month — centred */}
-        <div className="min-w-[calc(100%-3rem)] shrink-0">
+        <div className="w-[calc(100%-3rem)] max-w-[calc(100%-3rem)] shrink-0 overflow-hidden">
           <MonthGrid
             anchor={current}
             events={events}
@@ -71,7 +71,7 @@ export function MonthView({
 
         {/* Next month — peeking right edge */}
         <div
-          className="min-w-[calc(100%-3rem)] shrink-0 opacity-60 hover:opacity-80 cursor-pointer"
+          className="w-[calc(100%-3rem)] max-w-[calc(100%-3rem)] shrink-0 overflow-hidden opacity-60 hover:opacity-80 cursor-pointer"
           onClick={onNextClick}
           aria-label={`Go to ${format(next, "MMMM yyyy")}`}
           role="button"

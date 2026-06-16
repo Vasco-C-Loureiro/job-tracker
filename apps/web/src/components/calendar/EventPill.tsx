@@ -13,7 +13,7 @@ export function EventPill({ event }: EventPillProps) {
 
   return (
     <div
-      className={`${classes} text-xs font-medium rounded px-1.5 py-0.5 truncate leading-tight cursor-default select-none`}
+      className={`${classes} text-xs font-medium rounded px-1.5 py-0.5 truncate leading-tight cursor-default select-none min-w-0 max-w-full`}
       title={event.title}
     >
       {event.time && (
