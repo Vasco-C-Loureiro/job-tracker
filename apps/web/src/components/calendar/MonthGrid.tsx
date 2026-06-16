@@ -143,13 +143,15 @@ export function MonthGrid({ anchor, events, onWeekClick, onWeekHover, onDayClick
                   ))}
                   {appliedGroup && (
                     <div
-                      className={`${appliedGroup.pillClasses} text-xs font-medium rounded px-1.5 py-0.5 leading-tight cursor-default select-none flex items-center min-w-0 overflow-hidden`}
+                      className={`${appliedGroup.pillClasses} text-xs font-medium rounded px-1.5 py-0.5 leading-tight cursor-default select-none flex items-center justify-center overflow-hidden`}
                       title={appliedGroup.companies.join(", ")}
                     >
-                      <span className="truncate min-w-0 shrink">Applied to {appliedGroup.label}</span>
-                      {appliedGroup.countSuffix && (
-                        <span className="flex-shrink-0">{appliedGroup.countSuffix}</span>
-                      )}
+                      <div className="flex items-center min-w-0">
+                        <span className="shrink min-w-0 truncate">Applied to {appliedGroup.label}</span>
+                        {appliedGroup.countSuffix && (
+                          <span className="flex-shrink-0">{appliedGroup.countSuffix}</span>
+                        )}
+                      </div>
                     </div>
                   )}
                   {overflowNonApplied > 0 && (
