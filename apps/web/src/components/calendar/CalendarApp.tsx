@@ -11,6 +11,7 @@ import { WeekView } from "./WeekView";
 import { YearView } from "./YearView";
 import { YearMonthsView } from "./YearMonthsView";
 import { CalendarNavButtons } from "./CalendarNavButtons";
+import { UpcomingList } from "./UpcomingList";
 
 const slideVariants = {
   enter: (dir: number) => ({ x: dir > 0 ? "25%" : "-25%", opacity: 0 }),
@@ -143,14 +144,32 @@ export function CalendarApp() {
   return (
     <div ref={calendarRef} className="mx-6 my-6">
 
-      {/* Top bar: mode toggle placeholder + date display */}
+      {/* Mode toggle */}
       <div className="mb-4 flex items-center justify-between">
-        <p className="text-sm text-gray-500">
-          Mode: {mode}
-        </p>
-        <p className="text-sm text-gray-400">
-          Focused: {focusedDate.toDateString()}
-        </p>
+        <div className="inline-flex rounded-lg bg-gray-100 p-1">
+          <button
+            onClick={() => setMode("calendar")}
+            className={[
+              "px-4 py-1.5 rounded-md text-sm font-medium transition-colors",
+              mode === "calendar"
+                ? "bg-white shadow-sm text-gray-900"
+                : "text-gray-500 hover:text-gray-700",
+            ].join(" ")}
+          >
+            Calendar
+          </button>
+          <button
+            onClick={() => setMode("upcoming")}
+            className={[
+              "px-4 py-1.5 rounded-md text-sm font-medium transition-colors",
+              mode === "upcoming"
+                ? "bg-white shadow-sm text-gray-900"
+                : "text-gray-500 hover:text-gray-700",
+            ].join(" ")}
+          >
+            Upcoming
+          </button>
+        </div>
       </div>
 
       {/* Main view area */}
@@ -182,7 +201,7 @@ export function CalendarApp() {
                 exit="exit"
               >
                 {mode === "upcoming" ? (
-                  <div className="text-gray-400">Upcoming list (P21)</div>
+                  <UpcomingList events={events} />
                 ) : (
                   <>
                     {view === "month"       && (
