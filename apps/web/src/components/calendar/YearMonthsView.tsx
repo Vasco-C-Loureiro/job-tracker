@@ -28,14 +28,14 @@ export function YearMonthsView({ focusedDate, events, onMonthClick, onMonthHover
           return (
             <div
               key={monthIdx}
-              className="cursor-pointer hover:bg-gray-50 rounded-lg p-1 transition-colors"
+              className="cursor-pointer hover:bg-gray-50 rounded-lg p-0.5 transition-colors"
               onClick={() => onMonthClick?.(monthIdx)}
               onMouseEnter={() => onMonthHover?.(monthIdx)}
               role="button"
               tabIndex={0}
               onKeyDown={(e) => e.key === "Enter" && onMonthClick?.(monthIdx)}
             >
-              <p className="text-[13px] font-semibold text-gray-700 mb-1 text-center">{name}</p>
+              <p className="text-[13px] font-semibold text-gray-700 mb-0.5 text-center">{name}</p>
               <MonthGrid
                 anchor={anchor}
                 events={events}
