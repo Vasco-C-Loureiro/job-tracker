@@ -32,7 +32,7 @@ export function YearView({ focusedDate, events: _events, onYearClick, onYearSele
 
   return (
     <div className="flex items-center justify-center min-h-[60vh]">
-      <div className="relative overflow-hidden w-full">
+      <div className="relative overflow-hidden w-full py-5">
         {/*
           Track centering (no gap, margins instead):
             Slot 0 (dist 3, -16px): -16+210-16 = 178px
@@ -79,65 +79,6 @@ export function YearView({ focusedDate, events: _events, onYearClick, onYearSele
                   isPeeking ? "opacity-60 hover:opacity-80"                 : "",
                 ].filter(Boolean).join(" ")}
               >
-                {/* Side rails + 45° chamfered flares for the focused year */}
-                {isFocused && (
-                  <>
-                    {/* Left rail — full height */}
-                    <div className="absolute left-0 top-0 bottom-0 border-l-2 border-blue-400 rounded-l" />
-                    {/* Right rail — full height */}
-                    <div className="absolute right-0 top-0 bottom-0 border-r-2 border-blue-400 rounded-r" />
-
-                    {/* Top of left rail — flares up-right at 45° */}
-                    <div
-                      className="absolute bg-blue-400"
-                      style={{
-                        width: 2,
-                        height: 22,
-                        left: 0,
-                        top: 0,
-                        transformOrigin: "bottom center",
-                        transform: "rotate(-45deg) translateX(-50%)",
-                      }}
-                    />
-                    {/* Bottom of left rail — flares down-right at 45° */}
-                    <div
-                      className="absolute bg-blue-400"
-                      style={{
-                        width: 2,
-                        height: 22,
-                        left: 0,
-                        bottom: 0,
-                        transformOrigin: "top center",
-                        transform: "rotate(45deg) translateX(-50%)",
-                      }}
-                    />
-                    {/* Top of right rail — flares up-left at 45° */}
-                    <div
-                      className="absolute bg-blue-400"
-                      style={{
-                        width: 2,
-                        height: 22,
-                        right: 0,
-                        top: 0,
-                        transformOrigin: "bottom center",
-                        transform: "rotate(45deg) translateX(50%)",
-                      }}
-                    />
-                    {/* Bottom of right rail — flares down-left at 45° */}
-                    <div
-                      className="absolute bg-blue-400"
-                      style={{
-                        width: 2,
-                        height: 22,
-                        right: 0,
-                        bottom: 0,
-                        transformOrigin: "top center",
-                        transform: "rotate(-45deg) translateX(50%)",
-                      }}
-                    />
-                  </>
-                )}
-
                 <span
                   style={{
                     fontSize,
@@ -160,7 +101,7 @@ export function YearView({ focusedDate, events: _events, onYearClick, onYearSele
               // Fixed-size layout slot; dist 0/1 use mx-3 class, dist 2/3 use inline margin
               <div
                 key={year}
-                className={`flex-shrink-0 w-[210px] h-[210px] flex items-center justify-center${dist <= 1 ? " mx-3" : ""}`}
+                className={`relative flex-shrink-0 w-[210px] h-[210px] flex items-center justify-center${dist <= 1 ? " mx-3" : ""}`}
                 style={slotMarginStyle}
               >
                 {idx === 0 ? (
@@ -175,6 +116,14 @@ export function YearView({ focusedDate, events: _events, onYearClick, onYearSele
                   </div>
                 ) : (
                   square
+                )}
+                {isFocused && (
+                  <motion.div
+                    className="absolute pointer-events-none"
+                    animate={{ width: w, height: h }}
+                    transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+                    style={{ border: '2px solid #60a5fa', borderRadius: '0.75rem' }}
+                  />
                 )}
               </div>
             );
