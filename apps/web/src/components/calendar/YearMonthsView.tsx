@@ -35,7 +35,7 @@ export function YearMonthsView({ focusedDate, events, onMonthClick, onMonthHover
               tabIndex={0}
               onKeyDown={(e) => e.key === "Enter" && onMonthClick?.(monthIdx)}
             >
-              <p className="text-xs font-semibold text-gray-700 mb-1 text-center">{name}</p>
+              <p className="text-[13px] font-semibold text-gray-700 mb-1 text-center">{name}</p>
               <MonthGrid
                 anchor={anchor}
                 events={events}
