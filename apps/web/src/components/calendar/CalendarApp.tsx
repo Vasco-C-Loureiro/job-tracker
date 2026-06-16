@@ -41,6 +41,8 @@ export function CalendarApp() {
   const [direction, setDirection] = useState<1 | -1>(1);
   const calendarRef = useRef<HTMLDivElement>(null);
   const lastZoomTime = useRef(0);
+  const horizontalAccumulator = useRef(0);
+  const lastSwipeTime = useRef(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -59,7 +61,7 @@ export function CalendarApp() {
     };
   }, []);
 
-  function prev() {
+  const prev = useCallback(() => {
     setDirection(-1);
     setFocusedDate(d => {
       switch (view) {
@@ -69,9 +71,9 @@ export function CalendarApp() {
         case "week":        return subWeeks(d, 1);
       }
     });
-  }
+  }, [view]);
 
-  function next() {
+  const next = useCallback(() => {
     setDirection(1);
     setFocusedDate(d => {
       switch (view) {
@@ -81,7 +83,7 @@ export function CalendarApp() {
         case "week":        return addWeeks(d, 1);
       }
     });
-  }
+  }, [view]);
 
   const zoomIn = useCallback(() => {
     const nextView = ZOOM_IN[view];
@@ -111,17 +113,32 @@ export function CalendarApp() {
     const el = calendarRef.current;
     if (!el) return;
     function handleWheel(e: WheelEvent) {
-      if (!e.ctrlKey) return;
-      e.preventDefault();
-      const now = Date.now();
-      if (now - lastZoomTime.current < 300) return;
-      lastZoomTime.current = now;
-      if (e.deltaY < 0) zoomIn();
-      else zoomOut();
+      if (e.ctrlKey) {
+        e.preventDefault();
+        const now = Date.now();
+        if (now - lastZoomTime.current < 300) return;
+        lastZoomTime.current = now;
+        if (e.deltaY < 0) zoomIn();
+        else zoomOut();
+        return;
+      }
+      // Horizontal swipe: accumulate and fire once past threshold
+      if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+        e.preventDefault();
+        horizontalAccumulator.current += e.deltaX;
+        const now = Date.now();
+        if (Math.abs(horizontalAccumulator.current) > 60 && now - lastSwipeTime.current > 300) {
+          if (horizontalAccumulator.current > 0) next();
+          else prev();
+          horizontalAccumulator.current = 0;
+          lastSwipeTime.current = now;
+        }
+      }
+      // Vertical scroll (!ctrlKey, vertical dominant): let page scroll normally
     }
     el.addEventListener("wheel", handleWheel, { passive: false });
     return () => el.removeEventListener("wheel", handleWheel);
-  }, [zoomIn, zoomOut]);
+  }, [zoomIn, zoomOut, prev, next]);
 
   return (
     <div ref={calendarRef} className="mx-6 my-6">
@@ -141,6 +158,19 @@ export function CalendarApp() {
         <div className="text-sm text-gray-400">Loading calendar…</div>
       ) : (
         <>
+          <motion.div
+            drag="x"
+            dragConstraints={{ left: 0, right: 0 }}
+            dragElastic={0.15}
+            dragDirectionLock
+            style={{ userSelect: "none", touchAction: "pan-y" }}
+            onDragEnd={(_, info) => {
+              const isHorizontalDominant = Math.abs(info.offset.x) > Math.abs(info.offset.y);
+              if (!isHorizontalDominant) return;
+              if (info.offset.x < -80) next();
+              else if (info.offset.x > 80) prev();
+            }}
+          >
           <div className="relative overflow-hidden">
             <AnimatePresence mode="popLayout" custom={direction}>
               <motion.div
@@ -214,6 +244,7 @@ export function CalendarApp() {
               </motion.div>
             </AnimatePresence>
           </div>
+          </motion.div>
 
           <CalendarNavButtons onPrev={prev} onNext={next} />
         </>
