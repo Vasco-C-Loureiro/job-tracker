@@ -97,7 +97,7 @@ export function MonthGrid({ anchor, events, onWeekClick, onWeekHover, onDayClick
                 >
                   <span className="leading-none">{day.getDate()}</span>
                   {dots.length > 0 && (
-                    <div className="absolute right-0 flex items-center">
+                    <div className="absolute right-1 flex items-center">
                       <DotCluster dots={dots} />
                     </div>
                   )}
