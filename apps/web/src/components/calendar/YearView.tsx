@@ -12,9 +12,8 @@ const SIZES = [
   { w: 132, h: 132, fontSize: "1.125rem" }, // dist 3 — peeking edge
 ];
 
-// Horizontal margin per distance — tighter at edges to compress the track
-const MX_CLASS = ["mx-3", "mx-3", "mx-2", "mx-1"];
-// idx 0→dist3→mx-1, idx1→dist2→mx-2, idx2→dist1→mx-3, idx3→dist0→mx-3 (mirrored)
+// Horizontal margin per distance: dist 0/1 use Tailwind mx-3; dist 2/3 use inline styles
+// dist 2 → { margin: '0 4px' }, dist 3 → { margin: '0 -16px' } (negative pulls edges in)
 
 interface YearViewProps {
   focusedDate: Date;
@@ -36,15 +35,15 @@ export function YearView({ focusedDate, events: _events, onYearClick, onYearSele
       <div className="relative overflow-hidden w-full">
         {/*
           Track centering (no gap, margins instead):
-            Slot 0 (dist 3, mx-1 = 4px): 4+210+4 = 218px
-            Slot 1 (dist 2, mx-2 = 8px): 8+210+8 = 226px
-            Slot 2 (dist 1, mx-3 = 12px): 12+210+12 = 234px
-            Slot 3 starts at 678, marginLeft=12 → content at 690 → centre at 795px
-          Formula: translateX(calc(50% - 795px))
+            Slot 0 (dist 3, -16px): -16+210-16 = 178px
+            Slot 1 (dist 2,  +4px):  4+210+4   = 218px
+            Slot 2 (dist 1, +12px): 12+210+12  = 234px
+            Slot 3 starts at 630, marginLeft=12 → content at 642 → centre at 747px
+          Formula: translateX(calc(50% - 747px))
         */}
         <div
           className="flex"
-          style={{ transform: "translateX(calc(50% - 795px))" }}
+          style={{ transform: "translateX(calc(50% - 747px))" }}
         >
           {years.map((year, idx) => {
             const isPeeking = idx === 0 || idx === 6;
@@ -52,7 +51,10 @@ export function YearView({ focusedDate, events: _events, onYearClick, onYearSele
             const isToday   = year === currentYear;
             const dist      = Math.abs(idx - 3);
             const { w, h, fontSize } = SIZES[dist];
-            const mxClass = MX_CLASS[dist];
+            const slotMarginStyle: React.CSSProperties =
+              dist === 3 ? { margin: "0 -16px" } :
+              dist === 2 ? { margin: "0 4px" }   :
+              {};
 
             const square = (
               <motion.div
@@ -90,7 +92,7 @@ export function YearView({ focusedDate, events: _events, onYearClick, onYearSele
                       className="absolute bg-blue-400"
                       style={{
                         width: 2,
-                        height: 12,
+                        height: 22,
                         left: 0,
                         top: 0,
                         transformOrigin: "bottom center",
@@ -102,7 +104,7 @@ export function YearView({ focusedDate, events: _events, onYearClick, onYearSele
                       className="absolute bg-blue-400"
                       style={{
                         width: 2,
-                        height: 12,
+                        height: 22,
                         left: 0,
                         bottom: 0,
                         transformOrigin: "top center",
@@ -114,7 +116,7 @@ export function YearView({ focusedDate, events: _events, onYearClick, onYearSele
                       className="absolute bg-blue-400"
                       style={{
                         width: 2,
-                        height: 12,
+                        height: 22,
                         right: 0,
                         top: 0,
                         transformOrigin: "bottom center",
@@ -126,7 +128,7 @@ export function YearView({ focusedDate, events: _events, onYearClick, onYearSele
                       className="absolute bg-blue-400"
                       style={{
                         width: 2,
-                        height: 12,
+                        height: 22,
                         right: 0,
                         bottom: 0,
                         transformOrigin: "top center",
@@ -155,10 +157,11 @@ export function YearView({ focusedDate, events: _events, onYearClick, onYearSele
             );
 
             return (
-              // Fixed-size layout slot with distance-based margin; no gap on the flex container
+              // Fixed-size layout slot; dist 0/1 use mx-3 class, dist 2/3 use inline margin
               <div
                 key={year}
-                className={`flex-shrink-0 w-[210px] h-[210px] flex items-center justify-center ${mxClass}`}
+                className={`flex-shrink-0 w-[210px] h-[210px] flex items-center justify-center${dist <= 1 ? " mx-3" : ""}`}
+                style={slotMarginStyle}
               >
                 {idx === 0 ? (
                   <div className="flex items-center gap-2 justify-center">
