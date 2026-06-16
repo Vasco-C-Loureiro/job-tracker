@@ -122,7 +122,13 @@ export function YearView({ focusedDate, events: _events, onYearClick, onYearSele
                     className="absolute pointer-events-none"
                     animate={{ width: w, height: h }}
                     transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
-                    style={{ border: '2px solid #60a5fa', borderRadius: '0.75rem' }}
+                    style={{
+                      borderLeft:   '2px solid #60a5fa',
+                      borderRight:  '2px solid #60a5fa',
+                      borderTop:    'none',
+                      borderBottom: 'none',
+                      borderRadius: '0.75rem',
+                    }}
                   />
                 )}
               </div>
