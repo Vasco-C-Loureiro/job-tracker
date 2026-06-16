@@ -90,13 +90,17 @@ export function MonthGrid({ anchor, events, onWeekClick, onWeekHover, onDayClick
                   type="button"
                   onClick={() => onDayClick?.(day)}
                   className={[
-                    "flex items-center justify-center h-5 w-full text-[10px] rounded gap-0.5",
+                    "relative flex items-center justify-center h-5 w-full text-[10px] rounded",
                     isCurrentMonth ? "text-gray-700" : "text-gray-300",
                     isToday ? "ring-1 ring-blue-400 bg-blue-50 font-semibold" : "hover:bg-gray-100",
                   ].join(" ")}
                 >
                   <span className="leading-none">{day.getDate()}</span>
-                  <DotCluster dots={dots} />
+                  {dots.length > 0 && (
+                    <div className="absolute right-0 flex items-center">
+                      <DotCluster dots={dots} />
+                    </div>
+                  )}
                 </button>
               );
             })}
