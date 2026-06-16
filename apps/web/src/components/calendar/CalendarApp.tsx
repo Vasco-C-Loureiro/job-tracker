@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { addYears, subYears, addMonths, subMonths, addWeeks, subWeeks } from "date-fns";
+import { addYears, subYears, addMonths, subMonths, addWeeks, subWeeks, format } from "date-fns";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import type { CalendarView, CalendarMode, CalendarFeedEvent } from "@job-tracker/shared";
 import { fetchCalendarFeed } from "@/lib/calendar/feed";
@@ -12,6 +13,7 @@ import { YearView } from "./YearView";
 import { YearMonthsView } from "./YearMonthsView";
 import { CalendarNavButtons } from "./CalendarNavButtons";
 import { UpcomingList } from "./UpcomingList";
+import { MonthGrid } from "./MonthGrid";
 
 const slideVariants = {
   enter: (dir: number) => ({ x: dir > 0 ? "25%" : "-25%", opacity: 0 }),
@@ -41,6 +43,8 @@ export function CalendarApp() {
   >(null);
   const [direction, setDirection] = useState<1 | -1>(1);
   const calendarRef = useRef<HTMLDivElement>(null);
+  const mainRef = useRef<HTMLDivElement>(null);
+  const [mainWidth, setMainWidth] = useState<number>(700);
   const lastZoomTime = useRef(0);
   const horizontalAccumulator = useRef(0);
   const lastSwipeTime = useRef(0);
@@ -60,6 +64,15 @@ export function CalendarApp() {
       cancelled = true;
       window.removeEventListener("focus", load);
     };
+  }, []);
+
+  useEffect(() => {
+    const el = mainRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => setMainWidth(el.offsetWidth));
+    ro.observe(el);
+    setMainWidth(el.offsetWidth);
+    return () => ro.disconnect();
   }, []);
 
   const prev = useCallback(() => {
@@ -141,6 +154,9 @@ export function CalendarApp() {
     return () => el.removeEventListener("wheel", handleWheel);
   }, [zoomIn, zoomOut, prev, next]);
 
+  const prevAnchor = subMonths(focusedDate, 1);
+  const nextAnchor = addMonths(focusedDate, 1);
+
   return (
     <div ref={calendarRef} className="mx-6 my-6">
 
@@ -195,7 +211,7 @@ export function CalendarApp() {
               else if (info.offset.x > 80) prev();
             }}
           >
-          <div className="relative overflow-hidden">
+          <div ref={mainRef} className="relative overflow-hidden z-10">
             <AnimatePresence mode="popLayout" custom={direction}>
               <motion.div
                 key={`${view}-${focusedDate.getFullYear()}-${focusedDate.getMonth()}-${Math.floor(focusedDate.getDate() / 7)}`}
@@ -275,6 +291,74 @@ export function CalendarApp() {
             </AnimatePresence>
           </div>
           </motion.div>
+
+          {view === "month" && (
+            <>
+              {/* Left peek: previous month */}
+              <div
+                className="opacity-25 hover:opacity-40 transition-opacity"
+                style={{
+                  position: "fixed",
+                  left: 216,
+                  top: "50vh",
+                  width: mainWidth,
+                  transform: "translateY(-50%) scale(0.6)",
+                  transformOrigin: "left center",
+                  zIndex: 5,
+                  cursor: "pointer",
+                }}
+                onClick={prev}
+                role="button"
+                tabIndex={0}
+                aria-label={`Go to ${format(prevAnchor, "MMMM yyyy")}`}
+                onKeyDown={(e) => e.key === "Enter" && prev()}
+              >
+                <MonthGrid
+                  anchor={prevAnchor}
+                  events={events}
+                  showWeekNumbers={false}
+                  compact={false}
+                />
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div className="bg-white/80 rounded-full p-1.5 shadow-sm">
+                    <ChevronLeft size={18} className="text-gray-500" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Right peek: next month */}
+              <div
+                className="opacity-25 hover:opacity-40 transition-opacity"
+                style={{
+                  position: "fixed",
+                  right: 8,
+                  top: "50vh",
+                  width: mainWidth,
+                  transform: "translateY(-50%) scale(0.6)",
+                  transformOrigin: "right center",
+                  zIndex: 5,
+                  cursor: "pointer",
+                }}
+                onClick={next}
+                role="button"
+                tabIndex={0}
+                aria-label={`Go to ${format(nextAnchor, "MMMM yyyy")}`}
+                onKeyDown={(e) => e.key === "Enter" && next()}
+              >
+                <MonthGrid
+                  anchor={nextAnchor}
+                  events={events}
+                  showWeekNumbers={false}
+                  compact={false}
+                />
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div className="bg-white/80 rounded-full p-1.5 shadow-sm">
+                    <ChevronRight size={18} className="text-gray-500" />
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
 
           {view !== "year" && view !== "month" && <CalendarNavButtons onPrev={prev} onNext={next} />}
         </>
