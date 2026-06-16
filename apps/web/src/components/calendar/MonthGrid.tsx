@@ -129,7 +129,7 @@ export function MonthGrid({ anchor, events, onWeekClick, onWeekHover, onDayClick
                 type="button"
                 onClick={() => onDayClick?.(day)}
                 className={[
-                  "flex flex-col items-start min-h-[5rem] pt-1 px-0.5 rounded text-sm overflow-hidden",
+                  "flex flex-col items-start min-h-[5rem] pt-1 px-0.5 rounded text-sm overflow-hidden min-w-0",
                   isCurrentMonth ? "text-gray-800" : "text-gray-300 bg-gray-50/50",
                   isToday
                     ? "ring-1 ring-blue-400 bg-blue-50 font-semibold"
@@ -143,7 +143,7 @@ export function MonthGrid({ anchor, events, onWeekClick, onWeekHover, onDayClick
                   ))}
                   {appliedGroup && (
                     <div
-                      className={`${appliedGroup.pillClasses} text-xs font-medium rounded px-1.5 py-0.5 truncate leading-tight cursor-default select-none`}
+                      className={`${appliedGroup.pillClasses} text-xs font-medium rounded px-1.5 py-0.5 truncate leading-tight cursor-default select-none min-w-0 overflow-hidden`}
                       title={appliedGroup.companies.join(", ")}
                     >
                       {appliedGroup.label}
