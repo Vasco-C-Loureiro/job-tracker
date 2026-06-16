@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
           id: row.id,
           source: "manual",
           title: row.title,
-          date: row.date,
+          date: (row.date as string).substring(0, 10),
           time: row.time ? row.time.slice(0, 5) : null,
           endTime: row.end_time ? row.end_time.slice(0, 5) : null,
           description: row.description ?? null,
@@ -64,7 +64,7 @@ export async function GET(req: NextRequest) {
           id: row.id,
           source: "interview_round",
           title: roundTitle(row.round_number, row.type as InterviewType),
-          date: row.date as string,
+          date: (row.date as string).substring(0, 10),
           time: row.time ? (row.time as string).slice(0, 5) : null,
           endTime: null,
           description: null,
@@ -101,7 +101,7 @@ export async function GET(req: NextRequest) {
         console.error("[calendar-feed] applied dates error:", error.message);
       } else {
         for (const row of data ?? []) {
-          const dateStr = (row.applied_at as string).split("T")[0];
+          const dateStr = (row.applied_at as string).substring(0, 10);
           events.push({
             id: `applied:${row.id}`,
             source: "applied",
