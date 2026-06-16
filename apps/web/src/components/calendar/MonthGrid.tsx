@@ -125,6 +125,7 @@ export function MonthGrid({ anchor, events, onWeekClick, onWeekHover, onDayClick
         ))}
       </div>
       {/* Week rows */}
+      <div className="border-l border-t border-gray-100">
       {weeks.map((row) => (
         <div key={row[0].toISOString()} className="grid grid-cols-[2.5rem_repeat(7,1fr)]">
           {/* Week number */}
@@ -132,7 +133,7 @@ export function MonthGrid({ anchor, events, onWeekClick, onWeekHover, onDayClick
             type="button"
             onClick={() => onWeekClick?.(row[0])}
             onMouseEnter={() => onWeekHover?.(row[0])}
-            className="text-center text-xs font-semibold text-blue-800 hover:text-slate-800 hover:bg-gray-50 rounded py-1 cursor-pointer"
+            className="text-center text-[13px] font-semibold text-slate-400 bg-slate-50 hover:text-slate-800 hover:bg-gray-50 rounded py-1 cursor-pointer border-r border-b border-gray-100"
           >
             {isoWeek(row[0])}
           </button>
@@ -153,7 +154,7 @@ export function MonthGrid({ anchor, events, onWeekClick, onWeekHover, onDayClick
                 type="button"
                 onClick={() => onDayClick?.(day)}
                 className={[
-                  "flex flex-col items-start min-h-[5rem] pt-1 px-0.5 rounded text-sm overflow-hidden min-w-0",
+                  "flex flex-col items-start min-h-[5rem] pt-1 px-1 rounded text-sm overflow-hidden min-w-0 border-r border-b border-gray-100",
                   isCurrentMonth ? "text-gray-800" : "text-gray-300 bg-gray-50/50",
                   isToday
                     ? "ring-1 ring-blue-400 bg-blue-50 font-semibold"
@@ -187,6 +188,7 @@ export function MonthGrid({ anchor, events, onWeekClick, onWeekHover, onDayClick
           })}
         </div>
       ))}
+      </div>
     </div>
   );
 }
