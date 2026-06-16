@@ -53,8 +53,11 @@ export function MonthGrid({ anchor, events, onWeekClick, onWeekHover, onDayClick
       <div className="select-none">
         {/* Day-of-week headers */}
         <div className="grid grid-cols-7 mb-1">
-          {DAY_HEADERS.map((d) => (
-            <div key={d} className="text-center text-[10px] font-semibold text-blue-800 py-0.5">
+          {DAY_HEADERS.map((d, i) => (
+            <div
+              key={d}
+              className={`text-center text-[10px] font-semibold text-white bg-slate-700 py-0.5${i === 0 ? " rounded-l-md" : ""}${i === 6 ? " rounded-r-md" : ""}`}
+            >
               {d[0]}
             </div>
           ))}
@@ -114,9 +117,9 @@ export function MonthGrid({ anchor, events, onWeekClick, onWeekHover, onDayClick
     <div className="select-none">
       {/* Header row: Wk + day names */}
       <div className="grid grid-cols-[2.5rem_repeat(7,1fr)] mb-1">
-        <div className="text-center text-xs font-semibold text-blue-800 py-1">Wk</div>
-        {DAY_HEADERS.map((d) => (
-          <div key={d} className="text-center text-xs font-semibold text-blue-800 py-1">
+        <div className="text-center text-xs font-semibold text-white bg-slate-700 py-1 rounded-l-md">Wk</div>
+        {DAY_HEADERS.map((d, i) => (
+          <div key={d} className={`text-center text-xs font-semibold text-white bg-slate-700 py-1${i === 6 ? " rounded-r-md" : ""}`}>
             {d}
           </div>
         ))}
