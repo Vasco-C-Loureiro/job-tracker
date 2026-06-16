@@ -27,7 +27,7 @@ export function MonthGrid({ anchor, events, onWeekClick, onWeekHover, onDayClick
         {/* Day-of-week headers */}
         <div className="grid grid-cols-7 mb-1">
           {DAY_HEADERS.map((d) => (
-            <div key={d} className="text-center text-[10px] font-medium text-gray-400 py-0.5">
+            <div key={d} className="text-center text-[10px] font-semibold text-slate-600 py-0.5">
               {d[0]}
             </div>
           ))}
@@ -58,7 +58,7 @@ export function MonthGrid({ anchor, events, onWeekClick, onWeekHover, onDayClick
                   type="button"
                   onClick={() => onDayClick?.(day)}
                   className={[
-                    "flex flex-col items-center h-7 w-full text-[11px] rounded pt-0.5",
+                    "flex flex-col items-center h-5 w-full text-[10px] rounded",
                     isCurrentMonth ? "text-gray-700" : "text-gray-300",
                     isToday ? "ring-1 ring-blue-400 bg-blue-50 font-semibold" : "hover:bg-gray-100",
                   ].join(" ")}
@@ -93,9 +93,9 @@ export function MonthGrid({ anchor, events, onWeekClick, onWeekHover, onDayClick
     <div className="select-none">
       {/* Header row: Wk + day names */}
       <div className="grid grid-cols-[2.5rem_repeat(7,1fr)] mb-1">
-        <div className="text-center text-xs font-medium text-gray-400 py-1">Wk</div>
+        <div className="text-center text-xs font-semibold text-slate-600 py-1">Wk</div>
         {DAY_HEADERS.map((d) => (
-          <div key={d} className="text-center text-xs font-medium text-gray-500 py-1">
+          <div key={d} className="text-center text-xs font-semibold text-slate-600 py-1">
             {d}
           </div>
         ))}
@@ -108,7 +108,7 @@ export function MonthGrid({ anchor, events, onWeekClick, onWeekHover, onDayClick
             type="button"
             onClick={() => onWeekClick?.(row[0])}
             onMouseEnter={() => onWeekHover?.(row[0])}
-            className="text-center text-xs text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded py-1 cursor-pointer"
+            className="text-center text-xs font-semibold text-slate-600 hover:text-slate-800 hover:bg-gray-50 rounded py-1 cursor-pointer"
           >
             {isoWeek(row[0])}
           </button>

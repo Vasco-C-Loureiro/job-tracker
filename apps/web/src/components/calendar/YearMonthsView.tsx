@@ -20,29 +20,32 @@ export function YearMonthsView({ focusedDate, events, onMonthClick, onMonthHover
   const year = focusedDate.getFullYear();
 
   return (
-    <div className="grid grid-cols-4 gap-6 mx-4 my-6">
-      {MONTH_NAMES.map((name, monthIdx) => {
-        const anchor = startOfMonth(setMonth(setYear(new Date(), year), monthIdx));
+    <div className="px-4 pt-4 pb-2">
+      <h2 className="text-2xl font-semibold text-gray-800 mb-4">{year}</h2>
+      <div className="grid grid-cols-4 gap-3">
+        {MONTH_NAMES.map((name, monthIdx) => {
+          const anchor = startOfMonth(setMonth(setYear(new Date(), year), monthIdx));
 
-        return (
-          <div
-            key={monthIdx}
-            className="cursor-pointer hover:bg-gray-50 rounded-lg p-2 transition-colors"
-            onClick={() => onMonthClick?.(monthIdx)}
-            onMouseEnter={() => onMonthHover?.(monthIdx)}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => e.key === "Enter" && onMonthClick?.(monthIdx)}
-          >
-            <p className="text-sm font-medium text-gray-700 mb-1">{name}</p>
-            <MonthGrid
-              anchor={anchor}
-              events={events}
-              compact
-            />
-          </div>
-        );
-      })}
+          return (
+            <div
+              key={monthIdx}
+              className="cursor-pointer hover:bg-gray-50 rounded-lg p-1 transition-colors"
+              onClick={() => onMonthClick?.(monthIdx)}
+              onMouseEnter={() => onMonthHover?.(monthIdx)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => e.key === "Enter" && onMonthClick?.(monthIdx)}
+            >
+              <p className="text-xs font-semibold text-gray-700 mb-1">{name}</p>
+              <MonthGrid
+                anchor={anchor}
+                events={events}
+                compact
+              />
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
