@@ -12,6 +12,10 @@ const SIZES = [
   { w: 132, h: 132, fontSize: "1.125rem" }, // dist 3 — peeking edge
 ];
 
+// Horizontal margin per distance — tighter at edges to compress the track
+const MX_CLASS = ["mx-3", "mx-3", "mx-2", "mx-1"];
+// idx 0→dist3→mx-1, idx1→dist2→mx-2, idx2→dist1→mx-3, idx3→dist0→mx-3 (mirrored)
+
 interface YearViewProps {
   focusedDate: Date;
   events: CalendarFeedEvent[];
@@ -31,14 +35,16 @@ export function YearView({ focusedDate, events: _events, onYearClick, onYearSele
     <div className="flex items-center justify-center min-h-[60vh]">
       <div className="relative overflow-hidden w-full">
         {/*
-          Track centred so the focused year (index 3 of 7) is in the middle.
-          Each layout slot is 210px with gap-4 (1rem).
-          Offset = -(3 * (210px + 1rem)) + 50% - 105px to centre slot 3.
-          The visual card inside each slot animates to its target size.
+          Track centering (no gap, margins instead):
+            Slot 0 (dist 3, mx-1 = 4px): 4+210+4 = 218px
+            Slot 1 (dist 2, mx-2 = 8px): 8+210+8 = 226px
+            Slot 2 (dist 1, mx-3 = 12px): 12+210+12 = 234px
+            Slot 3 starts at 678, marginLeft=12 → content at 690 → centre at 795px
+          Formula: translateX(calc(50% - 795px))
         */}
         <div
-          className="flex gap-4"
-          style={{ transform: "translateX(calc(-3 * (210px + 1rem) + 50% - 105px))" }}
+          className="flex"
+          style={{ transform: "translateX(calc(50% - 795px))" }}
         >
           {years.map((year, idx) => {
             const isPeeking = idx === 0 || idx === 6;
@@ -46,6 +52,7 @@ export function YearView({ focusedDate, events: _events, onYearClick, onYearSele
             const isToday   = year === currentYear;
             const dist      = Math.abs(idx - 3);
             const { w, h, fontSize } = SIZES[dist];
+            const mxClass = MX_CLASS[dist];
 
             const square = (
               <motion.div
@@ -66,19 +73,66 @@ export function YearView({ focusedDate, events: _events, onYearClick, onYearSele
                 }}
                 className={[
                   "relative rounded-xl flex flex-col items-center justify-center cursor-pointer select-none overflow-hidden",
-                  isFocused ? "bg-blue-50"                                    : "bg-white border border-gray-200 hover:border-gray-300",
-                  isPeeking ? "opacity-60 hover:opacity-80"                   : "",
+                  isFocused ? "bg-blue-50"                                  : "bg-white border border-gray-200 hover:border-gray-300",
+                  isPeeking ? "opacity-60 hover:opacity-80"                 : "",
                 ].filter(Boolean).join(" ")}
               >
-                {/* Side-rail + corner-nub border for the focused year */}
+                {/* Side rails + 45° chamfered flares for the focused year */}
                 {isFocused && (
                   <>
+                    {/* Left rail — full height */}
                     <div className="absolute left-0 top-0 bottom-0 border-l-2 border-blue-400 rounded-l" />
+                    {/* Right rail — full height */}
                     <div className="absolute right-0 top-0 bottom-0 border-r-2 border-blue-400 rounded-r" />
-                    <div className="absolute left-0 top-0 w-3 border-t-2 border-blue-400" />
-                    <div className="absolute right-0 top-0 w-3 border-t-2 border-blue-400" />
-                    <div className="absolute left-0 bottom-0 w-3 border-b-2 border-blue-400" />
-                    <div className="absolute right-0 bottom-0 w-3 border-b-2 border-blue-400" />
+
+                    {/* Top of left rail — flares up-right at 45° */}
+                    <div
+                      className="absolute bg-blue-400"
+                      style={{
+                        width: 2,
+                        height: 12,
+                        left: 0,
+                        top: 0,
+                        transformOrigin: "bottom center",
+                        transform: "rotate(-45deg) translateX(-50%)",
+                      }}
+                    />
+                    {/* Bottom of left rail — flares down-right at 45° */}
+                    <div
+                      className="absolute bg-blue-400"
+                      style={{
+                        width: 2,
+                        height: 12,
+                        left: 0,
+                        bottom: 0,
+                        transformOrigin: "top center",
+                        transform: "rotate(45deg) translateX(-50%)",
+                      }}
+                    />
+                    {/* Top of right rail — flares up-left at 45° */}
+                    <div
+                      className="absolute bg-blue-400"
+                      style={{
+                        width: 2,
+                        height: 12,
+                        right: 0,
+                        top: 0,
+                        transformOrigin: "bottom center",
+                        transform: "rotate(45deg) translateX(50%)",
+                      }}
+                    />
+                    {/* Bottom of right rail — flares down-left at 45° */}
+                    <div
+                      className="absolute bg-blue-400"
+                      style={{
+                        width: 2,
+                        height: 12,
+                        right: 0,
+                        bottom: 0,
+                        transformOrigin: "top center",
+                        transform: "rotate(-45deg) translateX(50%)",
+                      }}
+                    />
                   </>
                 )}
 
@@ -101,8 +155,11 @@ export function YearView({ focusedDate, events: _events, onYearClick, onYearSele
             );
 
             return (
-              // Fixed-size layout slot keeps the track centering stable
-              <div key={year} className="flex-shrink-0 w-[210px] h-[210px] flex items-center justify-center">
+              // Fixed-size layout slot with distance-based margin; no gap on the flex container
+              <div
+                key={year}
+                className={`flex-shrink-0 w-[210px] h-[210px] flex items-center justify-center ${mxClass}`}
+              >
                 {idx === 0 ? (
                   <div className="flex items-center gap-2 justify-center">
                     <ChevronLeft size={22} className="text-gray-400 flex-shrink-0" />
