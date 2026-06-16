@@ -230,4 +230,5 @@ export interface CalendarFeedEvent {
   roundId: string | null;
   eventId: string | null;
   company: string | null;           // set for applied + deadline events; used for grouping display
+  jobTitle: string | null;          // set for interview_round events
 }

@@ -40,6 +40,7 @@ export async function GET(req: NextRequest) {
           roundId: null,
           eventId: row.id,
           company: null,
+          jobTitle: null,
         });
       }
     }
@@ -51,7 +52,7 @@ export async function GET(req: NextRequest) {
   try {
     const { data, error } = await supabase
       .from("interview_rounds")
-      .select("id, job_application_id, round_number, type, date, time, job_applications!inner(user_id, company)")
+      .select("id, job_application_id, round_number, type, date, time, job_applications!inner(user_id, company, title)")
       .eq("job_applications.user_id", user.id)
       .not("date", "is", null);
 
@@ -59,7 +60,7 @@ export async function GET(req: NextRequest) {
       console.error("[calendar-feed] interview rounds error:", error.message);
     } else {
       for (const row of data ?? []) {
-        const app = row.job_applications as unknown as { user_id: string; company: string };
+        const app = row.job_applications as unknown as { user_id: string; company: string; title: string };
         events.push({
           id: row.id,
           source: "interview_round",
@@ -74,6 +75,7 @@ export async function GET(req: NextRequest) {
           roundId: row.id,
           eventId: null,
           company: app.company,
+          jobTitle: app.title,
         });
       }
     }
@@ -116,6 +118,7 @@ export async function GET(req: NextRequest) {
             roundId: null,
             eventId: null,
             company: row.company,
+            jobTitle: null,
           });
         }
       }
