@@ -294,16 +294,16 @@ export function CalendarApp() {
 
           {view === "month" && (
             <>
-              {/* Left peek: previous month */}
+              {/* Left peek: previous month — clipped to one column (Sunday) */}
               <div
                 className="opacity-25 hover:opacity-40 transition-opacity"
                 style={{
                   position: "fixed",
                   left: 216,
-                  top: "50vh",
-                  width: mainWidth,
-                  transform: "translateY(-50%) scale(0.6)",
-                  transformOrigin: "left center",
+                  top: 0,
+                  height: "100vh",
+                  width: Math.max(120, Math.round(mainWidth / 7)),
+                  overflow: "hidden",
                   zIndex: 5,
                   cursor: "pointer",
                 }}
@@ -313,12 +313,23 @@ export function CalendarApp() {
                 aria-label={`Go to ${format(prevAnchor, "MMMM yyyy")}`}
                 onKeyDown={(e) => e.key === "Enter" && prev()}
               >
-                <MonthGrid
-                  anchor={prevAnchor}
-                  events={events}
-                  showWeekNumbers={false}
-                  compact={false}
-                />
+                <div
+                  style={{
+                    position: "absolute",
+                    right: 0,
+                    top: "50%",
+                    width: mainWidth,
+                    transform: "translateY(-50%) scale(0.8)",
+                    transformOrigin: "right center",
+                  }}
+                >
+                  <MonthGrid
+                    anchor={prevAnchor}
+                    events={events}
+                    showWeekNumbers={false}
+                    compact={false}
+                  />
+                </div>
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                   <div className="bg-white/80 rounded-full p-1.5 shadow-sm">
                     <ChevronLeft size={18} className="text-gray-500" />
@@ -326,16 +337,16 @@ export function CalendarApp() {
                 </div>
               </div>
 
-              {/* Right peek: next month */}
+              {/* Right peek: next month — clipped to one column (Monday) */}
               <div
                 className="opacity-25 hover:opacity-40 transition-opacity"
                 style={{
                   position: "fixed",
                   right: 8,
-                  top: "50vh",
-                  width: mainWidth,
-                  transform: "translateY(-50%) scale(0.6)",
-                  transformOrigin: "right center",
+                  top: 0,
+                  height: "100vh",
+                  width: Math.max(120, Math.round(mainWidth / 7)),
+                  overflow: "hidden",
                   zIndex: 5,
                   cursor: "pointer",
                 }}
@@ -345,12 +356,23 @@ export function CalendarApp() {
                 aria-label={`Go to ${format(nextAnchor, "MMMM yyyy")}`}
                 onKeyDown={(e) => e.key === "Enter" && next()}
               >
-                <MonthGrid
-                  anchor={nextAnchor}
-                  events={events}
-                  showWeekNumbers={false}
-                  compact={false}
-                />
+                <div
+                  style={{
+                    position: "absolute",
+                    left: 0,
+                    top: "50%",
+                    width: mainWidth,
+                    transform: "translateY(-50%) scale(0.8)",
+                    transformOrigin: "left center",
+                  }}
+                >
+                  <MonthGrid
+                    anchor={nextAnchor}
+                    events={events}
+                    showWeekNumbers={false}
+                    compact={false}
+                  />
+                </div>
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                   <div className="bg-white/80 rounded-full p-1.5 shadow-sm">
                     <ChevronRight size={18} className="text-gray-500" />
