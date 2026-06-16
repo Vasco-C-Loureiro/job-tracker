@@ -17,20 +17,19 @@ function DotCluster({ dots }: { dots: { className: string }[] }) {
 
   if (dots.length === 2) {
     return (
-      <div className="flex gap-px flex-shrink-0">
-        {dots.map((d, i) => (
-          <span key={i} className={`w-1.5 h-1.5 rounded-full ${d.className}`} />
-        ))}
+      <div className="flex flex-shrink-0">
+        <span className={`w-1.5 h-1.5 rounded-full ${dots[0].className}`} />
+        <span className={`w-1.5 h-1.5 rounded-full ${dots[1].className} -ml-1`} />
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col items-center gap-px flex-shrink-0">
-      <span className={`w-1.5 h-1.5 rounded-full ${dots[0].className}`} />
-      <div className="flex gap-px">
+    <div className="flex flex-col items-center flex-shrink-0">
+      <span className={`w-1.5 h-1.5 rounded-full ${dots[0].className} -mb-0.5`} />
+      <div className="flex">
         <span className={`w-1.5 h-1.5 rounded-full ${dots[1].className}`} />
-        <span className={`w-1.5 h-1.5 rounded-full ${dots[2].className}`} />
+        <span className={`w-1.5 h-1.5 rounded-full ${dots[2].className} -ml-1`} />
       </div>
     </div>
   );
