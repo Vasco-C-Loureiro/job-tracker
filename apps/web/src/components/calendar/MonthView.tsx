@@ -78,6 +78,7 @@ export function MonthView({
             showWeekNumbers={false}
             compact={false}
             uniformHeight={SIDE_GRID_HEIGHT}
+            cellAlign="end"
           />
         </div>
 
@@ -106,6 +107,7 @@ export function MonthView({
             showWeekNumbers={false}
             compact={false}
             uniformHeight={SIDE_GRID_HEIGHT}
+            cellAlign="start"
           />
         </div>
       </div>
