@@ -26,6 +26,7 @@ export function MonthView({
   const current = focusedDate;
   const prev = subMonths(current, 1);
   const next = addMonths(current, 1);
+  const SIDE_SCALE = 0.9; // side month panel scale — adjust to test different sizes
 
   return (
     <div className="py-2">
@@ -56,9 +57,14 @@ export function MonthView({
           right: 6/7 * 100% means the element's right edge is W/7 from the left edge.
         */}
         <div
-          className="absolute top-0 opacity-25 cursor-pointer"
-          // style={{ right: "calc(70% * 6 / 7 + 2%)", width: "70%" }}
-          style={{ right: "calc(70% * 6 / 7 + 33%)", width: "50%" }}
+          className="absolute opacity-25 cursor-pointer"
+          style={{
+            right: "calc(70% * 6 / 7 + 33%)",
+            width: "50%",
+            top: "50%",
+            transform: `translateY(-50%) scale(${SIDE_SCALE})`,
+            transformOrigin: "right center",
+          }}
           onClick={onPrevClick}
           role="button"
           tabIndex={0}
@@ -78,8 +84,14 @@ export function MonthView({
           the right edge of the container; overflow-hidden clips the rest.
         */}
         <div
-          className="absolute top-0 opacity-25 cursor-pointer"
-          style={{ left: "calc(70% * 6 / 7 + 33%)", width: "50%" }}
+          className="absolute opacity-25 cursor-pointer"
+          style={{
+            left: "calc(70% * 6 / 7 + 33%)",
+            width: "50%",
+            top: "50%",
+            transform: `translateY(-50%) scale(${SIDE_SCALE})`,
+            transformOrigin: "left center",
+          }}
           onClick={onNextClick}
           role="button"
           tabIndex={0}
