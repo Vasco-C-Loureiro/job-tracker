@@ -1,6 +1,6 @@
 "use client";
 
-import { format } from "date-fns";
+import { addMonths, format, subMonths } from "date-fns";
 import type { CalendarFeedEvent } from "@job-tracker/shared";
 import { MonthGrid } from "./MonthGrid";
 
@@ -20,27 +20,68 @@ export function MonthView({
   onWeekClick,
   onWeekHover,
   onDayClick,
+  onPrevClick,
+  onNextClick,
 }: MonthViewProps) {
   const current = focusedDate;
+  const prev = subMonths(current, 1);
+  const next = addMonths(current, 1);
 
   return (
-    <div className="overflow-hidden py-2">
-
-      {/* Month title — aligned with the main panel */}
-      <h2 className="text-lg font-semibold text-gray-800 mb-4 mx-36 pl-1">
+    <div className="py-2">
+      <h2 className="text-lg font-semibold text-gray-800 mb-4 pl-1">
         {format(current, "MMMM yyyy")}
       </h2>
 
-      {/* Main panel */}
-      <div className="relative mx-36">
-        <MonthGrid
-          anchor={current}
-          events={events}
-          showWeekNumbers={true}
-          onWeekClick={onWeekClick}
-          onWeekHover={onWeekHover}
-          onDayClick={onDayClick}
-        />
+      {/*
+        Clip container is the containing block for the absolute side months.
+        overflow-hidden clips whatever bleeds past the container edges.
+      */}
+      <div className="relative overflow-hidden">
+        {/* Current month — normal flow, sets the track height */}
+        <div className="px-8">
+          <MonthGrid
+            anchor={current}
+            events={events}
+            showWeekNumbers={true}
+            onWeekClick={onWeekClick}
+            onWeekHover={onWeekHover}
+            onDayClick={onDayClick}
+          />
+        </div>
+
+        {/*
+          Prev month — right edge sits one column (1/7 of container width) inside
+          the left edge of the container; overflow-hidden clips the rest.
+          right: 6/7 * 100% means the element's right edge is W/7 from the left edge.
+        */}
+        <div
+          className="absolute top-0 opacity-25 cursor-pointer"
+          style={{ right: "calc(100% * 6 / 7)", width: "100%" }}
+          onClick={onPrevClick}
+          role="button"
+          tabIndex={0}
+          aria-label="Go to previous month"
+          onKeyDown={(e) => e.key === "Enter" && onPrevClick?.()}
+        >
+          <MonthGrid anchor={prev} events={events} showWeekNumbers={false} compact={false} />
+        </div>
+
+        {/*
+          Next month — left edge sits one column (1/7 of container width) inside
+          the right edge of the container; overflow-hidden clips the rest.
+        */}
+        <div
+          className="absolute top-0 opacity-25 cursor-pointer"
+          style={{ left: "calc(100% * 6 / 7)", width: "100%" }}
+          onClick={onNextClick}
+          role="button"
+          tabIndex={0}
+          aria-label="Go to next month"
+          onKeyDown={(e) => e.key === "Enter" && onNextClick?.()}
+        >
+          <MonthGrid anchor={next} events={events} showWeekNumbers={false} compact={false} />
+        </div>
       </div>
     </div>
   );

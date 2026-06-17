@@ -12,7 +12,6 @@ import { YearView } from "./YearView";
 import { YearMonthsView } from "./YearMonthsView";
 import { CalendarNavButtons } from "./CalendarNavButtons";
 import { UpcomingList } from "./UpcomingList";
-import { MonthGrid } from "./MonthGrid";
 
 const slideVariants = {
   enter: (dir: number) => ({ x: dir > 0 ? "25%" : "-25%", opacity: 0 }),
@@ -42,11 +41,6 @@ export function CalendarApp() {
   >(null);
   const [direction, setDirection] = useState<1 | -1>(1);
   const calendarRef = useRef<HTMLDivElement>(null);
-  const mainRef = useRef<HTMLDivElement>(null);
-  const [mainRect, setMainRect] = useState({ left: 80, top: 160, width: 700, height: 600 });
-  const [viewportWidth, setViewportWidth] = useState(
-    typeof window !== "undefined" ? window.innerWidth : 1440
-  );
   const lastZoomTime = useRef(0);
   const horizontalAccumulator = useRef(0);
   const lastSwipeTime = useRef(0);
@@ -65,28 +59,6 @@ export function CalendarApp() {
     return () => {
       cancelled = true;
       window.removeEventListener("focus", load);
-    };
-  }, []);
-
-  useEffect(() => {
-    const measure = () => {
-      if (mainRef.current) {
-        const r = mainRef.current.getBoundingClientRect();
-        setMainRect({ left: r.left, top: r.top, width: r.width, height: r.height });
-      }
-      setViewportWidth(window.innerWidth);
-    };
-    measure();
-    window.addEventListener("resize", measure);
-    window.addEventListener("scroll", measure, true);
-    const ro = new ResizeObserver(measure);
-    if (mainRef.current) ro.observe(mainRef.current);
-    const sidebar = document.querySelector("aside");
-    if (sidebar) ro.observe(sidebar);
-    return () => {
-      window.removeEventListener("resize", measure);
-      window.removeEventListener("scroll", measure, true);
-      ro.disconnect();
     };
   }, []);
 
@@ -169,15 +141,6 @@ export function CalendarApp() {
     return () => el.removeEventListener("wheel", handleWheel);
   }, [zoomIn, zoomOut, prev, next]);
 
-  const prevAnchor = subMonths(focusedDate, 1);
-  const nextAnchor = addMonths(focusedDate, 1);
-
-  const peekWidth = Math.round(mainRect.width * 0.8);
-  const GAP = 16;
-  const peekTop = mainRect.top + mainRect.height / 2;
-  const leftPeekLeft = mainRect.left - GAP - peekWidth;
-  const rightPeekLeft = mainRect.left + mainRect.width + GAP;
-
   return (
     <div ref={calendarRef} className="mx-6 my-6">
 
@@ -232,7 +195,7 @@ export function CalendarApp() {
               else if (info.offset.x > 80) prev();
             }}
           >
-          <div ref={mainRef} className="relative overflow-hidden z-10">
+          <div className="relative overflow-hidden z-10">
             <AnimatePresence mode="popLayout" custom={direction}>
               <motion.div
                 key={`${view}-${focusedDate.getFullYear()}-${focusedDate.getMonth()}-${Math.floor(focusedDate.getDate() / 7)}`}
@@ -312,90 +275,6 @@ export function CalendarApp() {
             </AnimatePresence>
           </div>
           </motion.div>
-
-          {view === "month" && (
-            <>
-              {/* Left peek: outer clip + inner calendar, right edge at mainRect.left - GAP */}
-              <div
-                style={{
-                  position: "fixed",
-                  left: 0,
-                  width: mainRect.left - GAP,
-                  top: peekTop,
-                  height: peekWidth,
-                  transform: "translateY(-50%)",
-                  overflow: "hidden",
-                  zIndex: 5,
-                  pointerEvents: "none",
-                }}
-              >
-                <div
-                  style={{
-                    position: "absolute",
-                    right: GAP,
-                    top: "50%",
-                    width: peekWidth,
-                    transform: "translateY(-50%)",
-                    opacity: 0.25,
-                    cursor: "pointer",
-                    pointerEvents: "auto",
-                  }}
-                  onClick={prev}
-                  role="button"
-                  tabIndex={0}
-                  aria-label="Go to previous month"
-                  onKeyDown={(e) => e.key === "Enter" && prev()}
-                >
-                  <MonthGrid
-                    anchor={prevAnchor}
-                    events={events}
-                    showWeekNumbers={false}
-                    compact={false}
-                  />
-                </div>
-              </div>
-
-              {/* Right peek: outer clip + inner calendar, left edge at mainRect.left + mainRect.width + GAP */}
-              <div
-                style={{
-                  position: "fixed",
-                  left: rightPeekLeft,
-                  width: viewportWidth - rightPeekLeft,
-                  top: peekTop,
-                  height: peekWidth,
-                  transform: "translateY(-50%)",
-                  overflow: "hidden",
-                  zIndex: 5,
-                  pointerEvents: "none",
-                }}
-              >
-                <div
-                  style={{
-                    position: "absolute",
-                    left: 0,
-                    top: "50%",
-                    width: peekWidth,
-                    transform: "translateY(-50%)",
-                    opacity: 0.25,
-                    cursor: "pointer",
-                    pointerEvents: "auto",
-                  }}
-                  onClick={next}
-                  role="button"
-                  tabIndex={0}
-                  aria-label="Go to next month"
-                  onKeyDown={(e) => e.key === "Enter" && next()}
-                >
-                  <MonthGrid
-                    anchor={nextAnchor}
-                    events={events}
-                    showWeekNumbers={false}
-                    compact={false}
-                  />
-                </div>
-              </div>
-            </>
-          )}
 
           {view !== "year" && view !== "month" && <CalendarNavButtons onPrev={prev} onNext={next} />}
         </>
