@@ -43,9 +43,10 @@ interface MonthGridProps {
   onDayClick?: (day: Date) => void;
   compact?: boolean;
   showWeekNumbers?: boolean;
+  uniformHeight?: number;
 }
 
-export function MonthGrid({ anchor, events, onWeekClick, onWeekHover, onDayClick, compact = false, showWeekNumbers = true }: MonthGridProps) {
+export function MonthGrid({ anchor, events, onWeekClick, onWeekHover, onDayClick, compact = false, showWeekNumbers = true, uniformHeight }: MonthGridProps) {
   const weeks = monthMatrix(anchor);
   const todayStr = ymd(new Date());
 
@@ -128,9 +129,12 @@ export function MonthGrid({ anchor, events, onWeekClick, onWeekHover, onDayClick
         ))}
       </div>
       {/* Week rows */}
-      <div className="border-l border-t border-gray-100">
+      <div
+        className={`border-l border-t border-gray-100${uniformHeight ? " flex flex-col" : ""}`}
+        style={uniformHeight ? { height: uniformHeight } : undefined}
+      >
       {weeks.map((row) => (
-        <div key={row[0].toISOString()} className={`grid ${showWeekNumbers ? "grid-cols-[2.5rem_repeat(7,1fr)]" : "grid-cols-7"}`}>
+        <div key={row[0].toISOString()} className={`grid ${showWeekNumbers ? "grid-cols-[2.5rem_repeat(7,1fr)]" : "grid-cols-7"}${uniformHeight ? " flex-1 min-h-0" : ""}`}>
           {/* Week number */}
           {showWeekNumbers && (
             <button
@@ -159,7 +163,7 @@ export function MonthGrid({ anchor, events, onWeekClick, onWeekHover, onDayClick
                 type="button"
                 onClick={() => onDayClick?.(day)}
                 className={[
-                  "flex flex-col items-start min-h-[5rem] pt-1 px-1 rounded text-sm overflow-hidden min-w-0 border-r border-b border-gray-100",
+                  `flex flex-col items-start ${uniformHeight ? "h-full min-h-0" : "min-h-[5rem]"} pt-1 px-1 rounded text-sm overflow-hidden min-w-0 border-r border-b border-gray-100`,
                   isCurrentMonth ? "text-gray-800" : "text-gray-300 bg-gray-50/50",
                   isToday
                     ? "ring-1 ring-blue-400 bg-blue-50 font-semibold"
