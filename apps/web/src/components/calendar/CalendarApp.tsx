@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { addYears, subYears, addMonths, subMonths, addWeeks, subWeeks, format } from "date-fns";
+import { addYears, subYears, addMonths, subMonths, addWeeks, subWeeks } from "date-fns";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import type { CalendarView, CalendarMode, CalendarFeedEvent } from "@job-tracker/shared";
@@ -45,6 +45,10 @@ export function CalendarApp() {
   const calendarRef = useRef<HTMLDivElement>(null);
   const mainRef = useRef<HTMLDivElement>(null);
   const [mainWidth, setMainWidth] = useState<number>(700);
+  const [contentLeft, setContentLeft] = useState(80);
+  const [viewportWidth, setViewportWidth] = useState(
+    typeof window !== "undefined" ? window.innerWidth : 1440
+  );
   const lastZoomTime = useRef(0);
   const horizontalAccumulator = useRef(0);
   const lastSwipeTime = useRef(0);
@@ -73,6 +77,20 @@ export function CalendarApp() {
     ro.observe(el);
     setMainWidth(el.offsetWidth);
     return () => ro.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const measure = () => {
+      if (calendarRef.current) {
+        setContentLeft(calendarRef.current.getBoundingClientRect().left);
+      }
+      setViewportWidth(window.innerWidth);
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    const ro = new ResizeObserver(measure);
+    ro.observe(document.body);
+    return () => { window.removeEventListener("resize", measure); ro.disconnect(); };
   }, []);
 
   const prev = useCallback(() => {
@@ -156,6 +174,11 @@ export function CalendarApp() {
 
   const prevAnchor = subMonths(focusedDate, 1);
   const nextAnchor = addMonths(focusedDate, 1);
+
+  const peekWidth = Math.round(mainWidth * 0.8);
+  const colWidth = Math.round(peekWidth / 7);
+  const leftPeekLeft = contentLeft - peekWidth + colWidth;
+  const rightPeekLeft = viewportWidth - colWidth;
 
   return (
     <div ref={calendarRef} className="mx-6 my-6">
@@ -294,42 +317,31 @@ export function CalendarApp() {
 
           {view === "month" && (
             <>
-              {/* Left peek: previous month — clipped to one column (Sunday) */}
+              {/* Left peek: previous month — right edge sits one column inside content area */}
               <div
-                className="opacity-25 hover:opacity-40 transition-opacity"
                 style={{
                   position: "fixed",
-                  left: 216,
-                  top: 0,
-                  height: "100vh",
-                  width: Math.max(120, Math.round(mainWidth / 7)),
-                  overflow: "hidden",
+                  left: leftPeekLeft,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  width: peekWidth,
                   zIndex: 5,
+                  opacity: 0.25,
                   cursor: "pointer",
+                  pointerEvents: "auto",
                 }}
                 onClick={prev}
                 role="button"
                 tabIndex={0}
-                aria-label={`Go to ${format(prevAnchor, "MMMM yyyy")}`}
+                aria-label="Go to previous month"
                 onKeyDown={(e) => e.key === "Enter" && prev()}
               >
-                <div
-                  style={{
-                    position: "absolute",
-                    right: 0,
-                    top: "50%",
-                    width: mainWidth,
-                    transform: "translateY(-50%) scale(0.8)",
-                    transformOrigin: "right center",
-                  }}
-                >
-                  <MonthGrid
-                    anchor={prevAnchor}
-                    events={events}
-                    showWeekNumbers={false}
-                    compact={false}
-                  />
-                </div>
+                <MonthGrid
+                  anchor={prevAnchor}
+                  events={events}
+                  showWeekNumbers={false}
+                  compact={false}
+                />
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                   <div className="bg-white/80 rounded-full p-1.5 shadow-sm">
                     <ChevronLeft size={18} className="text-gray-500" />
@@ -337,42 +349,31 @@ export function CalendarApp() {
                 </div>
               </div>
 
-              {/* Right peek: next month — clipped to one column (Monday) */}
+              {/* Right peek: next month — left edge sits one column before viewport right */}
               <div
-                className="opacity-25 hover:opacity-40 transition-opacity"
                 style={{
                   position: "fixed",
-                  right: 8,
-                  top: 0,
-                  height: "100vh",
-                  width: Math.max(120, Math.round(mainWidth / 7)),
-                  overflow: "hidden",
+                  left: rightPeekLeft,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  width: peekWidth,
                   zIndex: 5,
+                  opacity: 0.25,
                   cursor: "pointer",
+                  pointerEvents: "auto",
                 }}
                 onClick={next}
                 role="button"
                 tabIndex={0}
-                aria-label={`Go to ${format(nextAnchor, "MMMM yyyy")}`}
+                aria-label="Go to next month"
                 onKeyDown={(e) => e.key === "Enter" && next()}
               >
-                <div
-                  style={{
-                    position: "absolute",
-                    left: 0,
-                    top: "50%",
-                    width: mainWidth,
-                    transform: "translateY(-50%) scale(0.8)",
-                    transformOrigin: "left center",
-                  }}
-                >
-                  <MonthGrid
-                    anchor={nextAnchor}
-                    events={events}
-                    showWeekNumbers={false}
-                    compact={false}
-                  />
-                </div>
+                <MonthGrid
+                  anchor={nextAnchor}
+                  events={events}
+                  showWeekNumbers={false}
+                  compact={false}
+                />
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                   <div className="bg-white/80 rounded-full p-1.5 shadow-sm">
                     <ChevronRight size={18} className="text-gray-500" />
