@@ -61,7 +61,7 @@ export function Sidebar() {
   return (
     <aside
       style={{ width: isExpanded ? "208px" : "56px" }}
-      className="relative flex flex-col h-screen sticky top-0 shrink-0 border-r border-gray-200 bg-white transition-[width] duration-200 ease-in-out overflow-hidden"
+      className="relative z-20 flex flex-col h-screen sticky top-0 shrink-0 border-r border-gray-200 bg-white transition-[width] duration-200 ease-in-out overflow-hidden"
     >
       {/* Header / toggle button */}
       <div
