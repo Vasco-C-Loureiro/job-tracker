@@ -42,7 +42,7 @@ export function MonthView({
       */}
       <div className="relative">
         {/* Current month — normal flow, sets the track height */}
-        <div className="px-50 mx-6">
+        <div className="px-32 mx-6">
           <MonthGrid
             anchor={current}
             events={events}
