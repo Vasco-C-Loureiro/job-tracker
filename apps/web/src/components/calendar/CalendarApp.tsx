@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { addYears, subYears, addMonths, subMonths, addWeeks, subWeeks } from "date-fns";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import type { CalendarView, CalendarMode, CalendarFeedEvent } from "@job-tracker/shared";
 import { fetchCalendarFeed } from "@/lib/calendar/feed";
@@ -44,8 +43,7 @@ export function CalendarApp() {
   const [direction, setDirection] = useState<1 | -1>(1);
   const calendarRef = useRef<HTMLDivElement>(null);
   const mainRef = useRef<HTMLDivElement>(null);
-  const [mainWidth, setMainWidth] = useState<number>(700);
-  const [contentLeft, setContentLeft] = useState(80);
+  const [mainRect, setMainRect] = useState({ left: 80, top: 160, width: 700, height: 600 });
   const [viewportWidth, setViewportWidth] = useState(
     typeof window !== "undefined" ? window.innerWidth : 1440
   );
@@ -71,26 +69,25 @@ export function CalendarApp() {
   }, []);
 
   useEffect(() => {
-    const el = mainRef.current;
-    if (!el) return;
-    const ro = new ResizeObserver(() => setMainWidth(el.offsetWidth));
-    ro.observe(el);
-    setMainWidth(el.offsetWidth);
-    return () => ro.disconnect();
-  }, []);
-
-  useEffect(() => {
     const measure = () => {
-      if (calendarRef.current) {
-        setContentLeft(calendarRef.current.getBoundingClientRect().left);
+      if (mainRef.current) {
+        const r = mainRef.current.getBoundingClientRect();
+        setMainRect({ left: r.left, top: r.top, width: r.width, height: r.height });
       }
       setViewportWidth(window.innerWidth);
     };
     measure();
     window.addEventListener("resize", measure);
+    window.addEventListener("scroll", measure, true);
     const ro = new ResizeObserver(measure);
-    ro.observe(document.body);
-    return () => { window.removeEventListener("resize", measure); ro.disconnect(); };
+    if (mainRef.current) ro.observe(mainRef.current);
+    const sidebar = document.querySelector("aside");
+    if (sidebar) ro.observe(sidebar);
+    return () => {
+      window.removeEventListener("resize", measure);
+      window.removeEventListener("scroll", measure, true);
+      ro.disconnect();
+    };
   }, []);
 
   const prev = useCallback(() => {
@@ -175,10 +172,11 @@ export function CalendarApp() {
   const prevAnchor = subMonths(focusedDate, 1);
   const nextAnchor = addMonths(focusedDate, 1);
 
-  const peekWidth = Math.round(mainWidth * 0.8);
-  const colWidth = Math.round(peekWidth / 7);
-  const leftPeekLeft = contentLeft - peekWidth + colWidth;
-  const rightPeekLeft = viewportWidth - colWidth;
+  const peekWidth = Math.round(mainRect.width * 0.8);
+  const GAP = 16;
+  const peekTop = mainRect.top + mainRect.height / 2;
+  const leftPeekLeft = mainRect.left - GAP - peekWidth;
+  const rightPeekLeft = mainRect.left + mainRect.width + GAP;
 
   return (
     <div ref={calendarRef} className="mx-6 my-6">
@@ -317,67 +315,83 @@ export function CalendarApp() {
 
           {view === "month" && (
             <>
-              {/* Left peek: previous month — right edge sits one column inside content area */}
+              {/* Left peek: outer clip + inner calendar, right edge at mainRect.left - GAP */}
               <div
                 style={{
                   position: "fixed",
-                  left: leftPeekLeft,
-                  top: "50%",
+                  left: 0,
+                  width: mainRect.left - GAP,
+                  top: peekTop,
+                  height: peekWidth,
                   transform: "translateY(-50%)",
-                  width: peekWidth,
+                  overflow: "hidden",
                   zIndex: 5,
-                  opacity: 0.25,
-                  cursor: "pointer",
-                  pointerEvents: "auto",
+                  pointerEvents: "none",
                 }}
-                onClick={prev}
-                role="button"
-                tabIndex={0}
-                aria-label="Go to previous month"
-                onKeyDown={(e) => e.key === "Enter" && prev()}
               >
-                <MonthGrid
-                  anchor={prevAnchor}
-                  events={events}
-                  showWeekNumbers={false}
-                  compact={false}
-                />
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <div className="bg-white/80 rounded-full p-1.5 shadow-sm">
-                    <ChevronLeft size={18} className="text-gray-500" />
-                  </div>
+                <div
+                  style={{
+                    position: "absolute",
+                    right: GAP,
+                    top: "50%",
+                    width: peekWidth,
+                    transform: "translateY(-50%)",
+                    opacity: 0.25,
+                    cursor: "pointer",
+                    pointerEvents: "auto",
+                  }}
+                  onClick={prev}
+                  role="button"
+                  tabIndex={0}
+                  aria-label="Go to previous month"
+                  onKeyDown={(e) => e.key === "Enter" && prev()}
+                >
+                  <MonthGrid
+                    anchor={prevAnchor}
+                    events={events}
+                    showWeekNumbers={false}
+                    compact={false}
+                  />
                 </div>
               </div>
 
-              {/* Right peek: next month — left edge sits one column before viewport right */}
+              {/* Right peek: outer clip + inner calendar, left edge at mainRect.left + mainRect.width + GAP */}
               <div
                 style={{
                   position: "fixed",
                   left: rightPeekLeft,
-                  top: "50%",
+                  width: viewportWidth - rightPeekLeft,
+                  top: peekTop,
+                  height: peekWidth,
                   transform: "translateY(-50%)",
-                  width: peekWidth,
+                  overflow: "hidden",
                   zIndex: 5,
-                  opacity: 0.25,
-                  cursor: "pointer",
-                  pointerEvents: "auto",
+                  pointerEvents: "none",
                 }}
-                onClick={next}
-                role="button"
-                tabIndex={0}
-                aria-label="Go to next month"
-                onKeyDown={(e) => e.key === "Enter" && next()}
               >
-                <MonthGrid
-                  anchor={nextAnchor}
-                  events={events}
-                  showWeekNumbers={false}
-                  compact={false}
-                />
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <div className="bg-white/80 rounded-full p-1.5 shadow-sm">
-                    <ChevronRight size={18} className="text-gray-500" />
-                  </div>
+                <div
+                  style={{
+                    position: "absolute",
+                    left: 0,
+                    top: "50%",
+                    width: peekWidth,
+                    transform: "translateY(-50%)",
+                    opacity: 0.25,
+                    cursor: "pointer",
+                    pointerEvents: "auto",
+                  }}
+                  onClick={next}
+                  role="button"
+                  tabIndex={0}
+                  aria-label="Go to next month"
+                  onKeyDown={(e) => e.key === "Enter" && next()}
+                >
+                  <MonthGrid
+                    anchor={nextAnchor}
+                    events={events}
+                    showWeekNumbers={false}
+                    compact={false}
+                  />
                 </div>
               </div>
             </>
