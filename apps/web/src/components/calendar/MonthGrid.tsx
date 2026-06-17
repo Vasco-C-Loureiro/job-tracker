@@ -1,7 +1,13 @@
 "use client";
 
 import type { CalendarFeedEvent } from "@job-tracker/shared";
-import { monthMatrix, isoWeek, isSameMonthAs, ymd, sortDayEvents } from "@/lib/calendar/grid";
+import {
+  monthMatrix,
+  isoWeek,
+  isSameMonthAs,
+  ymd,
+  sortDayEvents,
+} from "@/lib/calendar/grid";
 import { groupAppliedForDay, appliedDotCount } from "@/lib/calendar/grouping";
 import { resolveColorKey, colorClasses } from "@/lib/calendar/colors";
 import { EventPill } from "./EventPill";
@@ -12,24 +18,34 @@ function DotCluster({ dots }: { dots: { className: string }[] }) {
   if (dots.length === 0) return null;
 
   if (dots.length === 1) {
-    return <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${dots[0].className}`} />;
+    return (
+      <span
+        className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${dots[0].className}`}
+      />
+    );
   }
 
   if (dots.length === 2) {
     return (
       <div className="flex flex-shrink-0">
         <span className={`w-1.5 h-1.5 rounded-full ${dots[0].className}`} />
-        <span className={`w-1.5 h-1.5 rounded-full ${dots[1].className} -ml-0.5`} />
+        <span
+          className={`w-1.5 h-1.5 rounded-full ${dots[1].className} -ml-0.5`}
+        />
       </div>
     );
   }
 
   return (
     <div className="flex flex-col items-center flex-shrink-0">
-      <span className={`w-1.5 h-1.5 rounded-full ${dots[0].className} -mb-px`} />
+      <span
+        className={`w-1.5 h-1.5 rounded-full ${dots[0].className} -mb-px`}
+      />
       <div className="flex">
         <span className={`w-1.5 h-1.5 rounded-full ${dots[1].className}`} />
-        <span className={`w-1.5 h-1.5 rounded-full ${dots[2].className} -ml-0.5`} />
+        <span
+          className={`w-1.5 h-1.5 rounded-full ${dots[2].className} -ml-0.5`}
+        />
       </div>
     </div>
   );
@@ -48,7 +64,18 @@ interface MonthGridProps {
   numberIndent?: number;
 }
 
-export function MonthGrid({ anchor, events, onWeekClick, onWeekHover, onDayClick, compact = false, showWeekNumbers = true, uniformHeight, cellAlign = "start", numberIndent }: MonthGridProps) {
+export function MonthGrid({
+  anchor,
+  events,
+  onWeekClick,
+  onWeekHover,
+  onDayClick,
+  compact = false,
+  showWeekNumbers = true,
+  uniformHeight,
+  cellAlign = "start",
+  numberIndent,
+}: MonthGridProps) {
   const weeks = monthMatrix(anchor);
   const todayStr = ymd(new Date());
 
@@ -68,27 +95,40 @@ export function MonthGrid({ anchor, events, onWeekClick, onWeekHover, onDayClick
         </div>
         {/* Week rows */}
         {weeks.map((row) => (
-          <div key={row[0].toISOString()} className="grid grid-cols-7 border-l border-t border-gray-100">
+          <div
+            key={row[0].toISOString()}
+            className="grid grid-cols-7 border-l border-t border-gray-100"
+          >
             {row.map((day) => {
               const isCurrentMonth = isSameMonthAs(day, anchor);
               const isToday = ymd(day) === todayStr;
-              const dayEvs     = events.filter(e => e.date === ymd(day));
-              const nonApplied = dayEvs.filter(e => e.source !== "applied");
-              const appliedEvs = dayEvs.filter(e => e.source === "applied");
+              const dayEvs = events.filter((e) => e.date === ymd(day));
+              const nonApplied = dayEvs.filter((e) => e.source !== "applied");
+              const appliedEvs = dayEvs.filter((e) => e.source === "applied");
 
               // Deduplicate non-applied dots by colour token
               const tokensSeen = new Set<string>();
-              const nonAppliedDots = nonApplied.reduce<string[]>((acc, ev) => {
-                const token = resolveColorKey(ev);
-                if (!tokensSeen.has(token)) { tokensSeen.add(token); acc.push(token); }
-                return acc;
-              }, []).slice(0, 3);
+              const nonAppliedDots = nonApplied
+                .reduce<string[]>((acc, ev) => {
+                  const token = resolveColorKey(ev);
+                  if (!tokensSeen.has(token)) {
+                    tokensSeen.add(token);
+                    acc.push(token);
+                  }
+                  return acc;
+                }, [])
+                .slice(0, 3);
 
-              const numAppliedDots = appliedEvs.length > 0 ? appliedDotCount(appliedEvs.length) : 0;
+              const numAppliedDots =
+                appliedEvs.length > 0 ? appliedDotCount(appliedEvs.length) : 0;
 
               const dots = [
-                ...nonAppliedDots.map(token => ({ className: colorClasses(token, "dot") })),
-                ...Array.from({ length: numAppliedDots }, () => ({ className: colorClasses("applied", "dot") })),
+                ...nonAppliedDots.map((token) => ({
+                  className: colorClasses(token, "dot"),
+                })),
+                ...Array.from({ length: numAppliedDots }, () => ({
+                  className: colorClasses("applied", "dot"),
+                })),
               ].slice(0, 3);
 
               return (
@@ -99,12 +139,16 @@ export function MonthGrid({ anchor, events, onWeekClick, onWeekHover, onDayClick
                   className={[
                     "relative flex items-center justify-center h-5 w-full text-[10px] rounded border-r border-b border-gray-100",
                     isCurrentMonth ? "text-gray-700" : "text-gray-300",
-                    isToday ? "ring-1 ring-blue-400 bg-blue-50 font-semibold" : "hover:bg-gray-100",
+                    isToday
+                      ? "ring-1 ring-blue-400 bg-blue-50 font-semibold"
+                      : "hover:bg-gray-100",
                   ].join(" ")}
                 >
                   <span className="leading-none">{day.getDate()}</span>
                   {dots.length > 0 && (
-                    <div className={`absolute ${dots.length === 1 ? "right-2" : "right-1"} flex items-center`}>
+                    <div
+                      className={`absolute ${dots.length === 1 ? "right-2" : "right-1"} flex items-center`}
+                    >
                       <DotCluster dots={dots} />
                     </div>
                   )}
@@ -120,13 +164,24 @@ export function MonthGrid({ anchor, events, onWeekClick, onWeekHover, onDayClick
   return (
     <div className="select-none">
       {/* Header row: Wk + day names */}
-      <div className={`grid ${showWeekNumbers ? "grid-cols-[2.5rem_repeat(7,1fr)]" : "grid-cols-7"} mb-1`}>
+      <div
+        className={`grid ${showWeekNumbers ? "grid-cols-[2.5rem_repeat(7,1fr)]" : "grid-cols-7"} mb-1`}
+      >
         {showWeekNumbers && (
-          <div className="text-center text-xs font-semibold text-white bg-slate-700 py-1 rounded-l-md">Wk</div>
+          <div className="text-center text-xs font-semibold text-white bg-slate-700 py-1 rounded-l-md">
+            Wk
+          </div>
         )}
         {DAY_HEADERS.map((d, i) => (
-          <div key={d} className={`text-center text-xs font-semibold text-white bg-slate-700 py-1${!showWeekNumbers && i === 0 ? " rounded-l-md" : ""}${i === 6 ? " rounded-r-md" : ""}`}
-            style={numberIndent ? { paddingLeft: `${numberIndent}%` } : undefined}>
+          <div
+            key={d}
+            className={`text-center text-xs font-semibold text-white bg-slate-700 py-1${!showWeekNumbers && i === 0 ? " rounded-l-md" : ""}${i === 6 ? " rounded-r-md" : ""}`}
+            style={numberIndent !== undefined ? (
+              cellAlign === "end"
+                ? { textAlign: "right",  paddingRight: `${(100 - numberIndent) * 0.7}%` }
+                : { textAlign: "left",   paddingLeft:  `${numberIndent * 0.7}%` }
+            ) : undefined}
+          >
             {d}
           </div>
         ))}
@@ -136,73 +191,96 @@ export function MonthGrid({ anchor, events, onWeekClick, onWeekHover, onDayClick
         className={`border-l border-t border-gray-100${uniformHeight ? " flex flex-col" : ""}`}
         style={uniformHeight ? { height: uniformHeight } : undefined}
       >
-      {weeks.map((row) => (
-        <div key={row[0].toISOString()} className={`grid ${showWeekNumbers ? "grid-cols-[2.5rem_repeat(7,1fr)]" : "grid-cols-7"}${uniformHeight ? " flex-1 min-h-0" : ""}`}>
-          {/* Week number */}
-          {showWeekNumbers && (
-            <button
-              type="button"
-              onClick={() => onWeekClick?.(row[0])}
-              onMouseEnter={() => onWeekHover?.(row[0])}
-              className="text-center text-[13px] font-semibold text-slate-400 bg-slate-50 hover:text-slate-800 hover:bg-gray-50 rounded py-1 cursor-pointer border-r border-b border-gray-100"
-            >
-              {isoWeek(row[0])}
-            </button>
-          )}
-          {/* Day cells */}
-          {row.map((day) => {
-            const isCurrentMonth = isSameMonthAs(day, anchor);
-            const isToday = ymd(day) === todayStr;
-            const allDayEvents = sortDayEvents(events.filter(e => e.date === ymd(day)));
-            const nonApplied   = allDayEvents.filter(e => e.source !== "applied");
-            const appliedGroup = groupAppliedForDay(allDayEvents);
-            const MAX_PILLS = 3;
-            const slotsForNonApplied = appliedGroup ? MAX_PILLS - 1 : MAX_PILLS;
-            const visibleNonApplied  = nonApplied.slice(0, slotsForNonApplied);
-            const overflowNonApplied = nonApplied.length - slotsForNonApplied;
-            return (
+        {weeks.map((row) => (
+          <div
+            key={row[0].toISOString()}
+            className={`grid ${showWeekNumbers ? "grid-cols-[2.5rem_repeat(7,1fr)]" : "grid-cols-7"}${uniformHeight ? " flex-1 min-h-0" : ""}`}
+          >
+            {/* Week number */}
+            {showWeekNumbers && (
               <button
-                key={day.toISOString()}
                 type="button"
-                onClick={() => onDayClick?.(day)}
-                className={[
-                  `flex flex-col ${cellAlign === "end" ? "items-end" : "items-start"} ${uniformHeight ? "h-full min-h-0" : "min-h-[5rem]"} pt-1 px-1 rounded text-sm overflow-hidden min-w-0 border-r border-b border-gray-100`,
-                  isCurrentMonth ? "text-gray-800" : "text-gray-300 bg-gray-50/50",
-                  isToday
-                    ? "ring-1 ring-blue-400 bg-blue-50 font-semibold"
-                    : "hover:bg-gray-100",
-                ].join(" ")}
+                onClick={() => onWeekClick?.(row[0])}
+                onMouseEnter={() => onWeekHover?.(row[0])}
+                className="text-center text-[13px] font-semibold text-slate-400 bg-slate-50 hover:text-slate-800 hover:bg-gray-50 rounded py-1 cursor-pointer border-r border-b border-gray-100"
               >
-                <span className="leading-none self-center mb-1"
-                  style={numberIndent ? { display: 'block', width: '100%', paddingLeft: `${numberIndent}%` } : undefined}>
-                  {day.getDate()}
-                </span>
-                <div className="mt-0.5 flex flex-col gap-0.5 min-w-0 w-full">
-                  {visibleNonApplied.map(event => (
-                    <EventPill key={event.id} event={event} />
-                  ))}
-                  {appliedGroup && (
-                    <div
-                      className={`${appliedGroup.pillClasses} text-xs font-medium rounded px-1.5 py-0.5 leading-tight cursor-default select-none flex items-center justify-center overflow-hidden`}
-                      title={appliedGroup.companies.join(", ")}
-                    >
-                      <div className="flex items-center min-w-0">
-                        <span className="shrink min-w-0 truncate">Applied to {appliedGroup.label}</span>
-                        {appliedGroup.countSuffix && (
-                          <span className="flex-shrink-0">{appliedGroup.countSuffix}</span>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                  {overflowNonApplied > 0 && (
-                    <div className="text-xs text-gray-400 px-1">+{overflowNonApplied} more</div>
-                  )}
-                </div>
+                {isoWeek(row[0])}
               </button>
-            );
-          })}
-        </div>
-      ))}
+            )}
+            {/* Day cells */}
+            {row.map((day) => {
+              const isCurrentMonth = isSameMonthAs(day, anchor);
+              const isToday = ymd(day) === todayStr;
+              const allDayEvents = sortDayEvents(
+                events.filter((e) => e.date === ymd(day)),
+              );
+              const nonApplied = allDayEvents.filter(
+                (e) => e.source !== "applied",
+              );
+              const appliedGroup = groupAppliedForDay(allDayEvents);
+              const MAX_PILLS = 3;
+              const slotsForNonApplied = appliedGroup
+                ? MAX_PILLS - 1
+                : MAX_PILLS;
+              const visibleNonApplied = nonApplied.slice(0, slotsForNonApplied);
+              const overflowNonApplied = nonApplied.length - slotsForNonApplied;
+              return (
+                <button
+                  key={day.toISOString()}
+                  type="button"
+                  onClick={() => onDayClick?.(day)}
+                  className={[
+                    `flex flex-col ${cellAlign === "end" ? "items-end" : "items-start"} ${uniformHeight ? "h-full min-h-0" : "min-h-[5rem]"} pt-1 px-1 rounded text-sm overflow-hidden min-w-0 border-r border-b border-gray-100`,
+                    isCurrentMonth
+                      ? "text-gray-800"
+                      : "text-gray-300 bg-gray-50/50",
+                    isToday
+                      ? "ring-1 ring-blue-400 bg-blue-50 font-semibold"
+                      : "hover:bg-gray-100",
+                  ].join(" ")}
+                >
+                  <span
+                    className={`leading-none mb-1${numberIndent === undefined ? " self-center" : ""}`}
+                    style={numberIndent !== undefined ? (
+                      cellAlign === "end"
+                        ? { display: "block", width: "100%", textAlign: "right",  paddingRight: `${(100 - numberIndent) * 0.7}%` }
+                        : { display: "block", width: "100%", textAlign: "left",   paddingLeft:  `${numberIndent * 0.7}%` }
+                    ) : undefined}
+                  >
+                    {day.getDate()}
+                  </span>
+                  <div className="mt-0.5 flex flex-col gap-0.5 min-w-0 w-full">
+                    {visibleNonApplied.map((event) => (
+                      <EventPill key={event.id} event={event} />
+                    ))}
+                    {appliedGroup && (
+                      <div
+                        className={`${appliedGroup.pillClasses} text-xs font-medium rounded px-1.5 py-0.5 leading-tight cursor-default select-none flex items-center justify-center overflow-hidden`}
+                        title={appliedGroup.companies.join(", ")}
+                      >
+                        <div className="flex items-center min-w-0">
+                          <span className="shrink min-w-0 truncate">
+                            Applied to {appliedGroup.label}
+                          </span>
+                          {appliedGroup.countSuffix && (
+                            <span className="flex-shrink-0">
+                              {appliedGroup.countSuffix}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    {overflowNonApplied > 0 && (
+                      <div className="text-xs text-gray-400 px-1">
+                        +{overflowNonApplied} more
+                      </div>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        ))}
       </div>
     </div>
   );
