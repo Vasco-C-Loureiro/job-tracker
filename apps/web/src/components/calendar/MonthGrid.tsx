@@ -45,9 +45,10 @@ interface MonthGridProps {
   showWeekNumbers?: boolean;
   uniformHeight?: number;
   cellAlign?: "start" | "end";
+  numberIndent?: number;
 }
 
-export function MonthGrid({ anchor, events, onWeekClick, onWeekHover, onDayClick, compact = false, showWeekNumbers = true, uniformHeight, cellAlign = "start" }: MonthGridProps) {
+export function MonthGrid({ anchor, events, onWeekClick, onWeekHover, onDayClick, compact = false, showWeekNumbers = true, uniformHeight, cellAlign = "start", numberIndent }: MonthGridProps) {
   const weeks = monthMatrix(anchor);
   const todayStr = ymd(new Date());
 
@@ -124,7 +125,8 @@ export function MonthGrid({ anchor, events, onWeekClick, onWeekHover, onDayClick
           <div className="text-center text-xs font-semibold text-white bg-slate-700 py-1 rounded-l-md">Wk</div>
         )}
         {DAY_HEADERS.map((d, i) => (
-          <div key={d} className={`text-center text-xs font-semibold text-white bg-slate-700 py-1${!showWeekNumbers && i === 0 ? " rounded-l-md" : ""}${i === 6 ? " rounded-r-md" : ""}`}>
+          <div key={d} className={`text-center text-xs font-semibold text-white bg-slate-700 py-1${!showWeekNumbers && i === 0 ? " rounded-l-md" : ""}${i === 6 ? " rounded-r-md" : ""}`}
+            style={numberIndent ? { paddingLeft: `${numberIndent}%` } : undefined}>
             {d}
           </div>
         ))}
@@ -171,7 +173,10 @@ export function MonthGrid({ anchor, events, onWeekClick, onWeekHover, onDayClick
                     : "hover:bg-gray-100",
                 ].join(" ")}
               >
-                <span className="leading-none self-center mb-1">{day.getDate()}</span>
+                <span className="leading-none self-center mb-1"
+                  style={numberIndent ? { display: 'block', width: '100%', paddingLeft: `${numberIndent}%` } : undefined}>
+                  {day.getDate()}
+                </span>
                 <div className="mt-0.5 flex flex-col gap-0.5 min-w-0 w-full">
                   {visibleNonApplied.map(event => (
                     <EventPill key={event.id} event={event} />
