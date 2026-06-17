@@ -39,7 +39,7 @@ export function MonthView({
       */}
       <div className="relative overflow-hidden">
         {/* Current month — normal flow, sets the track height */}
-        <div className="px-8">
+        <div className="px-40">
           <MonthGrid
             anchor={current}
             events={events}
