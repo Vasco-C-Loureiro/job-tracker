@@ -28,7 +28,7 @@ export function MonthView({
   const next = addMonths(current, 1);
   const SIDE_SCALE = 0.9;
   const SIDE_GRID_HEIGHT = 400; // px, unscaled height of the side month grid before scale
-  const PEEK_NUMBER_INDENT = 70; // 0 = full left, 100 = full right. Adjust to taste.
+  const PEEK_NUMBER_INDENT = 60; // 0 = full left, 100 = full right. Adjust to taste.
 
   return (
     <div className="py-2">
@@ -40,9 +40,9 @@ export function MonthView({
         Clip container is the containing block for the absolute side months.
         overflow-hidden clips whatever bleeds past the container edges.
       */}
-      <div className="relative overflow-hidden">
+      <div className="relative">
         {/* Current month — normal flow, sets the track height */}
-        <div className="px-50">
+        <div className="px-50 mx-6">
           <MonthGrid
             anchor={current}
             events={events}
