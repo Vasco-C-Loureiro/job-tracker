@@ -195,7 +195,7 @@ export function CalendarApp() {
               else if (info.offset.x > 80) prev();
             }}
           >
-          <div className="relative overflow-hidden z-10">
+          <div className="relative overflow-hidden z-10 -mx-6">
             <AnimatePresence mode="popLayout" custom={direction}>
               <motion.div
                 key={`${view}-${focusedDate.getFullYear()}-${focusedDate.getMonth()}-${Math.floor(focusedDate.getDate() / 7)}`}
