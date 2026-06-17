@@ -57,7 +57,8 @@ export function MonthView({
         */}
         <div
           className="absolute top-0 opacity-25 cursor-pointer"
-          style={{ right: "calc(70% * 6 / 7 + 2%)", width: "70%" }}
+          // style={{ right: "calc(70% * 6 / 7 + 2%)", width: "70%" }}
+          style={{ right: "calc(70% * 6 / 7 + 33%)", width: "50%" }}
           onClick={onPrevClick}
           role="button"
           tabIndex={0}
@@ -78,7 +79,7 @@ export function MonthView({
         */}
         <div
           className="absolute top-0 opacity-25 cursor-pointer"
-          style={{ left: "calc(70% * 6 / 7 + 2%)", width: "70%" }}
+          style={{ left: "calc(70% * 6 / 7 + 33%)", width: "50%" }}
           onClick={onNextClick}
           role="button"
           tabIndex={0}
