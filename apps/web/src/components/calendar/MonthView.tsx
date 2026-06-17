@@ -28,6 +28,7 @@ export function MonthView({
   const next = addMonths(current, 1);
   const SIDE_SCALE = 0.9;
   const SIDE_GRID_HEIGHT = 400; // px, unscaled height of the side month grid before scale
+  const PEEK_NUMBER_INDENT = 70; // 0 = full left, 100 = full right. Adjust to taste.
 
   return (
     <div className="py-2">
@@ -79,6 +80,7 @@ export function MonthView({
             compact={false}
             uniformHeight={SIDE_GRID_HEIGHT}
             cellAlign="end"
+            numberIndent={PEEK_NUMBER_INDENT}
           />
         </div>
 
@@ -108,6 +110,7 @@ export function MonthView({
             compact={false}
             uniformHeight={SIDE_GRID_HEIGHT}
             cellAlign="start"
+            numberIndent={100 - PEEK_NUMBER_INDENT}
           />
         </div>
       </div>
