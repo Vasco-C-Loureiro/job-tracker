@@ -39,7 +39,7 @@ export function MonthView({
       */}
       <div className="relative overflow-hidden">
         {/* Current month — normal flow, sets the track height */}
-        <div className="px-40">
+        <div className="px-50">
           <MonthGrid
             anchor={current}
             events={events}
@@ -57,14 +57,19 @@ export function MonthView({
         */}
         <div
           className="absolute top-0 opacity-25 cursor-pointer"
-          style={{ right: "calc(100% * 6 / 7)", width: "100%" }}
+          style={{ right: "calc(70% * 6 / 7 + 2%)", width: "70%" }}
           onClick={onPrevClick}
           role="button"
           tabIndex={0}
           aria-label="Go to previous month"
           onKeyDown={(e) => e.key === "Enter" && onPrevClick?.()}
         >
-          <MonthGrid anchor={prev} events={events} showWeekNumbers={false} compact={false} />
+          <MonthGrid
+            anchor={prev}
+            events={events}
+            showWeekNumbers={false}
+            compact={false}
+          />
         </div>
 
         {/*
@@ -73,14 +78,19 @@ export function MonthView({
         */}
         <div
           className="absolute top-0 opacity-25 cursor-pointer"
-          style={{ left: "calc(100% * 6 / 7)", width: "100%" }}
+          style={{ left: "calc(70% * 6 / 7 + 2%)", width: "70%" }}
           onClick={onNextClick}
           role="button"
           tabIndex={0}
           aria-label="Go to next month"
           onKeyDown={(e) => e.key === "Enter" && onNextClick?.()}
         >
-          <MonthGrid anchor={next} events={events} showWeekNumbers={false} compact={false} />
+          <MonthGrid
+            anchor={next}
+            events={events}
+            showWeekNumbers={false}
+            compact={false}
+          />
         </div>
       </div>
     </div>
