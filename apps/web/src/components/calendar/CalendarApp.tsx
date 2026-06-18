@@ -21,17 +21,27 @@ const ZOOM_COOLDOWN_MS = 400;
 const ZOOM_NEW_THRESHOLD = 50;
 
 const slideVariants = {
-  enter: (dir: number) => ({ x: dir > 0 ? "25%" : "-25%", opacity: 0 }),
+  enter: ({ direction, type }: { direction: number; type: string }) => {
+    if (type === 'zoom-in')  return { scale: 0.75, x: 0, opacity: 0 };
+    if (type === 'zoom-out') return { scale: 1.25, x: 0, opacity: 0 };
+    return { scale: 1, x: direction > 0 ? '25%' : '-25%', opacity: 0 };
+  },
   centre: {
     x: 0,
+    scale: 1,
     opacity: 1,
-    transition: { duration: 0.28, ease: [0.4, 0, 0.2, 1] as const },
+    transition: { duration: 0.35, ease: [0.4, 0, 0.2, 1] as const },
   },
-  exit: (dir: number) => ({
-    x: dir > 0 ? "-25%" : "25%",
-    opacity: 0,
-    transition: { duration: 0.22, ease: [0.4, 0, 1, 1] as const },
-  }),
+  exit: ({ direction, type }: { direction: number; type: string }) => {
+    if (type === 'zoom-in')
+      return { scale: 1.25, x: 0, opacity: 0,
+               transition: { duration: 0.25, ease: [0.4, 0, 0.2, 1] as const } };
+    if (type === 'zoom-out')
+      return { scale: 0.75, x: 0, opacity: 0,
+               transition: { duration: 0.25, ease: [0.4, 0, 0.2, 1] as const } };
+    return { scale: 1, x: direction > 0 ? '-25%' : '25%', opacity: 0,
+             transition: { duration: 0.22, ease: [0.4, 0, 1, 1] as const } };
+  },
 };
 
 export function CalendarApp() {
@@ -47,6 +57,7 @@ export function CalendarApp() {
     | null
   >(null);
   const [direction, setDirection] = useState<1 | -1>(1);
+  const [transitionType, setTransitionType] = useState<'slide' | 'zoom-in' | 'zoom-out'>('slide');
   const calendarRef = useRef<HTMLDivElement>(null);
   const lastZoomTime = useRef(0);
   const horizontalAccumulator = useRef(0);
@@ -73,6 +84,7 @@ export function CalendarApp() {
   }, []);
 
   const prev = useCallback(() => {
+    setTransitionType('slide');
     setDirection(-1);
     setFocusedDate(d => {
       switch (view) {
@@ -85,6 +97,7 @@ export function CalendarApp() {
   }, [view]);
 
   const next = useCallback(() => {
+    setTransitionType('slide');
     setDirection(1);
     setFocusedDate(d => {
       switch (view) {
@@ -97,6 +110,7 @@ export function CalendarApp() {
   }, [view]);
 
   const zoomIn = useCallback(() => {
+    setTransitionType('zoom-in');
     const nextView = ZOOM_IN[view];
     if (!nextView) return;
     setFocusedDate(prev => {
@@ -115,6 +129,7 @@ export function CalendarApp() {
   }, [view, hoveredPeriod]);
 
   const zoomOut = useCallback(() => {
+    setTransitionType('zoom-out');
     const nextView = ZOOM_OUT[view];
     if (!nextView) return;
     setView(nextView);
@@ -232,10 +247,10 @@ export function CalendarApp() {
             }}
           >
           <div className="relative overflow-hidden z-10 -mx-6">
-            <AnimatePresence mode="popLayout" custom={direction}>
+            <AnimatePresence mode="popLayout" custom={{ direction, type: transitionType }}>
               <motion.div
                 key={`${view}-${focusedDate.getFullYear()}-${focusedDate.getMonth()}-${Math.floor(focusedDate.getDate() / 7)}`}
-                custom={direction}
+                custom={{ direction, type: transitionType }}
                 variants={slideVariants}
                 initial="enter"
                 animate="centre"
