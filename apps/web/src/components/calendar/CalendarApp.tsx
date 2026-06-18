@@ -13,12 +13,12 @@ import { YearMonthsView } from "./YearMonthsView";
 import { CalendarNavButtons } from "./CalendarNavButtons";
 import { UpcomingList } from "./UpcomingList";
 
-const SWIPE_THRESHOLD = 120;
-const SWIPE_COOLDOWN_MS = 200;
+const SWIPE_THRESHOLD = 80;
+const SWIPE_COOLDOWN_MS = 150;
 const SWIPE_MAX_PER_GESTURE = 5;
 const SWIPE_GESTURE_RESET_MS = 800;
-const ZOOM_COOLDOWN_MS = 600;
-const ZOOM_NEW_THRESHOLD = 80;
+const ZOOM_COOLDOWN_MS = 400;
+const ZOOM_NEW_THRESHOLD = 50;
 
 const slideVariants = {
   enter: (dir: number) => ({ x: dir > 0 ? "25%" : "-25%", opacity: 0 }),
