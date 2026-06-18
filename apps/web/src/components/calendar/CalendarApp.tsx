@@ -13,10 +13,10 @@ import { YearMonthsView } from "./YearMonthsView";
 import { CalendarNavButtons } from "./CalendarNavButtons";
 import { UpcomingList } from "./UpcomingList";
 
-const SWIPE_THRESHOLD = 80;
-const SWIPE_COOLDOWN_MS = 150;
+const SWIPE_THRESHOLD = 50;
+const SWIPE_COOLDOWN_MS = 350;
 const SWIPE_MAX_PER_GESTURE = 5;
-const SWIPE_GESTURE_RESET_MS = 800;
+const SWIPE_GESTURE_RESET_MS = 1000;
 const ZOOM_COOLDOWN_MS = 400;
 const ZOOM_NEW_THRESHOLD = 50;
 
@@ -63,6 +63,7 @@ export function CalendarApp() {
   const horizontalAccumulator = useRef(0);
   const lastSwipeTime = useRef(0);
   const swipeNavCount = useRef(0);
+  const peakDeltaX = useRef(0);
   const zoomAccumulator = useRef(0);
   const zoomDirection = useRef<0 | 1 | -1>(0);
 
@@ -164,23 +165,30 @@ export function CalendarApp() {
         e.preventDefault();
         const now = Date.now();
 
-        // If gesture has been idle long enough, treat next movement as a fresh gesture
+        // Reset gesture state if idle long enough
         if (now - lastSwipeTime.current > SWIPE_GESTURE_RESET_MS) {
           swipeNavCount.current = 0;
           horizontalAccumulator.current = 0;
+          peakDeltaX.current = 0;
         }
+
+        // Track the highest per-event deltaX seen in this gesture (velocity signal)
+        peakDeltaX.current = Math.max(peakDeltaX.current, Math.abs(e.deltaX));
+
+        // Fast flick (high per-event velocity) → cap at 1 navigation
+        // Slow/medium swipe → allow up to SWIPE_MAX_PER_GESTURE
+        const maxForGesture = peakDeltaX.current > 12 ? 1 : SWIPE_MAX_PER_GESTURE;
 
         horizontalAccumulator.current += e.deltaX;
 
         if (
           Math.abs(horizontalAccumulator.current) >= SWIPE_THRESHOLD &&
-          swipeNavCount.current < SWIPE_MAX_PER_GESTURE &&
+          swipeNavCount.current < maxForGesture &&
           now - lastSwipeTime.current >= SWIPE_COOLDOWN_MS
         ) {
           const dir = horizontalAccumulator.current > 0 ? 1 : -1;
           if (dir > 0) next();
           else prev();
-          // Subtract threshold rather than reset to zero — excess carries into next nav (carousel feel)
           horizontalAccumulator.current -= dir * SWIPE_THRESHOLD;
           swipeNavCount.current++;
           lastSwipeTime.current = now;
