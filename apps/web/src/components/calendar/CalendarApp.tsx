@@ -13,6 +13,13 @@ import { YearMonthsView } from "./YearMonthsView";
 import { CalendarNavButtons } from "./CalendarNavButtons";
 import { UpcomingList } from "./UpcomingList";
 
+const SWIPE_THRESHOLD = 120;
+const SWIPE_COOLDOWN_MS = 200;
+const SWIPE_MAX_PER_GESTURE = 5;
+const SWIPE_GESTURE_RESET_MS = 800;
+const ZOOM_COOLDOWN_MS = 600;
+const ZOOM_NEW_THRESHOLD = 80;
+
 const slideVariants = {
   enter: (dir: number) => ({ x: dir > 0 ? "25%" : "-25%", opacity: 0 }),
   centre: {
@@ -44,6 +51,9 @@ export function CalendarApp() {
   const lastZoomTime = useRef(0);
   const horizontalAccumulator = useRef(0);
   const lastSwipeTime = useRef(0);
+  const swipeNavCount = useRef(0);
+  const zoomAccumulator = useRef(0);
+  const zoomDirection = useRef<0 | 1 | -1>(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -116,22 +126,48 @@ export function CalendarApp() {
     function handleWheel(e: WheelEvent) {
       if (e.ctrlKey) {
         e.preventDefault();
+        const dir = e.deltaY < 0 ? -1 : 1;
+        if (dir !== zoomDirection.current) {
+          zoomAccumulator.current = 0;
+          zoomDirection.current = dir;
+        }
+        zoomAccumulator.current += Math.abs(e.deltaY);
         const now = Date.now();
-        if (now - lastZoomTime.current < 300) return;
-        lastZoomTime.current = now;
-        if (e.deltaY < 0) zoomIn();
-        else zoomOut();
+        if (
+          now - lastZoomTime.current >= ZOOM_COOLDOWN_MS &&
+          zoomAccumulator.current >= ZOOM_NEW_THRESHOLD
+        ) {
+          if (e.deltaY < 0) zoomIn();
+          else zoomOut();
+          lastZoomTime.current = now;
+          zoomAccumulator.current = 0;
+        }
         return;
       }
       // Horizontal swipe: accumulate and fire once past threshold
       if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
         e.preventDefault();
-        horizontalAccumulator.current += e.deltaX;
         const now = Date.now();
-        if (Math.abs(horizontalAccumulator.current) > 60 && now - lastSwipeTime.current > 300) {
-          if (horizontalAccumulator.current > 0) next();
-          else prev();
+
+        // If gesture has been idle long enough, treat next movement as a fresh gesture
+        if (now - lastSwipeTime.current > SWIPE_GESTURE_RESET_MS) {
+          swipeNavCount.current = 0;
           horizontalAccumulator.current = 0;
+        }
+
+        horizontalAccumulator.current += e.deltaX;
+
+        if (
+          Math.abs(horizontalAccumulator.current) >= SWIPE_THRESHOLD &&
+          swipeNavCount.current < SWIPE_MAX_PER_GESTURE &&
+          now - lastSwipeTime.current >= SWIPE_COOLDOWN_MS
+        ) {
+          const dir = horizontalAccumulator.current > 0 ? 1 : -1;
+          if (dir > 0) next();
+          else prev();
+          // Subtract threshold rather than reset to zero — excess carries into next nav (carousel feel)
+          horizontalAccumulator.current -= dir * SWIPE_THRESHOLD;
+          swipeNavCount.current++;
           lastSwipeTime.current = now;
         }
       }
@@ -185,7 +221,7 @@ export function CalendarApp() {
           <motion.div
             drag="x"
             dragConstraints={{ left: 0, right: 0 }}
-            dragElastic={0.15}
+            dragElastic={0.4}
             dragDirectionLock
             style={{ userSelect: "none", touchAction: "pan-y" }}
             onDragEnd={(_, info) => {
