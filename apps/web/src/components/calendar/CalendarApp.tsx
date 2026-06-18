@@ -64,6 +64,7 @@ export function CalendarApp() {
   const lastSwipeTime = useRef(0);
   const swipeNavCount = useRef(0);
   const peakDeltaX = useRef(0);
+  const lastSwipeEventTime = useRef(0);
   const zoomAccumulator = useRef(0);
   const zoomDirection = useRef<0 | 1 | -1>(0);
 
@@ -166,11 +167,12 @@ export function CalendarApp() {
         const now = Date.now();
 
         // Reset gesture state if idle long enough
-        if (now - lastSwipeTime.current > SWIPE_GESTURE_RESET_MS) {
+        if (now - lastSwipeEventTime.current > SWIPE_GESTURE_RESET_MS) {
           swipeNavCount.current = 0;
           horizontalAccumulator.current = 0;
           peakDeltaX.current = 0;
         }
+        lastSwipeEventTime.current = now;
 
         // Track the highest per-event deltaX seen in this gesture (velocity signal)
         peakDeltaX.current = Math.max(peakDeltaX.current, Math.abs(e.deltaX));
