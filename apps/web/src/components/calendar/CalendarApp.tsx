@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { addYears, subYears, addMonths, subMonths, addWeeks, subWeeks, format } from "date-fns";
+import { addYears, subYears, addMonths, subMonths, addWeeks, subWeeks, format, startOfWeek, getISOWeek } from "date-fns";
 import { AnimatePresence, motion } from "framer-motion";
 import type { CalendarView, CalendarMode, CalendarFeedEvent } from "@job-tracker/shared";
 import { fetchCalendarFeed } from "@/lib/calendar/feed";
@@ -242,6 +242,14 @@ export function CalendarApp() {
         {view === "month" && (
           <span className="text-lg font-semibold text-gray-800">
             {format(focusedDate, "MMMM yyyy")}
+          </span>
+        )}
+        {view === "week" && (
+          <span className="text-lg font-semibold text-gray-800">
+            {(() => {
+              const weekStart = startOfWeek(focusedDate, { weekStartsOn: 1 });
+              return `Week ${getISOWeek(weekStart)}, ${format(weekStart, "MMMM yyyy")}`;
+            })()}
           </span>
         )}
       </div>
