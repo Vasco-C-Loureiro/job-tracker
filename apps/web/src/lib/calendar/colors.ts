@@ -1,26 +1,25 @@
 import type { CalendarFeedEvent, InterviewType } from "@job-tracker/shared";
 
 // ── Hue assignments ──────────────────────────────────────────────────────────
-// Each InterviewType gets one distinct hue. Within that hue, round number
-// drives a 4-step pastel→saturated ramp (step = min(roundNumber, 4)).
+// All round types share the blue hue; round number drives the saturation ramp.
 // "other" → neutral slate (fixed, no ramp).
 // deadline → rose | applied → emerald | manual → pink/purple/lime/yellow/red
 // ────────────────────────────────────────────────────────────────────────────
 
 type ColorVariant = "pill" | "dot" | "card";
 
-// One hue per typed InterviewType (excluding "other" — handled separately).
+// All typed InterviewTypes map to "blue" (excluding "other" — handled separately).
 const ROUND_HUES: Partial<Record<InterviewType, string>> = {
-  "screening":           "sky",
-  "technical-phone":     "cyan",
-  "take-home":           "teal",
-  "coding":              "indigo",
-  "pair-programming":    "green",
+  "screening":           "blue",
+  "technical-phone":     "blue",
+  "take-home":           "blue",
+  "coding":              "blue",
+  "pair-programming":    "blue",
   "technical-deep-dive": "blue",
-  "system-design":       "violet",
-  "behavioral":          "amber",
-  "panel":               "orange",
-  "final":               "fuchsia",
+  "system-design":       "blue",
+  "behavioral":          "blue",
+  "panel":               "blue",
+  "final":               "blue",
 };
 
 // 4-step ramp — must be literal strings so Tailwind JIT keeps them.
