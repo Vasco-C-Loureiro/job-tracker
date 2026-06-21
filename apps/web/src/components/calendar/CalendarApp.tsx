@@ -238,7 +238,7 @@ export function CalendarApp() {
           <div className="inline-flex rounded-lg bg-gray-100 p-1">
             <button
               onClick={zoomOut}
-              className="px-4 py-1.5 rounded-md text-sm font-medium transition-colors text-gray-500 hover:text-gray-700"
+              className="px-4 py-1.5 rounded-md text-sm font-medium transition-colors bg-white shadow-sm text-gray-900 hover:bg-gray-50"
               aria-label="Zoom out to year view"
             >
               <span className="text-lg font-semibold">{focusedDate.getFullYear()}</span>
@@ -249,7 +249,7 @@ export function CalendarApp() {
           <div className="inline-flex rounded-lg bg-gray-100 p-1">
             <button
               onClick={zoomOut}
-              className="px-4 py-1.5 rounded-md text-sm font-medium transition-colors text-gray-500 hover:text-gray-700"
+              className="px-4 py-1.5 rounded-md text-sm font-medium transition-colors bg-white shadow-sm text-gray-900 hover:bg-gray-50"
               aria-label="Zoom out to year-months view"
             >
               <span className="text-sm font-semibold">{format(focusedDate, "MMMM yyyy")}</span>
@@ -260,7 +260,7 @@ export function CalendarApp() {
           <div className="inline-flex rounded-lg bg-gray-100 p-1">
             <button
               onClick={zoomOut}
-              className="px-4 py-1.5 rounded-md text-sm font-medium transition-colors text-gray-500 hover:text-gray-700"
+              className="px-4 py-1.5 rounded-md text-sm font-medium transition-colors bg-white shadow-sm text-gray-900 hover:bg-gray-50"
               aria-label="Zoom out to month view"
             >
               <span className="text-sm font-semibold">
