@@ -313,6 +313,7 @@ export function CalendarApp() {
                         focusedDate={focusedDate}
                         events={events}
                         onMonthClick={(monthIdx) => {
+                          setTransitionType('zoom-in');
                           setFocusedDate(prev => {
                             const d = new Date(prev);
                             d.setMonth(monthIdx);
@@ -329,6 +330,7 @@ export function CalendarApp() {
                         focusedDate={focusedDate}
                         events={events}
                         onYearClick={(year) => {
+                          setTransitionType('zoom-in');
                           setFocusedDate(prev => {
                             const d = new Date(prev);
                             d.setFullYear(year);
@@ -337,6 +339,7 @@ export function CalendarApp() {
                           setView("year-months");
                         }}
                         onYearSelect={(year) => {
+                          setTransitionType('slide');
                           setDirection(year > focusedDate.getFullYear() ? 1 : -1);
                           setFocusedDate(d => {
                             const n = new Date(d);
