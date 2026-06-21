@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { addYears, subYears, addMonths, subMonths, addWeeks, subWeeks } from "date-fns";
+import { addYears, subYears, addMonths, subMonths, addWeeks, subWeeks, format } from "date-fns";
 import { AnimatePresence, motion } from "framer-motion";
 import type { CalendarView, CalendarMode, CalendarFeedEvent } from "@job-tracker/shared";
 import { fetchCalendarFeed } from "@/lib/calendar/feed";
@@ -237,6 +237,11 @@ export function CalendarApp() {
         {view === "year-months" && (
           <span className="text-2xl font-semibold text-gray-800">
             {focusedDate.getFullYear()}
+          </span>
+        )}
+        {view === "month" && (
+          <span className="text-lg font-semibold text-gray-800">
+            {format(focusedDate, "MMMM yyyy")}
           </span>
         )}
       </div>
