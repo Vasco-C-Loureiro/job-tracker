@@ -283,6 +283,7 @@ export function CalendarApp() {
                         focusedDate={focusedDate}
                         events={events}
                         onWeekClick={(weekStart) => {
+                          setTransitionType('zoom-in');
                           setFocusedDate(weekStart);
                           setView("week");
                         }}
