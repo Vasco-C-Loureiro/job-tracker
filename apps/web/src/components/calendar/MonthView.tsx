@@ -1,6 +1,6 @@
 "use client";
 
-import { addMonths, format, subMonths } from "date-fns";
+import { addMonths, subMonths } from "date-fns";
 import type { CalendarFeedEvent } from "@job-tracker/shared";
 import { MonthGrid } from "./MonthGrid";
 
@@ -28,14 +28,10 @@ export function MonthView({
   const next = addMonths(current, 1);
   const SIDE_SCALE = 0.9;
   const SIDE_GRID_HEIGHT = 400; // px, unscaled height of the side month grid before scale
-  const PEEK_NUMBER_INDENT = 60; // 0 = full left, 100 = full right. Adjust to taste.
+  const PEEK_NUMBER_INDENT = 55; // 0 = full left, 100 = full right. Adjust to taste.
 
   return (
     <div className="py-2">
-      <h2 className="text-lg font-semibold text-gray-800 mb-4 pl-1">
-        {format(current, "MMMM yyyy")}
-      </h2>
-
       {/*
         Clip container is the containing block for the absolute side months.
         overflow-hidden clips whatever bleeds past the container edges.
