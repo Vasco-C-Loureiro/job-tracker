@@ -224,8 +224,9 @@ export interface CalendarFeedEvent {
   time: string | null;        // 'HH:mm' | null
   endTime: string | null;
   description: string | null;
-  roundType: InterviewType | null;  // set when source === "interview_round"
-  color: string | null;             // manual event's stored colour token; null for auto-sourced events
+  roundType: InterviewType | null;   // set when source === "interview_round"
+  roundNumber: number | null;        // set when source === "interview_round"
+  color: string | null;              // manual event's stored colour token; null for auto-sourced events
   jobId: string | null;
   roundId: string | null;
   eventId: string | null;
