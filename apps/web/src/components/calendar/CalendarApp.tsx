@@ -235,22 +235,34 @@ export function CalendarApp() {
           </button>
         </div>
         {view === "year-months" && (
-          <span className="text-2xl font-semibold text-gray-800">
+          <button
+            onClick={zoomOut}
+            className="text-2xl font-semibold text-gray-800 hover:text-gray-500 transition-colors cursor-pointer"
+            aria-label="Zoom out to year view"
+          >
             {focusedDate.getFullYear()}
-          </span>
+          </button>
         )}
         {view === "month" && (
-          <span className="text-lg font-semibold text-gray-800">
+          <button
+            onClick={zoomOut}
+            className="text-lg font-semibold text-gray-800 hover:text-gray-500 transition-colors cursor-pointer"
+            aria-label="Zoom out to year-months view"
+          >
             {format(focusedDate, "MMMM yyyy")}
-          </span>
+          </button>
         )}
         {view === "week" && (
-          <span className="text-lg font-semibold text-gray-800">
+          <button
+            onClick={zoomOut}
+            className="text-lg font-semibold text-gray-800 hover:text-gray-500 transition-colors cursor-pointer"
+            aria-label="Zoom out to month view"
+          >
             {(() => {
               const weekStart = startOfWeek(focusedDate, { weekStartsOn: 1 });
               return `Week ${getISOWeek(weekStart)}, ${format(weekStart, "MMMM yyyy")}`;
             })()}
-          </span>
+          </button>
         )}
       </div>
 
