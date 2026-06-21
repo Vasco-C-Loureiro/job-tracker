@@ -235,34 +235,42 @@ export function CalendarApp() {
           </button>
         </div>
         {view === "year-months" && (
-          <button
-            onClick={zoomOut}
-            className="text-2xl font-semibold text-gray-800 hover:text-gray-500 transition-colors cursor-pointer"
-            aria-label="Zoom out to year view"
-          >
-            {focusedDate.getFullYear()}
-          </button>
+          <div className="inline-flex rounded-lg bg-gray-100 p-1">
+            <button
+              onClick={zoomOut}
+              className="px-4 py-1.5 rounded-md text-sm font-medium transition-colors text-gray-500 hover:text-gray-700"
+              aria-label="Zoom out to year view"
+            >
+              <span className="text-lg font-semibold">{focusedDate.getFullYear()}</span>
+            </button>
+          </div>
         )}
         {view === "month" && (
-          <button
-            onClick={zoomOut}
-            className="text-lg font-semibold text-gray-800 hover:text-gray-500 transition-colors cursor-pointer"
-            aria-label="Zoom out to year-months view"
-          >
-            {format(focusedDate, "MMMM yyyy")}
-          </button>
+          <div className="inline-flex rounded-lg bg-gray-100 p-1">
+            <button
+              onClick={zoomOut}
+              className="px-4 py-1.5 rounded-md text-sm font-medium transition-colors text-gray-500 hover:text-gray-700"
+              aria-label="Zoom out to year-months view"
+            >
+              <span className="text-sm font-semibold">{format(focusedDate, "MMMM yyyy")}</span>
+            </button>
+          </div>
         )}
         {view === "week" && (
-          <button
-            onClick={zoomOut}
-            className="text-lg font-semibold text-gray-800 hover:text-gray-500 transition-colors cursor-pointer"
-            aria-label="Zoom out to month view"
-          >
-            {(() => {
-              const weekStart = startOfWeek(focusedDate, { weekStartsOn: 1 });
-              return `Week ${getISOWeek(weekStart)}, ${format(weekStart, "MMMM yyyy")}`;
-            })()}
-          </button>
+          <div className="inline-flex rounded-lg bg-gray-100 p-1">
+            <button
+              onClick={zoomOut}
+              className="px-4 py-1.5 rounded-md text-sm font-medium transition-colors text-gray-500 hover:text-gray-700"
+              aria-label="Zoom out to month view"
+            >
+              <span className="text-sm font-semibold">
+                {(() => {
+                  const weekStart = startOfWeek(focusedDate, { weekStartsOn: 1 });
+                  return `Week ${getISOWeek(weekStart)}, ${format(weekStart, "MMMM yyyy")}`;
+                })()}
+              </span>
+            </button>
+          </div>
         )}
       </div>
 
