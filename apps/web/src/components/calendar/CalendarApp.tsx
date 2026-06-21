@@ -167,7 +167,10 @@ export function CalendarApp() {
         const now = Date.now();
 
         // Reset gesture state if idle long enough
-        if (now - lastSwipeEventTime.current > SWIPE_GESTURE_RESET_MS) {
+        if (
+          now - lastSwipeEventTime.current > SWIPE_GESTURE_RESET_MS ||
+          (swipeNavCount.current > 0 && now - lastSwipeTime.current > SWIPE_GESTURE_RESET_MS)
+        ) {
           swipeNavCount.current = 0;
           horizontalAccumulator.current = 0;
           peakDeltaX.current = 0;
