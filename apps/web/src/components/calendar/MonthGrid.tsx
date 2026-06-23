@@ -57,6 +57,7 @@ interface MonthGridProps {
   onWeekClick?: (weekStart: Date) => void;
   onWeekHover?: (weekStart: Date) => void;
   onDayClick?: (day: Date) => void;
+  onEventClick?: (event: CalendarFeedEvent) => void;
   compact?: boolean;
   showWeekNumbers?: boolean;
   uniformHeight?: number;
@@ -70,6 +71,7 @@ export function MonthGrid({
   onWeekClick,
   onWeekHover,
   onDayClick,
+  onEventClick,
   compact = false,
   showWeekNumbers = true,
   uniformHeight,
@@ -251,7 +253,11 @@ export function MonthGrid({
                   </span>
                   <div className="mt-0.5 flex flex-col gap-0.5 min-w-0 w-full">
                     {visibleNonApplied.map((event) => (
-                      <EventPill key={event.id} event={event} />
+                      <EventPill
+                        key={event.id}
+                        event={event}
+                        onClick={onEventClick ? () => onEventClick(event) : undefined}
+                      />
                     ))}
                     {appliedGroup && (
                       <div

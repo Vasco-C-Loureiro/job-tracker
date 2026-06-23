@@ -12,6 +12,7 @@ import { YearView } from "./YearView";
 import { YearMonthsView } from "./YearMonthsView";
 import { CalendarNavButtons } from "./CalendarNavButtons";
 import { UpcomingList } from "./UpcomingList";
+import { DayDetailPanel } from "./DayDetailPanel";
 
 const SWIPE_THRESHOLD = 50;
 const SWIPE_COOLDOWN_MS = 350;
@@ -58,6 +59,7 @@ export function CalendarApp() {
   >(null);
   const [direction, setDirection] = useState<1 | -1>(1);
   const [transitionType, setTransitionType] = useState<'slide' | 'zoom-in' | 'zoom-out'>('slide');
+  const [selectedDay, setSelectedDay] = useState<Date | null>(null);
   const calendarRef = useRef<HTMLDivElement>(null);
   const lastZoomTime = useRef(0);
   const horizontalAccumulator = useRef(0);
@@ -136,6 +138,11 @@ export function CalendarApp() {
     if (!nextView) return;
     setView(nextView);
   }, [view]);
+
+  const handleEventClick = useCallback((event: CalendarFeedEvent) => {
+    const [y, m, d] = event.date.split("-").map(Number);
+    setSelectedDay(new Date(y, m - 1, d));
+  }, []);
 
   useEffect(() => {
     const el = calendarRef.current;
@@ -316,7 +323,8 @@ export function CalendarApp() {
                           setView("week");
                         }}
                         onWeekHover={(weekStart) => setHoveredPeriod({ type: "week", value: weekStart })}
-                        onDayClick={() => {}}
+                        onDayClick={(day) => setSelectedDay(day)}
+                        onEventClick={handleEventClick}
                         onPrevClick={prev}
                         onNextClick={next}
                       />
@@ -325,7 +333,8 @@ export function CalendarApp() {
                       <WeekView
                         focusedDate={focusedDate}
                         events={events}
-                        onDayClick={() => {}}
+                        onDayClick={(day) => setSelectedDay(day)}
+                        onEventClick={handleEventClick}
                       />
                     )}
                     {view === "year-months" && (
@@ -380,6 +389,16 @@ export function CalendarApp() {
           {view !== "year" && view !== "month" && <CalendarNavButtons onPrev={prev} onNext={next} />}
         </>
       )}
+
+      <AnimatePresence>
+        {selectedDay !== null && (
+          <DayDetailPanel
+            day={selectedDay}
+            events={events}
+            onClose={() => setSelectedDay(null)}
+          />
+        )}
+      </AnimatePresence>
 
     </div>
   );

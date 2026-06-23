@@ -6,6 +6,7 @@ import { INTERVIEW_TYPE_ICONS } from "@/lib/calendar/icons";
 
 interface EventCardProps {
   event: CalendarFeedEvent;
+  onClick?: () => void;
 }
 
 function formatTimeRange(time: string | null, endTime: string | null): string | null {
@@ -15,13 +16,16 @@ function formatTimeRange(time: string | null, endTime: string | null): string | 
   return end ? `${start} – ${end}` : start;
 }
 
-export function EventCard({ event }: EventCardProps) {
+export function EventCard({ event, onClick }: EventCardProps) {
   const token     = resolveColorKey(event);
   const classes   = colorClasses(token, "card");
   const timeRange = formatTimeRange(event.time, event.endTime);
 
   return (
-    <div className={`${classes} rounded-md px-3 py-2 text-sm`}>
+    <div
+      className={`${classes} rounded-md px-3 py-2 text-sm ${onClick ? "cursor-pointer" : ""}`}
+      onClick={onClick ? (e) => { e.stopPropagation(); onClick(); } : undefined}
+    >
       <div className="flex items-center justify-between gap-2">
         <span className="font-medium truncate">{event.title}</span>
         <span className="flex items-center gap-1.5 flex-shrink-0">
