@@ -3,9 +3,9 @@
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { motion } from "framer-motion";
-import { X, Plus } from "lucide-react";
+import { X, Plus, Pencil, Trash2 } from "lucide-react";
 import type { CalendarFeedEvent, InterviewType } from "@job-tracker/shared";
-import { resolveColorKey, colorClasses } from "@/lib/calendar/colors";
+import { resolveColorKey, colorClasses, MANUAL_COLOR_OPTIONS } from "@/lib/calendar/colors";
 import { INTERVIEW_TYPE_ICONS } from "@/lib/calendar/icons";
 import { createSupabaseBrowserClient } from "@/lib/supabase";
 import { ManualEventForm } from "./ManualEventForm";
@@ -45,6 +45,10 @@ const SOURCE_LABELS: Record<string, string> = {
 export function DayDetailPanel({ day, events, onClose, onEventsChanged }: DayDetailPanelProps) {
   const dayStr = format(day, "yyyy-MM-dd");
   const [showForm, setShowForm] = useState(false);
+  const [editingEventId, setEditingEventId] = useState<string | null>(null);
+  const [deletingEventId, setDeletingEventId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const dayEvents = events
     .map((e, i) => ({ e, i }))
@@ -98,6 +102,62 @@ export function DayDetailPanel({ day, events, onClose, onEventsChanged }: DayDet
     setShowForm(false);
   }
 
+  async function handleUpdate(id: string, values: ManualEventFormValues) {
+    const { data: { session } } = await createSupabaseBrowserClient().auth.getSession();
+    const token = session?.access_token;
+    if (!token) throw new Error("Not authenticated");
+
+    const descParts: string[] = [];
+    if (values.label.trim()) descParts.push(`label:${values.label.trim()}`);
+    if (values.description.trim()) descParts.push(values.description.trim());
+    const description = descParts.length > 0 ? descParts.join("\n") : null;
+
+    const res = await fetch(`/api/calendar-events/${id}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        title: values.title.trim(),
+        date: values.date,
+        time: values.time || null,
+        endTime: values.endTime || null,
+        description,
+        color: values.color || null,
+      }),
+    });
+
+    if (!res.ok) throw new Error("Failed to update event");
+
+    onEventsChanged();
+    setEditingEventId(null);
+  }
+
+  async function handleDelete(id: string) {
+    const { data: { session } } = await createSupabaseBrowserClient().auth.getSession();
+    const token = session?.access_token;
+    if (!token) throw new Error("Not authenticated");
+
+    setIsDeleting(true);
+    setDeleteError(null);
+
+    const res = await fetch(`/api/calendar-events/${id}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    setIsDeleting(false);
+
+    if (!res.ok) {
+      setDeleteError("Failed to delete. Please try again.");
+      return;
+    }
+
+    onEventsChanged();
+    setDeletingEventId(null);
+  }
+
   return (
     <>
       {/* Backdrop */}
@@ -122,7 +182,7 @@ export function DayDetailPanel({ day, events, onClose, onEventsChanged }: DayDet
           <div className="flex items-center gap-3">
             {!showForm && (
               <button
-                onClick={() => setShowForm(true)}
+                onClick={() => { setShowForm(true); setEditingEventId(null); setDeletingEventId(null); }}
                 className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 font-medium transition-colors"
               >
                 <Plus size={14} />
@@ -155,13 +215,68 @@ export function DayDetailPanel({ day, events, onClose, onEventsChanged }: DayDet
           ) : (
             <div className="flex flex-col gap-4">
               {dayEvents.map(event => {
-                const token = resolveColorKey(event);
-                const dotClass = colorClasses(token, "dot");
-                const timeRange = formatTimeRange(event.time, event.endTime);
                 const { label: manualLabel, body: manualBody } =
                   event.source === "manual"
                     ? parseManualDescription(event.description)
                     : { label: null, body: event.description };
+
+                // Edit form replaces the row
+                if (editingEventId === event.id) {
+                  return (
+                    <div key={event.id} className="border border-blue-100 rounded-lg p-3 bg-blue-50/30">
+                      <ManualEventForm
+                        initialDate={dayStr}
+                        initialValues={{
+                          title: event.title,
+                          date: event.date,
+                          time: event.time ?? "",
+                          endTime: event.endTime ?? "",
+                          color: event.color ?? MANUAL_COLOR_OPTIONS[0].key,
+                          label: manualLabel ?? "",
+                          description: manualBody ?? "",
+                        }}
+                        onSubmit={(values) => handleUpdate(event.id, values)}
+                        onCancel={() => setEditingEventId(null)}
+                        submitLabel="Save changes"
+                      />
+                    </div>
+                  );
+                }
+
+                // Delete confirmation replaces the row
+                if (deletingEventId === event.id) {
+                  return (
+                    <div key={event.id} className="border border-red-100 rounded-lg p-3 bg-red-50/30">
+                      <p className="text-sm text-gray-700 dark:text-neutral-200 mb-2">
+                        Delete &ldquo;{event.title}&rdquo;?
+                      </p>
+                      {deleteError && (
+                        <p className="text-xs text-red-600 mb-2">{deleteError}</p>
+                      )}
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => void handleDelete(event.id)}
+                          disabled={isDeleting}
+                          className="px-3 py-1.5 bg-red-600 text-white text-sm font-medium rounded hover:bg-red-700 disabled:opacity-50 transition-colors"
+                        >
+                          {isDeleting ? "Deleting…" : "Delete"}
+                        </button>
+                        <button
+                          onClick={() => { setDeletingEventId(null); setDeleteError(null); }}
+                          disabled={isDeleting}
+                          className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800 border border-gray-200 rounded hover:bg-gray-50 disabled:opacity-50 transition-colors"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  );
+                }
+
+                // Normal row
+                const token = resolveColorKey(event);
+                const dotClass = colorClasses(token, "dot");
+                const timeRange = formatTimeRange(event.time, event.endTime);
                 const badgeText =
                   event.source === "manual"
                     ? (manualLabel ?? "Manual")
@@ -169,7 +284,7 @@ export function DayDetailPanel({ day, events, onClose, onEventsChanged }: DayDet
                 const bodyText = event.source === "manual" ? manualBody : event.description;
 
                 return (
-                  <div key={event.id} className="flex gap-3 items-start">
+                  <div key={event.id} className="flex gap-3 items-start group">
                     {/* Colour chip */}
                     <span className={`mt-1 w-3 h-3 rounded-sm flex-shrink-0 ${dotClass}`} />
 
@@ -183,10 +298,29 @@ export function DayDetailPanel({ day, events, onClose, onEventsChanged }: DayDet
                             {event.title}
                           </p>
                         </div>
-                        {/* Source badge */}
-                        <span className="flex-shrink-0 text-xs text-gray-400 bg-gray-100 dark:bg-neutral-800 dark:text-neutral-400 rounded px-1.5 py-0.5">
-                          {badgeText}
-                        </span>
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                          {event.source === "manual" && (
+                            <>
+                              <button
+                                onClick={() => { setEditingEventId(event.id); setDeletingEventId(null); }}
+                                className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-gray-600 p-0.5 rounded"
+                                aria-label="Edit event"
+                              >
+                                <Pencil size={14} />
+                              </button>
+                              <button
+                                onClick={() => { setDeletingEventId(event.id); setEditingEventId(null); setDeleteError(null); }}
+                                className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-red-500 p-0.5 rounded"
+                                aria-label="Delete event"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </>
+                          )}
+                          <span className="text-xs text-gray-400 bg-gray-100 dark:bg-neutral-800 dark:text-neutral-400 rounded px-1.5 py-0.5">
+                            {badgeText}
+                          </span>
+                        </div>
                       </div>
 
                       {/* Round type + number */}
