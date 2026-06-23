@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { addYears, subYears, addMonths, subMonths, addWeeks, subWeeks, format, startOfWeek, getISOWeek, isBefore } from "date-fns";
+import { addYears, subYears, addMonths, subMonths, addWeeks, subWeeks, isBefore } from "date-fns";
 import { AnimatePresence, motion } from "framer-motion";
 import type { CalendarView, CalendarMode, CalendarFeedEvent } from "@job-tracker/shared";
 import { fetchCalendarFeed } from "@/lib/calendar/feed";
@@ -13,7 +13,7 @@ import { YearMonthsView } from "./YearMonthsView";
 import { CalendarNavButtons } from "./CalendarNavButtons";
 import { UpcomingList } from "./UpcomingList";
 import { DayDetailPanel } from "./DayDetailPanel";
-import { CalendarDatePicker } from "./CalendarDatePicker";
+import { CalendarDrumPicker } from "./CalendarDrumPicker";
 
 const SWIPE_THRESHOLD = 50;
 const SWIPE_COOLDOWN_MS = 350;
@@ -150,7 +150,7 @@ export function CalendarApp() {
     setSelectedDay(new Date(y, m - 1, d));
   }, []);
 
-  const handleDatePickerChange = useCallback((targetDate: Date) => {
+  const handleNavigate = useCallback((targetDate: Date) => {
     setTransitionType('slide');
     setDirection(isBefore(targetDate, focusedDate) ? -1 : 1);
     setFocusedDate(targetDate);
@@ -253,51 +253,12 @@ export function CalendarApp() {
             Upcoming
           </button>
         </div>
-        <div className="flex items-center gap-3">
-          <CalendarDatePicker
-            view={view}
-            focusedDate={focusedDate}
-            onChange={handleDatePickerChange}
-          />
-          {view === "year-months" && (
-            <div className="inline-flex rounded-lg bg-gray-100 p-1">
-              <button
-                onClick={zoomOut}
-                className="px-4 py-1.5 rounded-md text-sm font-medium transition-colors bg-white shadow-sm text-gray-900 hover:bg-gray-50"
-                aria-label="Zoom out to year view"
-              >
-                <span className="text-lg font-semibold">{focusedDate.getFullYear()}</span>
-              </button>
-            </div>
-          )}
-          {view === "month" && (
-            <div className="inline-flex rounded-lg bg-gray-100 p-1">
-              <button
-                onClick={zoomOut}
-                className="px-4 py-1.5 rounded-md text-sm font-medium transition-colors bg-white shadow-sm text-gray-900 hover:bg-gray-50"
-                aria-label="Zoom out to year-months view"
-              >
-                <span className="text-sm font-semibold">{format(focusedDate, "MMMM yyyy")}</span>
-              </button>
-            </div>
-          )}
-          {view === "week" && (
-            <div className="inline-flex rounded-lg bg-gray-100 p-1">
-              <button
-                onClick={zoomOut}
-                className="px-4 py-1.5 rounded-md text-sm font-medium transition-colors bg-white shadow-sm text-gray-900 hover:bg-gray-50"
-                aria-label="Zoom out to month view"
-              >
-                <span className="text-sm font-semibold">
-                  {(() => {
-                    const weekStart = startOfWeek(focusedDate, { weekStartsOn: 1 });
-                    return `Week ${getISOWeek(weekStart)}, ${format(weekStart, "MMMM yyyy")}`;
-                  })()}
-                </span>
-              </button>
-            </div>
-          )}
-        </div>
+        <CalendarDrumPicker
+          view={view}
+          focusedDate={focusedDate}
+          onNavigate={handleNavigate}
+          onZoomOut={zoomOut}
+        />
       </div>
 
       {/* Main view area */}
