@@ -6,16 +6,18 @@ import { INTERVIEW_TYPE_ICONS } from "@/lib/calendar/icons";
 
 interface EventPillProps {
   event: CalendarFeedEvent;
+  onClick?: () => void;
 }
 
-export function EventPill({ event }: EventPillProps) {
+export function EventPill({ event, onClick }: EventPillProps) {
   const token   = resolveColorKey(event);
   const classes = colorClasses(token, "pill");
 
   return (
     <div
-      className={`${classes} text-xs font-medium rounded px-1.5 py-0.5 leading-tight cursor-default select-none min-w-0 max-w-full flex items-center gap-1`}
+      className={`${classes} text-xs font-medium rounded px-1.5 py-0.5 leading-tight select-none min-w-0 max-w-full flex items-center gap-1 ${onClick ? "cursor-pointer" : "cursor-default"}`}
       title={event.title}
+      onClick={onClick ? (e) => { e.stopPropagation(); onClick(); } : undefined}
     >
       <span className="truncate min-w-0 flex-1">
         {event.time && (

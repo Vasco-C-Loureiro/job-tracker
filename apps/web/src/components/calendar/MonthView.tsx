@@ -10,6 +10,7 @@ interface MonthViewProps {
   onWeekClick?: (weekStart: Date) => void;
   onWeekHover?: (weekStart: Date) => void;
   onDayClick?: (day: Date) => void;
+  onEventClick?: (event: CalendarFeedEvent) => void;
   onPrevClick?: () => void;
   onNextClick?: () => void;
 }
@@ -20,6 +21,7 @@ export function MonthView({
   onWeekClick,
   onWeekHover,
   onDayClick,
+  onEventClick,
   onPrevClick,
   onNextClick,
 }: MonthViewProps) {
@@ -46,6 +48,7 @@ export function MonthView({
             onWeekClick={onWeekClick}
             onWeekHover={onWeekHover}
             onDayClick={onDayClick}
+            onEventClick={onEventClick}
           />
         </div>
 

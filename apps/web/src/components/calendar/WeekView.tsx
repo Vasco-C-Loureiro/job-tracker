@@ -10,9 +10,10 @@ interface WeekViewProps {
   focusedDate: Date;
   events: CalendarFeedEvent[];
   onDayClick?: (day: Date) => void;
+  onEventClick?: (event: CalendarFeedEvent) => void;
 }
 
-export function WeekView({ focusedDate, events, onDayClick }: WeekViewProps) {
+export function WeekView({ focusedDate, events, onDayClick, onEventClick }: WeekViewProps) {
   const weekStart = startOfWeek(focusedDate, { weekStartsOn: 1 });
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
   const today = new Date();
@@ -47,7 +48,11 @@ export function WeekView({ focusedDate, events, onDayClick }: WeekViewProps) {
             ) : (
               <div className="flex flex-col gap-1.5">
                 {nonApplied.map(event => (
-                  <EventCard key={event.id} event={event} />
+                  <EventCard
+                    key={event.id}
+                    event={event}
+                    onClick={onEventClick ? () => onEventClick(event) : undefined}
+                  />
                 ))}
                 {appliedGroup && (
                   <div
