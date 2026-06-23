@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { motion } from "framer-motion";
-import { X, Plus, Pencil, Trash2 } from "lucide-react";
+import { X, Plus, Pencil, Trash2, ArrowRight } from "lucide-react";
+import Link from "next/link";
 import type { CalendarFeedEvent, InterviewType } from "@job-tracker/shared";
 import { resolveColorKey, colorClasses, MANUAL_COLOR_OPTIONS } from "@/lib/calendar/colors";
 import { INTERVIEW_TYPE_ICONS } from "@/lib/calendar/icons";
@@ -41,6 +42,92 @@ const SOURCE_LABELS: Record<string, string> = {
   applied:         "Applied",
   manual:          "Manual",
 };
+
+// ─── Inline date/time editor for interview round events ───────────────────────
+
+interface InterviewDateTimeEditorProps {
+  event: CalendarFeedEvent;
+  onEventsChanged: () => void;
+}
+
+function InterviewDateTimeEditor({ event, onEventsChanged }: InterviewDateTimeEditorProps) {
+  const [dateVal, setDateVal] = useState(event.date);
+  const [timeVal, setTimeVal] = useState(event.time?.slice(0, 5) ?? "");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const originalTime = event.time?.slice(0, 5) ?? "";
+
+  async function handleBlur() {
+    if (dateVal === event.date && timeVal === originalTime) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const { data: { session } } = await createSupabaseBrowserClient().auth.getSession();
+      const token = session?.access_token;
+      if (!token) throw new Error("Not authenticated");
+      const res = await fetch(`/api/interviews/${event.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          roundNumber: event.roundNumber,
+          type: event.roundType,
+          date: dateVal,
+          time: timeVal || null,
+        }),
+      });
+      if (!res.ok) throw new Error("Failed to save");
+      onEventsChanged();
+    } catch {
+      setError("Failed to save. Try again.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const ic = "border border-gray-200 dark:border-neutral-700 rounded px-2 py-1 text-xs text-gray-800 dark:text-neutral-100 dark:bg-neutral-800 focus:outline-none focus:border-blue-400 disabled:opacity-50 bg-white";
+  const lc = "block text-xs text-gray-400 mb-0.5";
+
+  return (
+    <div className="mt-2 pt-2 border-t border-gray-100 dark:border-neutral-800">
+      <div className="flex gap-3 flex-wrap">
+        <div>
+          <label className={lc}>Date</label>
+          <input
+            type="date"
+            className={ic}
+            value={dateVal}
+            onChange={(e) => setDateVal(e.target.value)}
+            onBlur={() => void handleBlur()}
+            disabled={saving}
+          />
+        </div>
+        <div>
+          <label className={lc}>Time (optional)</label>
+          <input
+            type="time"
+            className={ic}
+            value={timeVal}
+            onChange={(e) => setTimeVal(e.target.value)}
+            onBlur={() => void handleBlur()}
+            disabled={saving}
+          />
+        </div>
+      </div>
+      {saving && <p className="text-xs text-gray-400 mt-1.5">Saving…</p>}
+      {error && <p className="text-xs text-red-500 mt-1.5">{error}</p>}
+      <Link
+        href={`/interviews?highlight=${event.jobId}`}
+        className="mt-2 inline-flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 dark:hover:text-neutral-300 transition-colors"
+      >
+        Go to interview
+        <ArrowRight size={12} />
+      </Link>
+    </div>
+  );
+}
+
+// ─── Main panel ───────────────────────────────────────────────────────────────
 
 export function DayDetailPanel({ day, events, onClose, onEventsChanged }: DayDetailPanelProps) {
   const dayStr = format(day, "yyyy-MM-dd");
@@ -341,6 +428,15 @@ export function DayDetailPanel({ day, events, onClose, onEventsChanged }: DayDet
                       {/* Description / notes body */}
                       {bodyText && (
                         <p className="text-xs text-gray-400 mt-1 line-clamp-3">{bodyText}</p>
+                      )}
+
+                      {/* Inline date/time editor for interview rounds */}
+                      {event.source === "interview_round" && (
+                        <InterviewDateTimeEditor
+                          key={`${event.date}-${event.time ?? ""}`}
+                          event={event}
+                          onEventsChanged={onEventsChanged}
+                        />
                       )}
                     </div>
                   </div>
