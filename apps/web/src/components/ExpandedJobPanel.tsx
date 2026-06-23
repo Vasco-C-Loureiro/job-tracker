@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import type {
   JobApplicationListItem,
   ApplicationStatus,
@@ -8,7 +8,9 @@ import type {
   JobType,
   InterviewType,
 } from "@job-tracker/shared";
-import { INTERVIEW_TYPE_OPTIONS } from "@/lib/calendar/icons";
+import type { LucideIcon } from "lucide-react";
+import { INTERVIEW_TYPE_ICONS, INTERVIEW_TYPE_OPTIONS } from "@/lib/calendar/icons";
+import { interviewTypeLabel } from "@/lib/calendar/labels";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -73,6 +75,18 @@ function RoundCard({
   const fc =
     "w-full px-2 py-1 border border-gray-300 rounded text-xs text-gray-900 focus:outline-none focus:border-blue-400 bg-white";
 
+  const [typeOpen, setTypeOpen] = useState(false);
+  const typeRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!typeOpen) return;
+    function handleDown(e: MouseEvent) {
+      if (!typeRef.current?.contains(e.target as Node)) setTypeOpen(false);
+    }
+    document.addEventListener("mousedown", handleDown);
+    return () => document.removeEventListener("mousedown", handleDown);
+  }, [typeOpen]);
+
   return (
     <div className="flex-shrink-0 w-48 bg-white border border-gray-200 rounded-lg p-3 shadow-sm relative">
       <button
@@ -84,15 +98,43 @@ function RoundCard({
       </button>
       <p className="text-xs font-semibold text-gray-900 mb-2">Round {round.roundNumber}</p>
       <div className="flex flex-col gap-2">
-        <select
-          className={fc}
-          value={round.type}
-          onChange={(e) => onPatch({ type: e.target.value as InterviewType })}
-        >
-          {INTERVIEW_TYPE_OPTIONS.map((t) => (
-            <option key={t.value} value={t.value}>{t.label}</option>
-          ))}
-        </select>
+        <div ref={typeRef} className="relative">
+          <button
+            type="button"
+            className={`${fc} flex items-center gap-1.5 text-left`}
+            onClick={() => setTypeOpen((o) => !o)}
+          >
+            {(() => {
+              const Icon: LucideIcon = INTERVIEW_TYPE_ICONS[round.type] ?? INTERVIEW_TYPE_ICONS.other;
+              return <Icon size={12} className="flex-shrink-0 opacity-60" />;
+            })()}
+            <span className="flex-1 truncate">{interviewTypeLabel(round.type)}</span>
+            <svg className="w-3 h-3 opacity-40" viewBox="0 0 12 12" fill="none">
+              <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+          </button>
+          {typeOpen && (
+            <div className="absolute z-50 top-full left-0 mt-1 w-full bg-white border border-gray-200 rounded shadow-lg max-h-48 overflow-y-auto">
+              {INTERVIEW_TYPE_OPTIONS.map(({ value, label }) => {
+                const Icon: LucideIcon = INTERVIEW_TYPE_ICONS[value];
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    className={`w-full flex items-center gap-2 px-2 py-1.5 text-xs text-left hover:bg-gray-50 ${round.type === value ? "text-blue-600 font-medium" : "text-gray-900"}`}
+                    onClick={() => {
+                      onPatch({ type: value });
+                      setTypeOpen(false);
+                    }}
+                  >
+                    <Icon size={12} className="flex-shrink-0 opacity-60" />
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
         <input
           type="date"
           className={fc}
