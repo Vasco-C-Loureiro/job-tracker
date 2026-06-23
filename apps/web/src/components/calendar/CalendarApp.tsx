@@ -70,22 +70,27 @@ export function CalendarApp() {
   const zoomAccumulator = useRef(0);
   const zoomDirection = useRef<0 | 1 | -1>(0);
 
+  const refreshEvents = useCallback(async () => {
+    const data = await fetchCalendarFeed();
+    setEvents(data);
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
-    const load = async () => {
+    async function initialLoad() {
       const data = await fetchCalendarFeed();
       if (!cancelled) {
         setEvents(data);
         setLoading(false);
       }
-    };
-    void load();
-    window.addEventListener("focus", load);
+    }
+    void initialLoad();
+    window.addEventListener("focus", refreshEvents);
     return () => {
       cancelled = true;
-      window.removeEventListener("focus", load);
+      window.removeEventListener("focus", refreshEvents);
     };
-  }, []);
+  }, [refreshEvents]);
 
   const prev = useCallback(() => {
     setTransitionType('slide');
@@ -396,6 +401,7 @@ export function CalendarApp() {
             day={selectedDay}
             events={events}
             onClose={() => setSelectedDay(null)}
+            onEventsChanged={refreshEvents}
           />
         )}
       </AnimatePresence>
