@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { format } from "date-fns";
-import { ArrowRight } from "lucide-react";
-import type { CalendarFeedEvent } from "@job-tracker/shared";
+import { ArrowRight, type LucideIcon } from "lucide-react";
+import type { CalendarFeedEvent, InterviewType } from "@job-tracker/shared";
+import { INTERVIEW_TYPE_ICONS } from "@/lib/calendar/icons";
 import { resolveColorKey, colorClasses } from "@/lib/calendar/colors";
 import { ymd, sortDayEvents } from "@/lib/calendar/grid";
 import { groupAppliedForDay } from "@/lib/calendar/grouping";
@@ -79,6 +80,10 @@ export function UpcomingList({ events }: UpcomingListProps) {
                     <span className={`mt-1.5 w-2 h-2 rounded-full flex-shrink-0 ${dotClass}`} />
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
+                        {event.source === "interview_round" && event.roundType && (() => {
+                          const Icon: LucideIcon = INTERVIEW_TYPE_ICONS[event.roundType as InterviewType] ?? INTERVIEW_TYPE_ICONS.other;
+                          return <Icon size={13} className="flex-shrink-0 text-gray-400" />;
+                        })()}
                         <span className="text-sm font-medium text-gray-800 truncate">
                           {event.title}
                         </span>
