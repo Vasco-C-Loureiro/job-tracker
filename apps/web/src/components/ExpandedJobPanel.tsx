@@ -8,6 +8,7 @@ import type {
   JobType,
   InterviewType,
 } from "@job-tracker/shared";
+import { INTERVIEW_TYPE_OPTIONS } from "@/lib/calendar/icons";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -47,19 +48,6 @@ export type Props = {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const INTERVIEW_TYPES: { value: InterviewType; label: string }[] = [
-  { value: "screening",           label: "Screening" },
-  { value: "technical-phone",     label: "Technical Phone" },
-  { value: "take-home",           label: "Take-home" },
-  { value: "coding",              label: "Coding" },
-  { value: "pair-programming",    label: "Pair Programming" },
-  { value: "technical-deep-dive", label: "Technical Deep-dive" },
-  { value: "system-design",       label: "System Design" },
-  { value: "behavioral",          label: "Behavioral" },
-  { value: "panel",               label: "Panel" },
-  { value: "final",               label: "Final" },
-  { value: "other",               label: "Other" },
-];
 
 const STATUS_OPTIONS: { value: ApplicationStatus; label: string }[] = [
   { value: "saved",     label: "Saved"     },
@@ -101,7 +89,7 @@ function RoundCard({
           value={round.type}
           onChange={(e) => onPatch({ type: e.target.value as InterviewType })}
         >
-          {INTERVIEW_TYPES.map((t) => (
+          {INTERVIEW_TYPE_OPTIONS.map((t) => (
             <option key={t.value} value={t.value}>{t.label}</option>
           ))}
         </select>
