@@ -4,7 +4,10 @@ import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
-import { INTERVIEW_TYPE_OPTIONS } from "@/lib/calendar/icons";
+import type { LucideIcon } from "lucide-react";
+import { INTERVIEW_TYPE_ICONS, INTERVIEW_TYPE_OPTIONS } from "@/lib/calendar/icons";
+import { interviewTypeLabel } from "@/lib/calendar/labels";
+import type { InterviewType } from "@job-tracker/shared";
 import type { JobApplicationRow, InterviewRoundRow } from "./InterviewKanban";
 
 type RoundState = {
@@ -118,6 +121,8 @@ export default function InterviewCard({
   const [pillOpen, setPillOpen] = useState(false);
   const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number } | null>(null);
   const [editingRoundIdx, setEditingRoundIdx] = useState<number | null>(null);
+  const [typeDropdownOpen, setTypeDropdownOpen] = useState(false);
+  const typeDropdownRef = useRef<HTMLDivElement>(null);
   const [localRounds, setLocalRounds] = useState<RoundState[]>(() =>
     initialRounds.map(rowToRoundState).sort((a, b) => a.roundNumber - b.roundNumber),
   );
@@ -213,6 +218,18 @@ export default function InterviewCard({
     window.addEventListener("scroll", handleScroll, true);
     return () => window.removeEventListener("scroll", handleScroll, true);
   }, [roundPillOpen]);
+
+  // Close type dropdown on outside click
+  useEffect(() => {
+    if (!typeDropdownOpen) return;
+    function handleDown(e: MouseEvent) {
+      if (!typeDropdownRef.current?.contains(e.target as Node)) {
+        setTypeDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleDown);
+    return () => document.removeEventListener("mousedown", handleDown);
+  }, [typeDropdownOpen]);
 
   async function patchJob(payload: Record<string, unknown>): Promise<boolean> {
     const token = await getToken();
@@ -669,19 +686,43 @@ export default function InterviewCard({
                         </div>
                         <div className="grid grid-cols-2 gap-3">
                           {/* Row 1: Type + Date */}
-                          <div>
+                          <div ref={typeDropdownRef} className="relative">
                             <label className={labelCls}>Type</label>
-                            <select
-                              className={inputCls}
-                              value={round.type}
-                              onChange={(e) => updateLocalRound(idx, "type", e.target.value)}
+                            <button
+                              type="button"
+                              className={`${inputCls} flex items-center gap-1.5 text-left`}
+                              onClick={() => setTypeDropdownOpen((o) => !o)}
                             >
-                              {INTERVIEW_TYPE_OPTIONS.map(({ value, label }) => (
-                                <option key={value} className="text-gray-900 bg-white" value={value}>
-                                  {label}
-                                </option>
-                              ))}
-                            </select>
+                              {(() => {
+                                const Icon: LucideIcon = INTERVIEW_TYPE_ICONS[round.type as InterviewType] ?? INTERVIEW_TYPE_ICONS.other;
+                                return <Icon size={13} className="flex-shrink-0 opacity-60" />;
+                              })()}
+                              <span className="flex-1 truncate">{interviewTypeLabel(round.type as InterviewType)}</span>
+                              <svg className="w-3 h-3 opacity-50" viewBox="0 0 12 12" fill="none">
+                                <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                              </svg>
+                            </button>
+                            {typeDropdownOpen && (
+                              <div className="absolute z-50 top-full left-0 mt-1 w-full bg-white border border-gray-200 rounded shadow-lg max-h-48 overflow-y-auto">
+                                {INTERVIEW_TYPE_OPTIONS.map(({ value, label }) => {
+                                  const Icon: LucideIcon = INTERVIEW_TYPE_ICONS[value];
+                                  return (
+                                    <button
+                                      key={value}
+                                      type="button"
+                                      className={`w-full flex items-center gap-2 px-2.5 py-1.5 text-sm text-left hover:bg-gray-50 ${round.type === value ? "text-blue-600 font-medium" : "text-gray-900"}`}
+                                      onClick={() => {
+                                        updateLocalRound(idx, "type", value);
+                                        setTypeDropdownOpen(false);
+                                      }}
+                                    >
+                                      <Icon size={13} className="flex-shrink-0 opacity-60" />
+                                      {label}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            )}
                           </div>
                           <div>
                             <label className={labelCls}>Date</label>
@@ -768,7 +809,13 @@ export default function InterviewCard({
                       >
                         <span className="font-medium">Round {round.roundNumber}</span>
                         <span className="text-gray-300">·</span>
-                        <span>{round.type}</span>
+                        <span className="flex items-center gap-1">
+                          {(() => {
+                            const Icon: LucideIcon = INTERVIEW_TYPE_ICONS[round.type as InterviewType] ?? INTERVIEW_TYPE_ICONS.other;
+                            return <Icon size={12} className="flex-shrink-0 opacity-70" />;
+                          })()}
+                          {interviewTypeLabel(round.type as InterviewType)}
+                        </span>
                         {round.date && (
                           <>
                             <span className="text-gray-300">·</span>
