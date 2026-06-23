@@ -1,17 +1,21 @@
 "use client";
 
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { motion } from "framer-motion";
-import { X } from "lucide-react";
+import { X, Plus } from "lucide-react";
 import type { CalendarFeedEvent, InterviewType } from "@job-tracker/shared";
 import { resolveColorKey, colorClasses } from "@/lib/calendar/colors";
 import { INTERVIEW_TYPE_ICONS } from "@/lib/calendar/icons";
+import { createSupabaseBrowserClient } from "@/lib/supabase";
+import { ManualEventForm } from "./ManualEventForm";
+import type { ManualEventFormValues } from "./ManualEventForm";
 
 interface DayDetailPanelProps {
   day: Date;
   events: CalendarFeedEvent[];
   onClose: () => void;
+  onEventsChanged: () => void;
 }
 
 function formatTimeRange(time: string | null, endTime: string | null): string | null {
@@ -21,6 +25,16 @@ function formatTimeRange(time: string | null, endTime: string | null): string | 
   return end ? `${start} – ${end}` : start;
 }
 
+function parseManualDescription(description: string | null): { label: string | null; body: string | null } {
+  if (!description) return { label: null, body: null };
+  if (description.startsWith("label:")) {
+    const nl = description.indexOf("\n");
+    if (nl === -1) return { label: description.slice(6), body: null };
+    return { label: description.slice(6, nl), body: description.slice(nl + 1).trim() || null };
+  }
+  return { label: null, body: description };
+}
+
 const SOURCE_LABELS: Record<string, string> = {
   interview_round: "Interview",
   deadline:        "Deadline",
@@ -28,8 +42,9 @@ const SOURCE_LABELS: Record<string, string> = {
   manual:          "Manual",
 };
 
-export function DayDetailPanel({ day, events, onClose }: DayDetailPanelProps) {
+export function DayDetailPanel({ day, events, onClose, onEventsChanged }: DayDetailPanelProps) {
   const dayStr = format(day, "yyyy-MM-dd");
+  const [showForm, setShowForm] = useState(false);
 
   const dayEvents = events
     .map((e, i) => ({ e, i }))
@@ -50,6 +65,38 @@ export function DayDetailPanel({ day, events, onClose }: DayDetailPanelProps) {
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [onClose]);
+
+  async function handleCreate(values: ManualEventFormValues) {
+    const { data: { session } } = await createSupabaseBrowserClient().auth.getSession();
+    const token = session?.access_token;
+    if (!token) throw new Error("Not authenticated");
+
+    const descParts: string[] = [];
+    if (values.label.trim()) descParts.push(`label:${values.label.trim()}`);
+    if (values.description.trim()) descParts.push(values.description.trim());
+    const description = descParts.length > 0 ? descParts.join("\n") : null;
+
+    const res = await fetch("/api/calendar-events", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        title: values.title.trim(),
+        date: values.date,
+        time: values.time || null,
+        endTime: values.endTime || null,
+        description,
+        color: values.color || null,
+      }),
+    });
+
+    if (!res.ok) throw new Error("Failed to create event");
+
+    onEventsChanged();
+    setShowForm(false);
+  }
 
   return (
     <>
@@ -72,18 +119,36 @@ export function DayDetailPanel({ day, events, onClose }: DayDetailPanelProps) {
           <h2 className="text-sm font-semibold text-gray-800 dark:text-neutral-100">
             {format(day, "EEEE d MMMM yyyy")}
           </h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 dark:text-neutral-500 dark:hover:text-neutral-300 transition-colors"
-            aria-label="Close"
-          >
-            <X size={18} />
-          </button>
+          <div className="flex items-center gap-3">
+            {!showForm && (
+              <button
+                onClick={() => setShowForm(true)}
+                className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 font-medium transition-colors"
+              >
+                <Plus size={14} />
+                New event
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600 dark:text-neutral-500 dark:hover:text-neutral-300 transition-colors"
+              aria-label="Close"
+            >
+              <X size={18} />
+            </button>
+          </div>
         </div>
 
         {/* Body */}
         <div className="flex-1 overflow-y-auto px-5 py-4">
-          {dayEvents.length === 0 ? (
+          {showForm ? (
+            <ManualEventForm
+              initialDate={dayStr}
+              onSubmit={handleCreate}
+              onCancel={() => setShowForm(false)}
+              submitLabel="Create event"
+            />
+          ) : dayEvents.length === 0 ? (
             <div className="flex items-center justify-center h-full">
               <p className="text-sm text-gray-400">No events for this day.</p>
             </div>
@@ -93,6 +158,15 @@ export function DayDetailPanel({ day, events, onClose }: DayDetailPanelProps) {
                 const token = resolveColorKey(event);
                 const dotClass = colorClasses(token, "dot");
                 const timeRange = formatTimeRange(event.time, event.endTime);
+                const { label: manualLabel, body: manualBody } =
+                  event.source === "manual"
+                    ? parseManualDescription(event.description)
+                    : { label: null, body: event.description };
+                const badgeText =
+                  event.source === "manual"
+                    ? (manualLabel ?? "Manual")
+                    : (SOURCE_LABELS[event.source] ?? event.source);
+                const bodyText = event.source === "manual" ? manualBody : event.description;
 
                 return (
                   <div key={event.id} className="flex gap-3 items-start">
@@ -111,7 +185,7 @@ export function DayDetailPanel({ day, events, onClose }: DayDetailPanelProps) {
                         </div>
                         {/* Source badge */}
                         <span className="flex-shrink-0 text-xs text-gray-400 bg-gray-100 dark:bg-neutral-800 dark:text-neutral-400 rounded px-1.5 py-0.5">
-                          {SOURCE_LABELS[event.source] ?? event.source}
+                          {badgeText}
                         </span>
                       </div>
 
@@ -130,11 +204,9 @@ export function DayDetailPanel({ day, events, onClose }: DayDetailPanelProps) {
                         </div>
                       )}
 
-                      {/* Description */}
-                      {event.description && (
-                        <p className="text-xs text-gray-400 mt-1 line-clamp-3">
-                          {event.description}
-                        </p>
+                      {/* Description / notes body */}
+                      {bodyText && (
+                        <p className="text-xs text-gray-400 mt-1 line-clamp-3">{bodyText}</p>
                       )}
                     </div>
                   </div>
