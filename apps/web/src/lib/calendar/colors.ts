@@ -1,15 +1,14 @@
 import type { CalendarFeedEvent, InterviewType } from "@job-tracker/shared";
 
 // ── Hue assignments ──────────────────────────────────────────────────────────
-// All round types share the blue hue; round number drives the saturation ramp.
-// "other" → neutral slate (fixed, no ramp).
+// All round types (including "other") share the blue hue; round number drives the saturation ramp.
 // deadline → rose | applied → emerald | manual → pink/purple/lime/yellow/red
 // ────────────────────────────────────────────────────────────────────────────
 
 type ColorVariant = "pill" | "dot" | "card";
 
-// All typed InterviewTypes map to "blue" (excluding "other" — handled separately).
-const ROUND_HUES: Partial<Record<InterviewType, string>> = {
+// All typed InterviewTypes map to "blue"; round number drives the saturation ramp.
+const ROUND_HUES: Record<InterviewType, string> = {
   "screening":           "blue",
   "technical-phone":     "blue",
   "take-home":           "blue",
@@ -20,6 +19,7 @@ const ROUND_HUES: Partial<Record<InterviewType, string>> = {
   "behavioral":          "blue",
   "panel":               "blue",
   "final":               "blue",
+  "other":               "blue",
 };
 
 // 4-step ramp — must be literal strings so Tailwind JIT keeps them.
@@ -87,9 +87,8 @@ const ROUND_STEP_CLASSES: Record<string, Record<number, Record<ColorVariant, str
   },
 };
 
-// Flat tokens for round:other, deadline, applied, and manual:* events.
+// Flat tokens for deadline, applied, and manual:* events.
 const TOKEN_CLASSES: Record<string, Record<ColorVariant, string>> = {
-  "round:other":   { pill: "bg-slate-100 text-slate-700",    dot: "bg-slate-500",    card: "bg-slate-50 border border-slate-200 text-slate-800"    },
   "deadline":      { pill: "bg-rose-100 text-rose-700",      dot: "bg-rose-500",     card: "bg-rose-50 border border-rose-200 text-rose-800"        },
   "applied":       { pill: "bg-emerald-100 text-emerald-700",dot: "bg-emerald-500",  card: "bg-emerald-50 border border-emerald-200 text-emerald-800"},
   "manual:pink":   { pill: "bg-pink-100 text-pink-700",      dot: "bg-pink-500",     card: "bg-pink-50 border border-pink-200 text-pink-800"        },
@@ -107,7 +106,7 @@ const FALLBACK_CLASSES: Record<ColorVariant, string> = {
 
 function getRoundClasses(type: InterviewType, step: number, variant: ColorVariant): string {
   const hue = ROUND_HUES[type];
-  if (!hue) return TOKEN_CLASSES["round:other"][variant];
+  if (!hue) return FALLBACK_CLASSES[variant];
   return ROUND_STEP_CLASSES[hue]?.[step]?.[variant] ?? FALLBACK_CLASSES[variant];
 }
 
@@ -131,9 +130,6 @@ export function resolveColorKey(event: CalendarFeedEvent): string {
 
 /** Get Tailwind classes for a given token and render variant. */
 export function colorClasses(tokenKey: string, variant: ColorVariant): string {
-  if (tokenKey === "round:other") {
-    return TOKEN_CLASSES["round:other"][variant];
-  }
   if (tokenKey.startsWith("round:")) {
     const parts = tokenKey.split(":");
     const type = parts[1] as InterviewType;
