@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
+import { INTERVIEW_TYPE_OPTIONS } from "@/lib/calendar/icons";
 import type { JobApplicationRow, InterviewRoundRow } from "./InterviewKanban";
 
 type RoundState = {
@@ -51,19 +52,6 @@ function getNextAvailableRoundNumber(
   return maxRound;
 }
 
-const INTERVIEW_TYPES: { value: string; label: string }[] = [
-  { value: "screening",           label: "Screening"           },
-  { value: "technical-phone",     label: "Technical phone"     },
-  { value: "take-home",           label: "Take-home"           },
-  { value: "coding",              label: "Coding"              },
-  { value: "pair-programming",    label: "Pair programming"    },
-  { value: "technical-deep-dive", label: "Technical deep-dive" },
-  { value: "system-design",       label: "System design"       },
-  { value: "behavioral",          label: "Behavioral"          },
-  { value: "panel",               label: "Panel"               },
-  { value: "final",               label: "Final"               },
-  { value: "other",               label: "Other"               },
-];
 
 const STATUS_BADGE: Record<string, string> = {
   saved:      "bg-gray-100 text-gray-600",
@@ -688,7 +676,7 @@ export default function InterviewCard({
                               value={round.type}
                               onChange={(e) => updateLocalRound(idx, "type", e.target.value)}
                             >
-                              {INTERVIEW_TYPES.map(({ value, label }) => (
+                              {INTERVIEW_TYPE_OPTIONS.map(({ value, label }) => (
                                 <option key={value} className="text-gray-900 bg-white" value={value}>
                                   {label}
                                 </option>

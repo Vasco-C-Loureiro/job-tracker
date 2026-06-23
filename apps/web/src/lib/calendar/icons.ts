@@ -4,6 +4,7 @@ import {
   Network, MessageCircle, UsersRound, Flag, Circle,
   type LucideIcon,
 } from "lucide-react";
+import { interviewTypeLabel } from "@/lib/calendar/labels";
 
 export const INTERVIEW_TYPE_ICONS: Record<InterviewType, LucideIcon> = {
   "screening":           Phone,
@@ -18,3 +19,12 @@ export const INTERVIEW_TYPE_ICONS: Record<InterviewType, LucideIcon> = {
   "final":               Flag,
   "other":               Circle,
 };
+
+export const INTERVIEW_TYPE_OPTIONS: { value: InterviewType; label: string }[] = [
+  "screening", "technical-phone", "take-home", "coding",
+  "pair-programming", "technical-deep-dive", "system-design",
+  "behavioral", "panel", "final", "other",
+].map((value) => ({
+  value: value as InterviewType,
+  label: interviewTypeLabel(value as InterviewType),
+}));
