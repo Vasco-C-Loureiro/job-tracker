@@ -140,7 +140,7 @@ function DrumColumn({ items, selectedIndex, loop, onSnap, onDragUpdate }: DrumCo
                 color:    slotTextColor(absDist),
                 fontWeight: dist === 0 ? 600 : 400,
                 position: "relative",
-                zIndex:   20,
+                zIndex:   30,
               }}
             >
               {label}

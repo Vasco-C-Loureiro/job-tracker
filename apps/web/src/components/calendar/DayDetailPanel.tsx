@@ -377,30 +377,24 @@ export function DayDetailPanel({ day, events, onClose, onEventsChanged, defaultC
 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0">
+                        <div className="min-w-0 flex-1">
                           {/* Time shown above title only for non-interview events */}
                           {event.source !== "interview_round" && timeRange && (
                             <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-0.5">{timeRange}</p>
                           )}
-                          <p className="text-sm font-medium text-neutral-900">
+                          <p className="text-sm font-medium text-neutral-900 truncate">
                             {event.title}
                           </p>
                         </div>
-                        {event.source === "applied" ? (
-                          <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                            <span className="text-xs text-neutral-400 bg-neutral-100 dark:text-neutral-500 dark:bg-transparent rounded px-1.5 py-0.5">
-                              Applied
-                            </span>
-                            {event.interestLevel && (
-                              <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${INTEREST_LEVEL_CLASSES[event.interestLevel]}`}>
-                                {event.interestLevel === "very-high"
-                                  ? "Very high"
-                                  : event.interestLevel.charAt(0).toUpperCase() +
-                                    event.interestLevel.slice(1)}
-                              </span>
-                            )}
-                          </div>
-                        ) : (
+                        {event.source === "applied" && event.interestLevel && (
+                          <span className={`flex-shrink-0 inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${INTEREST_LEVEL_CLASSES[event.interestLevel]}`}>
+                            {event.interestLevel === "very-high"
+                              ? "Very high"
+                              : event.interestLevel.charAt(0).toUpperCase() +
+                                event.interestLevel.slice(1)}
+                          </span>
+                        )}
+                        {event.source !== "applied" && (
                           <div className="flex items-center gap-1 flex-shrink-0">
                             {/* Manual event: edit + delete */}
                             {event.source === "manual" && (
@@ -454,7 +448,7 @@ export function DayDetailPanel({ day, events, onClose, onEventsChanged, defaultC
 
                       {/* Applied: job title */}
                       {event.source === "applied" && event.jobTitle && (
-                        <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">{event.jobTitle}</p>
+                        <p className="text-xs text-neutral-500 mt-0.5 truncate">{event.jobTitle}</p>
                       )}
 
                       {/* Applied: salary on its own line */}
