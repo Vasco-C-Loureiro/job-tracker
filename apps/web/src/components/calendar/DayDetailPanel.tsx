@@ -98,7 +98,7 @@ function InterviewDateTimeEditor({ event, onEventsChanged }: InterviewDateTimeEd
     }
   }
 
-  const ic = "border border-neutral-200 dark:border-neutral-600 rounded px-2 py-1 text-xs text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-blue-400 disabled:opacity-50 bg-white";
+  const ic = "border border-neutral-200 dark:border-neutral-600 rounded px-2 py-1 text-xs text-neutral-900 focus:outline-none focus:border-blue-400 disabled:opacity-50 bg-white";
   const lc = "block text-xs text-neutral-500 dark:text-neutral-400 mb-0.5";
 
   return (
@@ -147,7 +147,7 @@ function JobDateEditor({ event, field, label, onEventsChanged }: JobDateEditorPr
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const ic = "border border-neutral-200 dark:border-neutral-600 rounded px-2 py-1 text-xs text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-blue-400 disabled:opacity-50 bg-white";
+  const ic = "border border-neutral-200 dark:border-neutral-600 rounded px-2 py-1 text-xs text-neutral-900 focus:outline-none focus:border-blue-400 disabled:opacity-50 bg-white";
 
   async function handleBlur() {
     if (dateVal === event.date) return;
