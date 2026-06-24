@@ -20,6 +20,8 @@ type PreferencesRow = {
   auto_delete_notifications_days: number | null;
   // U25 columns
   show_applied_dates: boolean | null;
+  // U26 columns
+  default_currency: string | null;
 };
 
 const DEFAULTS = {
@@ -50,6 +52,7 @@ function buildResponse(row: PreferencesRow) {
     autoDeleteNotificationsEnabled: row.auto_delete_notifications_enabled ?? false,
     autoDeleteNotificationsDays: row.auto_delete_notifications_days ?? 7,
     showAppliedDates: row.show_applied_dates ?? false,
+    defaultCurrency: row.default_currency ?? "GBP",
   };
 }
 
@@ -59,7 +62,7 @@ const SELECT_COLS =
   "auto_archive_inactive_enabled, auto_archive_inactive_days, " +
   "auto_archive_rejected_enabled, auto_archive_rejected_days, " +
   "auto_delete_notifications_enabled, auto_delete_notifications_days, " +
-  "show_applied_dates";
+  "show_applied_dates, default_currency";
 
 function getToken(request: NextRequest): string | null {
   const h = request.headers.get("Authorization");
@@ -234,6 +237,15 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: "showAppliedDates must be a boolean" }, { status: 400 });
     }
     upsert.show_applied_dates = b.showAppliedDates;
+  }
+
+  // ── U26 fields (camelCase in body → snake_case in DB) ──────────────────────
+
+  if ("defaultCurrency" in b) {
+    if (typeof b.defaultCurrency !== "string") {
+      return NextResponse.json({ error: "defaultCurrency must be a string" }, { status: 400 });
+    }
+    upsert.default_currency = b.defaultCurrency;
   }
 
   const { data, error } = await supabase
