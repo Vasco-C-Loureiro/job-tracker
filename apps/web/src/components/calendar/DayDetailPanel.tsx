@@ -386,14 +386,6 @@ export function DayDetailPanel({ day, events, onClose, onEventsChanged, defaultC
                             {event.title}
                           </p>
                         </div>
-                        {event.source === "applied" && event.interestLevel && (
-                          <span className={`flex-shrink-0 inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${INTEREST_LEVEL_CLASSES[event.interestLevel]}`}>
-                            {event.interestLevel === "very-high"
-                              ? "Very high"
-                              : event.interestLevel.charAt(0).toUpperCase() +
-                                event.interestLevel.slice(1)}
-                          </span>
-                        )}
                         {event.source !== "applied" && (
                           <div className="flex items-center gap-1 flex-shrink-0">
                             {/* Manual event: edit + delete */}
@@ -446,9 +438,21 @@ export function DayDetailPanel({ day, events, onClose, onEventsChanged, defaultC
                         </div>
                       )}
 
-                      {/* Applied: job title */}
-                      {event.source === "applied" && event.jobTitle && (
-                        <p className="text-xs text-neutral-500 mt-0.5 truncate">{event.jobTitle}</p>
+                      {/* Applied: job title + interest pill */}
+                      {event.source === "applied" && (
+                        <div className="flex items-center justify-between gap-2 mt-0.5">
+                          <p className="text-xs text-neutral-500 truncate min-w-0 flex-1">
+                            {event.jobTitle ?? ""}
+                          </p>
+                          {event.interestLevel && (
+                            <span className={`flex-shrink-0 inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${INTEREST_LEVEL_CLASSES[event.interestLevel]}`}>
+                              {event.interestLevel === "very-high"
+                                ? "Very high"
+                                : event.interestLevel.charAt(0).toUpperCase() +
+                                  event.interestLevel.slice(1)}
+                            </span>
+                          )}
+                        </div>
                       )}
 
                       {/* Applied: salary on its own line */}
