@@ -23,12 +23,30 @@ const ARCHIVE_DEFAULTS: ArchivePrefs = {
   autoDeleteNotificationsDays: 7,
 };
 
+const CURRENCY_OPTIONS = [
+  { value: "GBP", label: "£ – British Pound" },
+  { value: "USD", label: "$ – US Dollar" },
+  { value: "EUR", label: "€ – Euro" },
+  { value: "CAD", label: "C$ – Canadian Dollar" },
+  { value: "AUD", label: "A$ – Australian Dollar" },
+  { value: "CHF", label: "Fr – Swiss Franc" },
+  { value: "SEK", label: "kr – Swedish Krona" },
+  { value: "NOK", label: "kr – Norwegian Krone" },
+  { value: "DKK", label: "kr – Danish Krone" },
+  { value: "JPY", label: "¥ – Japanese Yen" },
+  { value: "INR", label: "₹ – Indian Rupee" },
+  { value: "SGD", label: "S$ – Singapore Dollar" },
+  { value: "BRL", label: "R$ – Brazilian Real" },
+  { value: "MXN", label: "$ – Mexican Peso" },
+];
+
 export default function SettingsPage() {
   const [prefs, setPrefs] = useState<ArchivePrefs>(ARCHIVE_DEFAULTS);
   const [localColumns, setLocalColumns] = useState<Set<string>>(() => new Set(DEFAULT_VISIBLE_COLUMNS));
   const [defaultResume, setDefaultResume] = useState(true);
   const [defaultCoverLetter, setDefaultCoverLetter] = useState(false);
   const [showAppliedDates, setShowAppliedDates] = useState(false);
+  const [defaultCurrency, setDefaultCurrency] = useState("GBP");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
@@ -48,6 +66,7 @@ export default function SettingsPage() {
           default_resume_submitted?: boolean;
           default_cover_letter_submitted?: boolean;
           showAppliedDates?: boolean;
+          defaultCurrency?: string;
         };
         setPrefs({
           autoArchiveInactiveEnabled: data.autoArchiveInactiveEnabled ?? ARCHIVE_DEFAULTS.autoArchiveInactiveEnabled,
@@ -61,6 +80,7 @@ export default function SettingsPage() {
         if (typeof data.default_resume_submitted === "boolean") setDefaultResume(data.default_resume_submitted);
         if (typeof data.default_cover_letter_submitted === "boolean") setDefaultCoverLetter(data.default_cover_letter_submitted);
         if (typeof data.showAppliedDates === "boolean") setShowAppliedDates(data.showAppliedDates);
+        if (typeof data.defaultCurrency === "string") setDefaultCurrency(data.defaultCurrency);
       }
       setLoading(false);
     }
@@ -89,6 +109,7 @@ export default function SettingsPage() {
         default_resume_submitted: defaultResume,
         default_cover_letter_submitted: defaultCoverLetter,
         showAppliedDates,
+        defaultCurrency,
       }),
     });
     if (res.ok) {
@@ -262,6 +283,24 @@ export default function SettingsPage() {
                 </label>
                 <p className="ml-7 text-xs text-gray-500">
                   Display dates when you applied to jobs as events on the calendar.
+                </p>
+              </div>
+
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-900 mb-1">
+                  Default salary currency
+                </label>
+                <select
+                  value={defaultCurrency}
+                  onChange={(e) => { setDefaultCurrency(e.target.value); setMessage(null); }}
+                  className="border border-gray-300 rounded px-3 py-1.5 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  {CURRENCY_OPTIONS.map(opt => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+                <p className="mt-1 text-xs text-gray-500">
+                  Used when salary listings do not include a currency symbol.
                 </p>
               </div>
             </section>

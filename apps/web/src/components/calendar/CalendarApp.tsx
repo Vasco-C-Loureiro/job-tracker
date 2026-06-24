@@ -5,6 +5,8 @@ import { addYears, subYears, addMonths, subMonths, addWeeks, subWeeks, isBefore 
 import { AnimatePresence, motion } from "framer-motion";
 import type { CalendarView, CalendarMode, CalendarFeedEvent } from "@job-tracker/shared";
 import { fetchCalendarFeed } from "@/lib/calendar/feed";
+import { createSupabaseBrowserClient } from "@/lib/supabase";
+import { currencySymbol } from "@/lib/formatSalary";
 import { ZOOM_IN, ZOOM_OUT } from "@/lib/calendar/zoom";
 import { MonthView } from "./MonthView";
 import { WeekView } from "./WeekView";
@@ -52,6 +54,7 @@ export function CalendarApp() {
   const [mode, setMode] = useState<CalendarMode>("calendar");
   const [events, setEvents] = useState<CalendarFeedEvent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [defaultCurrency, setDefaultCurrency] = useState("£");
   const [hoveredPeriod, setHoveredPeriod] = useState<
     | { type: "month"; value: number }
     | { type: "week"; value: Date }
@@ -79,10 +82,25 @@ export function CalendarApp() {
   useEffect(() => {
     let cancelled = false;
     async function initialLoad() {
-      const data = await fetchCalendarFeed();
+      const prefsPromise = (async () => {
+        try {
+          const { data: { session } } = await createSupabaseBrowserClient().auth.getSession();
+          if (!session?.access_token) return null;
+          const res = await fetch("/api/preferences", {
+            headers: { Authorization: `Bearer ${session.access_token}` },
+          });
+          return res.ok ? (await res.json() as { defaultCurrency?: string }) : null;
+        } catch {
+          return null;
+        }
+      })();
+      const [feedData, prefs] = await Promise.all([fetchCalendarFeed(), prefsPromise]);
       if (!cancelled) {
-        setEvents(data);
+        setEvents(feedData);
         setLoading(false);
+        if (prefs && typeof prefs.defaultCurrency === "string") {
+          setDefaultCurrency(currencySymbol(prefs.defaultCurrency));
+        }
       }
     }
     void initialLoad();
@@ -228,7 +246,7 @@ export function CalendarApp() {
     <div ref={calendarRef} className="mx-6 my-6">
 
       {/* Mode toggle */}
-      <div className="mb-4 flex items-center gap-3">
+      <div className="mb-4 flex items-center gap-4">
         <div className="inline-flex rounded-lg bg-gray-100 p-1">
           <button
             onClick={() => setMode("calendar")}
@@ -377,6 +395,7 @@ export function CalendarApp() {
             events={events}
             onClose={() => setSelectedDay(null)}
             onEventsChanged={refreshEvents}
+            defaultCurrency={defaultCurrency}
           />
         )}
       </AnimatePresence>

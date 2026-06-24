@@ -9,6 +9,7 @@ import type { CalendarFeedEvent, InterviewType } from "@job-tracker/shared";
 import { resolveColorKey, colorClasses, MANUAL_COLOR_OPTIONS } from "@/lib/calendar/colors";
 import { INTERVIEW_TYPE_ICONS } from "@/lib/calendar/icons";
 import { createSupabaseBrowserClient } from "@/lib/supabase";
+import { formatSalary } from "@/lib/formatSalary";
 import { ManualEventForm } from "./ManualEventForm";
 import type { ManualEventFormValues } from "./ManualEventForm";
 
@@ -17,6 +18,7 @@ interface DayDetailPanelProps {
   events: CalendarFeedEvent[];
   onClose: () => void;
   onEventsChanged: () => void;
+  defaultCurrency: string;
 }
 
 function formatTimeRange(time: string | null, endTime: string | null): string | null {
@@ -100,7 +102,7 @@ function InterviewDateTimeEditor({ event, onEventsChanged }: InterviewDateTimeEd
   const lc = "block text-xs text-neutral-500 dark:text-neutral-400 mb-0.5";
 
   return (
-    <div className="mt-2 pt-2 border-t border-neutral-200 dark:border-neutral-700">
+    <div className="mt-2 pt-2 border-t border-neutral-200 dark:border-neutral-600">
       <div className="flex gap-3 flex-wrap">
         <div>
           <label className={lc}>Date</label>
@@ -133,7 +135,7 @@ function InterviewDateTimeEditor({ event, onEventsChanged }: InterviewDateTimeEd
 
 // ─── Main panel ───────────────────────────────────────────────────────────────
 
-export function DayDetailPanel({ day, events, onClose, onEventsChanged }: DayDetailPanelProps) {
+export function DayDetailPanel({ day, events, onClose, onEventsChanged, defaultCurrency }: DayDetailPanelProps) {
   const dayStr = format(day, "yyyy-MM-dd");
   const [showForm, setShowForm] = useState(false);
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
@@ -246,20 +248,20 @@ export function DayDetailPanel({ day, events, onClose, onEventsChanged }: DayDet
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/20 z-40"
+        className="fixed inset-0 bg-black/10 z-40"
         onClick={onClose}
       />
 
       {/* Panel */}
       <motion.div
-        className="fixed right-0 top-0 h-full w-96 bg-neutral-100 dark:bg-neutral-800 shadow-xl z-50 flex flex-col"
+        className="fixed right-0 top-0 h-full w-96 bg-white dark:bg-neutral-700 shadow-xl z-50 flex flex-col"
         initial={{ x: "100%" }}
         animate={{ x: 0 }}
         exit={{ x: "100%" }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-200 dark:border-neutral-700">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-200 dark:border-neutral-600">
           <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
             {format(day, "EEEE d MMMM yyyy")}
           </h2>
@@ -414,43 +416,45 @@ export function DayDetailPanel({ day, events, onClose, onEventsChanged }: DayDet
                               {isExpanded ? <X size={14} /> : <Pencil size={14} />}
                             </button>
                           )}
-                          {/* Applied: interest level pill */}
-                          {event.source === "applied" && event.interestLevel && (
-                            <span className={`${INTEREST_LEVEL_CLASSES[event.interestLevel]} rounded-full px-2 py-0.5 text-xs font-medium`}>
-                              {INTEREST_LEVEL_LABELS[event.interestLevel]}
-                            </span>
-                          )}
-                          <span className="text-xs text-neutral-500 bg-neutral-200 dark:bg-neutral-700 dark:text-neutral-400 rounded px-1.5 py-0.5">
+                          <span className="text-xs text-neutral-500 bg-neutral-100 dark:bg-neutral-600 dark:text-neutral-400 rounded px-1.5 py-0.5">
                             {badgeText}
                           </span>
                         </div>
                       </div>
 
-                      {/* Round type + number */}
+                      {/* Round type + number + time inline */}
                       {event.source === "interview_round" && event.roundType && (
                         <div className="flex items-center gap-1.5 mt-1">
                           {(() => {
                             const Icon = INTERVIEW_TYPE_ICONS[event.roundType as InterviewType] ?? INTERVIEW_TYPE_ICONS.other;
                             return <Icon size={14} className="flex-shrink-0 text-neutral-400" />;
                           })()}
-                          {event.roundNumber !== null && (
-                            <span className="text-xs text-neutral-500 dark:text-neutral-400">
-                              Round {event.roundNumber}
-                            </span>
-                          )}
+                          <span className="text-xs text-neutral-500 dark:text-neutral-400">
+                            {event.roundNumber !== null ? `Round ${event.roundNumber}` : ""}
+                            {!isExpanded && timeRange ? ` · ${timeRange}` : ""}
+                          </span>
                         </div>
                       )}
 
-                      {/* Collapsed time display for interview rounds */}
-                      {event.source === "interview_round" && !isExpanded && timeRange && (
-                        <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">{timeRange}</p>
+                      {/* Applied: job title */}
+                      {event.source === "applied" && event.jobTitle && (
+                        <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">{event.jobTitle}</p>
                       )}
 
-                      {/* Applied: job title + salary */}
-                      {event.source === "applied" && event.jobTitle && (
+                      {/* Applied: salary on its own line */}
+                      {event.source === "applied" && event.salary && (
                         <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
-                          {event.jobTitle}{event.salary ? ` · ${event.salary}` : ""}
+                          {formatSalary(event.salary, defaultCurrency)}
                         </p>
+                      )}
+
+                      {/* Applied: interest level pill below content, left-aligned */}
+                      {event.source === "applied" && event.interestLevel && (
+                        <div className="mt-1">
+                          <span className={`${INTEREST_LEVEL_CLASSES[event.interestLevel]} rounded-full px-2 py-0.5 text-xs font-medium`}>
+                            {INTEREST_LEVEL_LABELS[event.interestLevel]}
+                          </span>
+                        </div>
                       )}
 
                       {/* Description / notes body */}
