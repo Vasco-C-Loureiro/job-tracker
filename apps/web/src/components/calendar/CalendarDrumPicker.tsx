@@ -134,13 +134,18 @@ function DrumColumn({ items, selectedIndex, loop, onSnap, onDragUpdate }: DrumCo
           return (
             <div
               key={globalIdx}
-              className="flex items-center justify-center text-sm select-none"
+              className="select-none"
               style={{
-                height:   SLOT_H,
-                color:    slotTextColor(absDist),
-                fontWeight: dist === 0 ? 600 : 400,
-                position: "relative",
-                zIndex:   30,
+                display:         "flex",
+                alignItems:      "center",
+                justifyContent:  "center",
+                height:          SLOT_H,
+                color:           slotTextColor(absDist),
+                fontWeight:      dist === 0 ? 600 : 400,
+                borderRadius:    dist === 0 ? 6 : 0,
+                backgroundColor: dist === 0 ? "#e5e7eb" : "transparent",
+                position:        "relative",
+                zIndex:          30,
               }}
             >
               {label}
@@ -275,12 +280,6 @@ export function CalendarDrumPicker({
               className="bg-neutral-50 border border-neutral-200 rounded-xl shadow-xl overflow-hidden flex"
               style={{ width: showMonth ? 220 : 110 }}
             >
-              {/* Centre-slot highlight bar */}
-              <div
-                className="pointer-events-none absolute left-0 right-0 bg-neutral-200 rounded-md z-10"
-                style={{ top: ABOVE * SLOT_H, height: SLOT_H }}
-              />
-
               {showMonth && (
                 <>
                   <DrumColumn
