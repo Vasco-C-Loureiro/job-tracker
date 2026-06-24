@@ -91,7 +91,7 @@ export async function GET(req: NextRequest) {
   try {
     const { data, error } = await supabase
       .from("job_applications")
-      .select("id, company, title, closing_date, interest_level")
+      .select("id, company, title, closing_date, interest_level, salary_raw")
       .eq("user_id", user.id)
       .not("closing_date", "is", null)
       .eq("is_archived", false);
@@ -116,7 +116,7 @@ export async function GET(req: NextRequest) {
           eventId: null,
           company: row.company,
           jobTitle: (row.title as string) ?? null,
-          salary: null,
+          salary: (row.salary_raw as string) ?? null,
           interestLevel: (row.interest_level as CalendarFeedEvent["interestLevel"]) ?? null,
         });
       }

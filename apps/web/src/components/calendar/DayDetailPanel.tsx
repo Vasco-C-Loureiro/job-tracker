@@ -467,6 +467,38 @@ export function DayDetailPanel({ day, events, onClose, onEventsChanged, defaultC
                         </p>
                       )}
 
+                      {/* Deadline: job title + interest pill + salary + link */}
+                      {event.source === "deadline" && (
+                        <>
+                          <div className="flex items-center justify-between gap-2 mt-0.5">
+                            <p className="text-xs text-neutral-500 truncate min-w-0 flex-1">
+                              {event.jobTitle ?? ""}
+                            </p>
+                            {event.interestLevel && (
+                              <span className={`flex-shrink-0 inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${INTEREST_LEVEL_CLASSES[event.interestLevel]}`}>
+                                {event.interestLevel === "very-high"
+                                  ? "Very high"
+                                  : event.interestLevel.charAt(0).toUpperCase() +
+                                    event.interestLevel.slice(1)}
+                              </span>
+                            )}
+                          </div>
+                          {event.salary && (
+                            <p className="text-xs text-neutral-500 mt-0.5">
+                              {formatSalary(event.salary, defaultCurrency)}
+                            </p>
+                          )}
+                          {event.jobId && (
+                            <Link
+                              href={`/?highlight=${event.jobId}`}
+                              className="mt-2 inline-flex items-center gap-1 text-xs text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors"
+                            >
+                              Go to application <ArrowRight size={12} />
+                            </Link>
+                          )}
+                        </>
+                      )}
+
                       {/* Description / notes body */}
                       {bodyText && (
                         <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1 line-clamp-3">{bodyText}</p>
