@@ -386,6 +386,11 @@ export function DayDetailPanel({ day, events, onClose, onEventsChanged, defaultC
                             {event.title}
                           </p>
                         </div>
+                        {event.source === "applied" && (
+                          <span className="flex-shrink-0 text-xs text-neutral-400 bg-neutral-100 rounded px-1.5 py-0.5">
+                            Applied
+                          </span>
+                        )}
                         {event.source !== "applied" && (
                           <div className="flex items-center gap-1 flex-shrink-0">
                             {/* Manual event: edit + delete */}
