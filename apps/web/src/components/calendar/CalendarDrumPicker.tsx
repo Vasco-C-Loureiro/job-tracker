@@ -19,11 +19,12 @@ function yForIdx(i: number) {
   return (ABOVE - i) * SLOT_H;
 }
 
-function slotOpacity(absDist: number): number {
-  if (absDist === 0) return 1;
-  if (absDist === 1) return 0.6;
-  if (absDist === 2) return 0.3;
-  return 0.15;
+function slotTextColor(absDist: number): string {
+  if (absDist === 0) return "#111111";
+  if (absDist === 1) return "#555555";
+  if (absDist === 2) return "#888888";
+  if (absDist === 3) return "#aaaaaa";
+  return "#cccccc";
 }
 
 // ── DrumColumn ────────────────────────────────────────────────────────────────
@@ -133,11 +134,13 @@ function DrumColumn({ items, selectedIndex, loop, onSnap, onDragUpdate }: DrumCo
           return (
             <div
               key={globalIdx}
-              className="flex items-center justify-center text-sm text-neutral-800 select-none"
+              className="flex items-center justify-center text-sm select-none"
               style={{
-                height: SLOT_H,
-                opacity:    slotOpacity(absDist),
+                height:   SLOT_H,
+                color:    slotTextColor(absDist),
                 fontWeight: dist === 0 ? 600 : 400,
+                position: "relative",
+                zIndex:   20,
               }}
             >
               {label}

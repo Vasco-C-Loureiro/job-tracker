@@ -46,10 +46,10 @@ const SOURCE_LABELS: Record<string, string> = {
 };
 
 const INTEREST_LEVEL_CLASSES: Record<string, string> = {
-  "low":       "bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300",
-  "medium":    "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/50 dark:text-yellow-300",
-  "high":      "bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300",
-  "very-high": "bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300",
+  "low":       "bg-red-100 text-red-700 dark:bg-red-800 dark:text-red-100",
+  "medium":    "bg-yellow-100 text-yellow-700 dark:bg-yellow-700 dark:text-yellow-100",
+  "high":      "bg-green-100 text-green-700 dark:bg-green-700 dark:text-green-100",
+  "very-high": "bg-blue-100 text-blue-700 dark:bg-blue-700 dark:text-blue-100",
 };
 
 const INTEREST_LEVEL_LABELS: Record<string, string> = {
@@ -262,7 +262,7 @@ export function DayDetailPanel({ day, events, onClose, onEventsChanged, defaultC
       >
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-200 dark:border-neutral-600">
-          <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+          <h2 className="text-sm font-semibold text-neutral-900">
             {format(day, "EEEE d MMMM yyyy")}
           </h2>
           <div className="flex items-center gap-3">
@@ -386,40 +386,56 @@ export function DayDetailPanel({ day, events, onClose, onEventsChanged, defaultC
                             {event.title}
                           </p>
                         </div>
-                        <div className="flex items-center gap-1 flex-shrink-0">
-                          {/* Manual event: edit + delete */}
-                          {event.source === "manual" && (
-                            <>
+                        {event.source === "applied" ? (
+                          <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                            <span className="text-xs text-neutral-400 bg-neutral-100 dark:text-neutral-500 dark:bg-transparent rounded px-1.5 py-0.5">
+                              Applied
+                            </span>
+                            {event.interestLevel && (
+                              <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${INTEREST_LEVEL_CLASSES[event.interestLevel]}`}>
+                                {event.interestLevel === "very-high"
+                                  ? "Very high"
+                                  : event.interestLevel.charAt(0).toUpperCase() +
+                                    event.interestLevel.slice(1)}
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1 flex-shrink-0">
+                            {/* Manual event: edit + delete */}
+                            {event.source === "manual" && (
+                              <>
+                                <button
+                                  onClick={() => { setEditingEventId(event.id); setDeletingEventId(null); }}
+                                  className="opacity-0 group-hover:opacity-100 transition-opacity text-neutral-400 hover:text-neutral-600 p-0.5 rounded"
+                                  aria-label="Edit event"
+                                >
+                                  <Pencil size={14} />
+                                </button>
+                                <button
+                                  onClick={() => { setDeletingEventId(event.id); setEditingEventId(null); setDeleteError(null); }}
+                                  className="opacity-0 group-hover:opacity-100 transition-opacity text-neutral-400 hover:text-red-500 p-0.5 rounded"
+                                  aria-label="Delete event"
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              </>
+                            )}
+                            {/* Interview round: toggle date/time editor */}
+                            {event.source === "interview_round" && (
                               <button
-                                onClick={() => { setEditingEventId(event.id); setDeletingEventId(null); }}
-                                className="opacity-0 group-hover:opacity-100 transition-opacity text-neutral-400 hover:text-neutral-600 p-0.5 rounded"
-                                aria-label="Edit event"
+                                onClick={() => setExpandedRoundIds(prev => ({ ...prev, [event.id]: !prev[event.id] }))}
+                                className="opacity-0 group-hover:opacity-100 transition-opacity text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 p-0.5 rounded"
+                                aria-label={isExpanded ? "Collapse" : "Edit date/time"}
                               >
-                                <Pencil size={14} />
+                                {isExpanded ? <X size={14} /> : <Pencil size={14} />}
                               </button>
-                              <button
-                                onClick={() => { setDeletingEventId(event.id); setEditingEventId(null); setDeleteError(null); }}
-                                className="opacity-0 group-hover:opacity-100 transition-opacity text-neutral-400 hover:text-red-500 p-0.5 rounded"
-                                aria-label="Delete event"
-                              >
-                                <Trash2 size={14} />
-                              </button>
-                            </>
-                          )}
-                          {/* Interview round: toggle date/time editor */}
-                          {event.source === "interview_round" && (
-                            <button
-                              onClick={() => setExpandedRoundIds(prev => ({ ...prev, [event.id]: !prev[event.id] }))}
-                              className="opacity-0 group-hover:opacity-100 transition-opacity text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 p-0.5 rounded"
-                              aria-label={isExpanded ? "Collapse" : "Edit date/time"}
-                            >
-                              {isExpanded ? <X size={14} /> : <Pencil size={14} />}
-                            </button>
-                          )}
-                          <span className="text-xs text-neutral-500 bg-neutral-100 rounded px-1.5 py-0.5">
-                            {badgeText}
-                          </span>
-                        </div>
+                            )}
+                            <span className="text-xs text-neutral-500 bg-neutral-100 rounded px-1.5 py-0.5">
+                              {badgeText}
+                            </span>
+                          </div>
+                        )}
                       </div>
 
                       {/* Round type + number + time inline */}
@@ -446,16 +462,6 @@ export function DayDetailPanel({ day, events, onClose, onEventsChanged, defaultC
                         <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
                           {formatSalary(event.salary, defaultCurrency)}
                         </p>
-                      )}
-
-                      {/* Applied: interest level pill */}
-                      {event.source === "applied" && event.interestLevel && (
-                        <span className={`mt-1.5 self-start inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${INTEREST_LEVEL_CLASSES[event.interestLevel]}`}>
-                          {event.interestLevel === "very-high"
-                            ? "Very high"
-                            : event.interestLevel.charAt(0).toUpperCase() +
-                              event.interestLevel.slice(1)}
-                        </span>
                       )}
 
                       {/* Description / notes body */}
