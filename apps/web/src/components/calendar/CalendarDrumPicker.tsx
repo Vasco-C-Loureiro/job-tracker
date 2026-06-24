@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence, useMotionValue, animate } from "framer-motion";
-import { ChevronLeft, ChevronDown } from "lucide-react";
+import { CornerUpLeft, ChevronDown } from "lucide-react";
 import { startOfWeek, getMonth, getYear } from "date-fns";
 import type { CalendarView } from "@job-tracker/shared";
 
@@ -133,7 +133,7 @@ function DrumColumn({ items, selectedIndex, loop, onSnap, onDragUpdate }: DrumCo
           return (
             <div
               key={globalIdx}
-              className="flex items-center justify-center text-sm text-gray-900 dark:text-neutral-100 select-none"
+              className="flex items-center justify-center text-sm text-neutral-900 dark:text-neutral-100 select-none"
               style={{
                 height: SLOT_H,
                 opacity:    slotOpacity(absDist),
@@ -238,64 +238,66 @@ export function CalendarDrumPicker({
 
   return (
     <div ref={containerRef} className="relative flex items-center gap-1.5">
-      {/* Zoom-out arrow */}
+      {/* Zoom-out */}
       <button
         onClick={onZoomOut}
-        className="flex items-center justify-center w-7 h-7 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-neutral-800 dark:hover:text-neutral-300 transition-colors"
+        className="flex items-center justify-center w-7 h-7 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-neutral-700 dark:hover:text-neutral-300 transition-colors"
         aria-label="Zoom out"
       >
-        <ChevronLeft size={16} />
+        <CornerUpLeft size={16} />
       </button>
 
-      {/* Pill trigger */}
+      {/* Pill trigger — matches Calendar/Upcoming toggle active style */}
       <button
         onClick={() => setIsOpen(v => !v)}
-        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-white shadow-sm text-gray-900 dark:bg-neutral-800 dark:text-neutral-100 text-sm font-medium border border-gray-200 dark:border-neutral-700 hover:bg-gray-50 dark:hover:bg-neutral-700 transition-colors"
+        className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-md bg-white shadow-sm text-gray-900 dark:bg-neutral-700 dark:text-neutral-100 text-sm font-medium hover:bg-gray-50 dark:hover:bg-neutral-600 transition-colors"
         aria-expanded={isOpen}
         aria-label="Open date picker"
       >
         {pillLabel}
-        <ChevronDown size={14} className="text-gray-400 dark:text-neutral-500" />
+        <ChevronDown size={14} className="text-gray-400 dark:text-neutral-400" />
       </button>
 
-      {/* Drum panel — drops down from pill */}
+      {/* Drum panel — centred under the pill */}
       <AnimatePresence>
         {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -6, scale: 0.97 }}
-            animate={{ opacity: 1, y: 0,  scale: 1    }}
-            exit={{    opacity: 0, y: -6, scale: 0.97 }}
-            transition={{ duration: 0.15, ease: "easeOut" }}
-            className="absolute top-full mt-1.5 left-0 bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 rounded-xl shadow-xl overflow-hidden z-50 flex"
-            style={{ width: showMonth ? 220 : 110 }}
-          >
-            {/* Centre-slot highlight bar */}
-            <div
-              className="pointer-events-none absolute left-0 right-0 bg-gray-100 dark:bg-neutral-800 rounded-md z-10"
-              style={{ top: ABOVE * SLOT_H, height: SLOT_H }}
-            />
+          <div className="absolute top-full mt-1.5 left-1/2 -translate-x-1/2 z-50">
+            <motion.div
+              initial={{ opacity: 0, y: -6, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0,  scale: 1    }}
+              exit={{    opacity: 0, y: -6, scale: 0.97 }}
+              transition={{ duration: 0.15, ease: "easeOut" }}
+              className="bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl shadow-xl overflow-hidden flex"
+              style={{ width: showMonth ? 220 : 110 }}
+            >
+              {/* Centre-slot highlight bar */}
+              <div
+                className="pointer-events-none absolute left-0 right-0 bg-neutral-200 dark:bg-neutral-700 rounded-md z-10"
+                style={{ top: ABOVE * SLOT_H, height: SLOT_H }}
+              />
 
-            {showMonth && (
-              <>
-                <DrumColumn
-                  items={MONTH_LABELS}
-                  selectedIndex={currentMonth}
-                  loop={true}
-                  onSnap={handleMonthSnap}
-                  onDragUpdate={(idx) => setDisplayMonth(idx)}
-                />
-                <div className="w-px bg-gray-200 dark:bg-neutral-700 flex-shrink-0 z-20" />
-              </>
-            )}
+              {showMonth && (
+                <>
+                  <DrumColumn
+                    items={MONTH_LABELS}
+                    selectedIndex={currentMonth}
+                    loop={true}
+                    onSnap={handleMonthSnap}
+                    onDragUpdate={(idx) => setDisplayMonth(idx)}
+                  />
+                  <div className="w-px bg-neutral-200 dark:bg-neutral-700 flex-shrink-0 z-20" />
+                </>
+              )}
 
-            <DrumColumn
-              items={yearItems}
-              selectedIndex={yearSelectedIdx}
-              loop={false}
-              onSnap={handleYearSnap}
-              onDragUpdate={(idx) => setDisplayYear(initBaseYear.current + idx)}
-            />
-          </motion.div>
+              <DrumColumn
+                items={yearItems}
+                selectedIndex={yearSelectedIdx}
+                loop={false}
+                onSnap={handleYearSnap}
+                onDragUpdate={(idx) => setDisplayYear(initBaseYear.current + idx)}
+              />
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
     </div>

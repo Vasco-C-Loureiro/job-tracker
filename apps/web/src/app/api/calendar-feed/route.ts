@@ -42,6 +42,8 @@ export async function GET(req: NextRequest) {
           eventId: row.id,
           company: null,
           jobTitle: null,
+          salary: null,
+          interestLevel: null,
         });
       }
     }
@@ -78,6 +80,8 @@ export async function GET(req: NextRequest) {
           eventId: null,
           company: app.company,
           jobTitle: app.title,
+          salary: null,
+          interestLevel: null,
         });
       }
     }
@@ -96,7 +100,7 @@ export async function GET(req: NextRequest) {
     if (prefs?.show_applied_dates) {
       const { data, error } = await supabase
         .from("job_applications")
-        .select("id, company, applied_at")
+        .select("id, company, title, applied_at, salary_raw, interest_level")
         .eq("user_id", user.id)
         .not("applied_at", "is", null)
         .eq("is_archived", false);
@@ -121,7 +125,9 @@ export async function GET(req: NextRequest) {
             roundId: null,
             eventId: null,
             company: row.company,
-            jobTitle: null,
+            jobTitle: (row.title as string) ?? null,
+            salary: (row.salary_raw as string) ?? null,
+            interestLevel: (row.interest_level as CalendarFeedEvent["interestLevel"]) ?? null,
           });
         }
       }
