@@ -133,7 +133,7 @@ function DrumColumn({ items, selectedIndex, loop, onSnap, onDragUpdate }: DrumCo
           return (
             <div
               key={globalIdx}
-              className="flex items-center justify-center text-sm text-neutral-900 dark:text-neutral-100 select-none"
+              className="flex items-center justify-center text-sm text-neutral-800 select-none"
               style={{
                 height: SLOT_H,
                 opacity:    slotOpacity(absDist),
@@ -237,25 +237,25 @@ export function CalendarDrumPicker({
   }
 
   return (
-    <div ref={containerRef} className="relative flex items-center gap-1.5">
+    <div ref={containerRef} className="relative flex items-center gap-2">
+      {/* Zoom-out */}
+      <button
+        onClick={onZoomOut}
+        className="flex items-center justify-center w-7 h-7 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-neutral-600 dark:hover:text-neutral-300 transition-colors"
+        aria-label="Zoom out"
+      >
+        <CornerUpRight size={16} />
+      </button>
+
       {/* Pill trigger */}
       <button
         onClick={() => setIsOpen(v => !v)}
-        className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-md bg-white shadow-sm text-gray-900 dark:bg-neutral-700 dark:text-neutral-100 text-sm font-medium hover:bg-gray-50 dark:hover:bg-neutral-600 transition-colors"
+        className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-md bg-white shadow-sm text-gray-900 text-sm font-medium hover:bg-gray-50 transition-colors"
         aria-expanded={isOpen}
         aria-label="Open date picker"
       >
         {pillLabel}
-        <ChevronDown size={14} className="text-gray-400 dark:text-neutral-400" />
-      </button>
-
-      {/* Zoom-out — mr-16 gives the drum panel clearance to open without clipping */}
-      <button
-        onClick={onZoomOut}
-        className="flex items-center justify-center w-7 h-7 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-neutral-600 dark:hover:text-neutral-300 transition-colors mr-16"
-        aria-label="Zoom out"
-      >
-        <CornerUpRight size={16} />
+        <ChevronDown size={14} className="text-gray-400" />
       </button>
 
       {/* Drum panel — centred under the pill */}
@@ -267,12 +267,12 @@ export function CalendarDrumPicker({
               animate={{ opacity: 1, y: 0,  scale: 1    }}
               exit={{    opacity: 0, y: -6, scale: 0.97 }}
               transition={{ duration: 0.15, ease: "easeOut" }}
-              className="bg-white dark:bg-neutral-700 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-xl overflow-hidden flex"
+              className="bg-neutral-50 border border-neutral-200 rounded-xl shadow-xl overflow-hidden flex"
               style={{ width: showMonth ? 220 : 110 }}
             >
               {/* Centre-slot highlight bar */}
               <div
-                className="pointer-events-none absolute left-0 right-0 bg-neutral-100 dark:bg-neutral-600 rounded-md z-10"
+                className="pointer-events-none absolute left-0 right-0 bg-neutral-200 rounded-md z-10"
                 style={{ top: ABOVE * SLOT_H, height: SLOT_H }}
               />
 
@@ -285,7 +285,7 @@ export function CalendarDrumPicker({
                     onSnap={handleMonthSnap}
                     onDragUpdate={(idx) => setDisplayMonth(idx)}
                   />
-                  <div className="w-px bg-neutral-200 dark:bg-neutral-600 flex-shrink-0 z-20" />
+                  <div className="w-px bg-neutral-200 flex-shrink-0 z-20" />
                 </>
               )}
 

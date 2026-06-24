@@ -246,7 +246,7 @@ export function CalendarApp() {
     <div ref={calendarRef} className="mx-6 my-6">
 
       {/* Mode toggle */}
-      <div className="mb-4 flex items-center gap-4">
+      <div className="mb-4 flex items-center">
         <div className="inline-flex rounded-lg bg-gray-100 p-1">
           <button
             onClick={() => setMode("calendar")}
@@ -271,12 +271,14 @@ export function CalendarApp() {
             Upcoming
           </button>
         </div>
-        <CalendarDrumPicker
-          view={view}
-          focusedDate={focusedDate}
-          onNavigate={handleNavigate}
-          onZoomOut={zoomOut}
-        />
+        <div className="ml-auto mr-16">
+          <CalendarDrumPicker
+            view={view}
+            focusedDate={focusedDate}
+            onNavigate={handleNavigate}
+            onZoomOut={zoomOut}
+          />
+        </div>
       </div>
 
       {/* Main view area */}
