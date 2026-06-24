@@ -95,6 +95,7 @@ export function AddJobModal({ isOpen, onClose, onJobAdded }: Props) {
   const [status, setStatus]               = useState<ApplicationStatus>("saved");
   const [sourceUrl, setSourceUrl]         = useState("");
   const [appliedAt, setAppliedAt]         = useState("");
+  const [closingDate, setClosingDate]     = useState("");
   const [interestLevel, setInterestLevel] = useState("");
   const [tags, setTags]                   = useState("");
   const [notes, setNotes]                 = useState("");
@@ -118,7 +119,7 @@ export function AddJobModal({ isOpen, onClose, onJobAdded }: Props) {
     if (!isOpen) return;
     setCompany(""); setTitle(""); setLocation(""); setRemoteType(""); setJobType("");
     setSalary(""); setStatus("saved"); setSourceUrl(""); setAppliedAt("");
-    setInterestLevel(""); setTags(""); setNotes("");
+    setClosingDate(""); setInterestLevel(""); setTags(""); setNotes("");
     setErrors({}); setClosing(false);
   }, [isOpen]);
 
@@ -152,6 +153,7 @@ export function AddJobModal({ isOpen, onClose, onJobAdded }: Props) {
       if (jobType)            body.jobType        = jobType;
       if (salary.trim())      body.salaryRaw      = salary.trim();
       if (appliedAt)          body.appliedAt      = appliedAt;
+      if (closingDate)        body.closingDate    = closingDate;
       if (interestLevel)      body.interestLevel  = interestLevel;
       if (tagList.length > 0) body.tags           = tagList;
       if (notes.trim())       body.notes          = notes.trim();
@@ -336,6 +338,17 @@ export function AddJobModal({ isOpen, onClose, onJobAdded }: Props) {
                 type="date"
                 value={appliedAt}
                 onChange={(e) => setAppliedAt(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-900 focus:outline-none focus:border-blue-400"
+              />
+            </div>
+
+            {/* Closing date */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Closing date</label>
+              <input
+                type="date"
+                value={closingDate}
+                onChange={(e) => setClosingDate(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-900 focus:outline-none focus:border-blue-400"
               />
             </div>

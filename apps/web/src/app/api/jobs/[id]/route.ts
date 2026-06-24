@@ -192,6 +192,10 @@ export async function PATCH(
     update.applied_at = typeof b.appliedAt === "string" && b.appliedAt ? b.appliedAt : null;
   }
 
+  if (has("closingDate")) {
+    update.closing_date = typeof b.closingDate === "string" && b.closingDate ? b.closingDate : null;
+  }
+
   if (has("interestLevel")) {
     if (
       b.interestLevel !== null &&

@@ -177,6 +177,7 @@ export function ExpandedJobPanel({ job, getToken, onJobPatched }: Props) {
   const [interestLevel, setInterestLevel]       = useState(job.interestLevel ?? "");
   const [tags, setTags]                         = useState((job.tags ?? []).join(", "));
   const [appliedAt, setAppliedAt]               = useState(job.appliedAt?.slice(0, 10) ?? "");
+  const [closingDate, setClosingDate]           = useState(job.closingDate?.slice(0, 10) ?? "");
   const [salaryRaw, setSalaryRaw]               = useState(job.salaryRaw ?? "");
   const [sourceUrl, setSourceUrl]               = useState(job.sourceUrl ?? "");
   const [companyUrl, setCompanyUrl]             = useState(job.companyApplicationUrl ?? "");
@@ -484,6 +485,17 @@ export function ExpandedJobPanel({ job, getToken, onJobPatched }: Props) {
             value={appliedAt}
             onChange={(e) => setAppliedAt(e.target.value)}
             onBlur={() => void saveField("appliedAt", appliedAt || null, "appliedAt")}
+          />
+        </div>
+
+        <div>
+          <label className={lc}>Closing date</label>
+          <input
+            type="date"
+            className={fc}
+            value={closingDate}
+            onChange={(e) => setClosingDate(e.target.value)}
+            onBlur={() => void saveField("closingDate", closingDate || null, "closingDate")}
           />
         </div>
 
