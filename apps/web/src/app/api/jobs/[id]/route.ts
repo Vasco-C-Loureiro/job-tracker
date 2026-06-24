@@ -22,7 +22,7 @@ export async function GET(
 
   const { data, error } = await supabase
     .from("job_applications")
-    .select("id, description")
+    .select("id, description, closing_date")
     .eq("id", id)
     .eq("user_id", userData.user.id)
     .maybeSingle();
