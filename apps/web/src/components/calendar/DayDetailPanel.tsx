@@ -98,7 +98,7 @@ function InterviewDateTimeEditor({ event, onEventsChanged }: InterviewDateTimeEd
     }
   }
 
-  const ic = "border border-neutral-200 dark:border-neutral-600 rounded px-2 py-1 text-xs text-neutral-800 dark:text-neutral-100 dark:bg-neutral-700 focus:outline-none focus:border-blue-400 disabled:opacity-50 bg-white";
+  const ic = "border border-neutral-200 dark:border-neutral-600 rounded px-2 py-1 text-xs text-neutral-800 dark:text-neutral-100 focus:outline-none focus:border-blue-400 disabled:opacity-50 bg-white";
   const lc = "block text-xs text-neutral-500 dark:text-neutral-400 mb-0.5";
 
   return (
@@ -248,13 +248,13 @@ export function DayDetailPanel({ day, events, onClose, onEventsChanged, defaultC
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/10 z-40"
+        className="fixed inset-0 bg-black/5 z-40"
         onClick={onClose}
       />
 
       {/* Panel */}
       <motion.div
-        className="fixed right-0 top-0 h-full w-96 bg-white dark:bg-neutral-700 shadow-xl z-50 flex flex-col"
+        className="fixed right-0 top-0 h-full w-96 bg-neutral-50 shadow-xl z-50 flex flex-col"
         initial={{ x: "100%" }}
         animate={{ x: 0 }}
         exit={{ x: "100%" }}
@@ -416,7 +416,7 @@ export function DayDetailPanel({ day, events, onClose, onEventsChanged, defaultC
                               {isExpanded ? <X size={14} /> : <Pencil size={14} />}
                             </button>
                           )}
-                          <span className="text-xs text-neutral-500 bg-neutral-100 dark:bg-neutral-600 dark:text-neutral-400 rounded px-1.5 py-0.5">
+                          <span className="text-xs text-neutral-500 bg-neutral-100 rounded px-1.5 py-0.5">
                             {badgeText}
                           </span>
                         </div>
@@ -448,13 +448,14 @@ export function DayDetailPanel({ day, events, onClose, onEventsChanged, defaultC
                         </p>
                       )}
 
-                      {/* Applied: interest level pill below content, left-aligned */}
+                      {/* Applied: interest level pill */}
                       {event.source === "applied" && event.interestLevel && (
-                        <div className="mt-1">
-                          <span className={`${INTEREST_LEVEL_CLASSES[event.interestLevel]} rounded-full px-2 py-0.5 text-xs font-medium`}>
-                            {INTEREST_LEVEL_LABELS[event.interestLevel]}
-                          </span>
-                        </div>
+                        <span className={`mt-1.5 self-start inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${INTEREST_LEVEL_CLASSES[event.interestLevel]}`}>
+                          {event.interestLevel === "very-high"
+                            ? "Very high"
+                            : event.interestLevel.charAt(0).toUpperCase() +
+                              event.interestLevel.slice(1)}
+                        </span>
                       )}
 
                       {/* Description / notes body */}
