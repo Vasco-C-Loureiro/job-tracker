@@ -24,6 +24,7 @@ type JobApplicationRow = {
   salary_currency?: string | null;
   notes?: string | null;
   applied_at?: string | null;
+  closing_date?: string | null;
   interest_level?: string | null;
   tags?: string[] | null;
   resume_submitted?: boolean | null;
@@ -53,6 +54,7 @@ function rowToListItem(row: JobApplicationRow): JobApplicationListItem {
     salaryCurrency: row.salary_currency ?? undefined,
     notes: row.notes ?? undefined,
     appliedAt: row.applied_at ?? undefined,
+    closingDate: row.closing_date ?? null,
     interestLevel:
       (row.interest_level as JobApplicationListItem["interestLevel"]) ?? undefined,
     tags: row.tags ?? undefined,
@@ -91,7 +93,7 @@ export default async function Home({
       "id, user_id, company, title, source_url, source, status, saved_at, updated_at, " +
         "location, remote_type, job_type, salary_raw, salary_min, salary_max, salary_currency, notes, applied_at, " +
         "interest_level, tags, resume_submitted, cover_letter_submitted, " +
-        "company_application_url, is_archived, archived_at",
+        "company_application_url, is_archived, archived_at, closing_date",
     )
     .eq("user_id", user.id)
     .eq("is_archived", false)
