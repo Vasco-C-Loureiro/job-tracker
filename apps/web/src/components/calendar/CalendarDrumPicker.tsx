@@ -244,19 +244,21 @@ export function CalendarDrumPicker({
         className="flex items-center justify-center w-7 h-7 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-neutral-600 dark:hover:text-neutral-300 transition-colors"
         aria-label="Zoom out"
       >
-        <CornerUpRight size={16} />
+        <CornerUpRight size={16} style={{ transform: 'rotate(-90deg)' }} />
       </button>
 
       {/* Pill trigger */}
-      <button
-        onClick={() => setIsOpen(v => !v)}
-        className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-md bg-white shadow-sm text-gray-900 text-sm font-medium hover:bg-gray-50 transition-colors"
-        aria-expanded={isOpen}
-        aria-label="Open date picker"
-      >
-        {pillLabel}
-        <ChevronDown size={14} className="text-gray-400" />
-      </button>
+      <div className="inline-flex rounded-lg bg-gray-100 p-1">
+        <button
+          onClick={() => setIsOpen(v => !v)}
+          className="px-4 py-1.5 rounded-md text-sm font-medium bg-white shadow-sm text-gray-900 hover:bg-gray-50 transition-colors inline-flex items-center gap-1.5"
+          aria-expanded={isOpen}
+          aria-label="Open date picker"
+        >
+          {pillLabel}
+          <ChevronDown size={14} className="text-gray-400" />
+        </button>
+      </div>
 
       {/* Drum panel — centred under the pill */}
       <AnimatePresence>

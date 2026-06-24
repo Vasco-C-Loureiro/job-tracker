@@ -382,7 +382,7 @@ export function DayDetailPanel({ day, events, onClose, onEventsChanged, defaultC
                           {event.source !== "interview_round" && timeRange && (
                             <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-0.5">{timeRange}</p>
                           )}
-                          <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                          <p className="text-sm font-medium text-neutral-900">
                             {event.title}
                           </p>
                         </div>
