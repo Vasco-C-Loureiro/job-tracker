@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServiceClient } from "@/lib/supabase.server";
 import type { CalendarFeedEvent, InterviewType } from "@job-tracker/shared";
-import { roundTitle, appliedTitle } from "@/lib/calendar/labels";
-
-// job_applications has no closing-date/deadline column — deadline source is omitted.
+import { roundTitle, appliedTitle, deadlineTitle } from "@/lib/calendar/labels";
 
 export async function GET(req: NextRequest) {
   const token = req.headers.get("authorization")?.replace("Bearer ", "");
@@ -89,7 +87,45 @@ export async function GET(req: NextRequest) {
     console.error("[calendar-feed] interview rounds exception:", err);
   }
 
-  // ── 3. Applied dates (preference-gated) ───────────────────────────────────
+  // ── 3. Deadline events (closing_date) ────────────────────────────────────
+  try {
+    const { data, error } = await supabase
+      .from("job_applications")
+      .select("id, company, title, closing_date, interest_level")
+      .eq("user_id", user.id)
+      .not("closing_date", "is", null)
+      .eq("is_archived", false);
+
+    if (error) {
+      console.error("[calendar-feed] deadline events error:", error.message);
+    } else {
+      for (const row of data ?? []) {
+        events.push({
+          id: `deadline:${row.id}`,
+          source: "deadline",
+          title: deadlineTitle(row.company),
+          date: (row.closing_date as string).substring(0, 10),
+          time: null,
+          endTime: null,
+          description: null,
+          color: null,
+          roundType: null,
+          roundNumber: null,
+          jobId: row.id,
+          roundId: null,
+          eventId: null,
+          company: row.company,
+          jobTitle: (row.title as string) ?? null,
+          salary: null,
+          interestLevel: (row.interest_level as CalendarFeedEvent["interestLevel"]) ?? null,
+        });
+      }
+    }
+  } catch (err) {
+    console.error("[calendar-feed] deadline events exception:", err);
+  }
+
+  // ── 4. Applied dates (preference-gated) ───────────────────────────────────
   try {
     const { data: prefs } = await supabase
       .from("user_preferences")

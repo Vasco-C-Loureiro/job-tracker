@@ -46,7 +46,8 @@ export type JobApplication = {
   updatedAt: string; // ISO 8601
 
   notes?: string;
-  appliedAt?: string; // ISO 8601
+  appliedAt?: string;    // ISO 8601
+  closingDate?: string | null;
   interestLevel?: "low" | "medium" | "high" | "very-high";
   tags?: string[];
   resumeSubmitted?: boolean;
