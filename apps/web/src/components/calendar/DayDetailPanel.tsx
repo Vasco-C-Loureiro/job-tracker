@@ -133,6 +133,65 @@ function InterviewDateTimeEditor({ event, onEventsChanged }: InterviewDateTimeEd
   );
 }
 
+// ─── Inline date editor for applied / deadline events ────────────────────────
+
+interface JobDateEditorProps {
+  event: CalendarFeedEvent;
+  field: "appliedAt" | "closingDate";
+  label: string;
+  onEventsChanged: () => void;
+}
+
+function JobDateEditor({ event, field, label, onEventsChanged }: JobDateEditorProps) {
+  const [dateVal, setDateVal] = useState(event.date);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const ic = "border border-neutral-200 dark:border-neutral-600 rounded px-2 py-1 text-xs text-neutral-800 dark:text-neutral-100 focus:outline-none focus:border-blue-400 disabled:opacity-50 bg-white";
+
+  async function handleBlur() {
+    if (dateVal === event.date) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const { data: { session } } = await createSupabaseBrowserClient().auth.getSession();
+      const token = session?.access_token;
+      if (!token) throw new Error("Not authenticated");
+      const res = await fetch(`/api/jobs/${event.jobId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ [field]: dateVal || null }),
+      });
+      if (!res.ok) throw new Error("Failed to save");
+      onEventsChanged();
+    } catch {
+      setError("Failed to save. Try again.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="mt-2 flex flex-col gap-1">
+      <label className="text-xs text-neutral-400">{label}</label>
+      <input
+        type="date"
+        value={dateVal}
+        onChange={(e) => setDateVal(e.target.value)}
+        onBlur={() => void handleBlur()}
+        disabled={saving}
+        className={ic}
+      />
+      {error && (
+        <p className="text-xs text-red-500">{error}</p>
+      )}
+    </div>
+  );
+}
+
 // ─── Main panel ───────────────────────────────────────────────────────────────
 
 export function DayDetailPanel({ day, events, onClose, onEventsChanged, defaultCurrency }: DayDetailPanelProps) {
@@ -143,6 +202,7 @@ export function DayDetailPanel({ day, events, onClose, onEventsChanged, defaultC
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [expandedRoundIds, setExpandedRoundIds] = useState<Record<string, boolean>>({});
+  const [expandedJobIds, setExpandedJobIds] = useState<Record<string, boolean>>({});
 
   const dayEvents = events
     .map((e, i) => ({ e, i }))
@@ -387,9 +447,18 @@ export function DayDetailPanel({ day, events, onClose, onEventsChanged, defaultC
                           </p>
                         </div>
                         {event.source === "applied" && (
-                          <span className="flex-shrink-0 text-xs text-neutral-400 bg-neutral-100 rounded px-1.5 py-0.5">
-                            Applied
-                          </span>
+                          <div className="flex items-center gap-1 flex-shrink-0">
+                            <button
+                              onClick={() => setExpandedJobIds(prev => ({ ...prev, [event.id]: !prev[event.id] }))}
+                              className="opacity-0 group-hover:opacity-100 transition-opacity text-neutral-400 hover:text-neutral-600 p-0.5 rounded"
+                              aria-label={expandedJobIds[event.id] ? "Collapse" : "Edit date"}
+                            >
+                              {expandedJobIds[event.id] ? <X size={14} /> : <Pencil size={14} />}
+                            </button>
+                            <span className="flex-shrink-0 text-xs text-neutral-400 bg-neutral-100 rounded px-1.5 py-0.5">
+                              Applied
+                            </span>
+                          </div>
                         )}
                         {event.source !== "applied" && (
                           <div className="flex items-center gap-1 flex-shrink-0">
@@ -420,6 +489,16 @@ export function DayDetailPanel({ day, events, onClose, onEventsChanged, defaultC
                                 aria-label={isExpanded ? "Collapse" : "Edit date/time"}
                               >
                                 {isExpanded ? <X size={14} /> : <Pencil size={14} />}
+                              </button>
+                            )}
+                            {/* Deadline: toggle date editor */}
+                            {event.source === "deadline" && (
+                              <button
+                                onClick={() => setExpandedJobIds(prev => ({ ...prev, [event.id]: !prev[event.id] }))}
+                                className="opacity-0 group-hover:opacity-100 transition-opacity text-neutral-400 hover:text-neutral-600 p-0.5 rounded"
+                                aria-label={expandedJobIds[event.id] ? "Collapse" : "Edit date"}
+                              >
+                                {expandedJobIds[event.id] ? <X size={14} /> : <Pencil size={14} />}
                               </button>
                             )}
                             <span className="text-xs text-neutral-500 bg-neutral-100 rounded px-1.5 py-0.5">
@@ -488,6 +567,25 @@ export function DayDetailPanel({ day, events, onClose, onEventsChanged, defaultC
                               {formatSalary(event.salary, defaultCurrency)}
                             </p>
                           )}
+                          <AnimatePresence>
+                            {expandedJobIds[event.id] && (
+                              <motion.div
+                                key="deadline-editor"
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: "auto", opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                transition={{ duration: 0.2, ease: "easeOut" }}
+                                style={{ overflow: "hidden" }}
+                              >
+                                <JobDateEditor
+                                  event={event}
+                                  field="closingDate"
+                                  label="Closing date"
+                                  onEventsChanged={onEventsChanged}
+                                />
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
                           {event.jobId && (
                             <Link
                               href={`/?highlight=${event.jobId}`}
@@ -534,6 +632,29 @@ export function DayDetailPanel({ day, events, onClose, onEventsChanged, defaultC
                         >
                           Go to interview <ArrowRight size={12} />
                         </Link>
+                      )}
+
+                      {/* Applied: date editor */}
+                      {event.source === "applied" && (
+                        <AnimatePresence>
+                          {expandedJobIds[event.id] && (
+                            <motion.div
+                              key="applied-editor"
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: "auto", opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              transition={{ duration: 0.2, ease: "easeOut" }}
+                              style={{ overflow: "hidden" }}
+                            >
+                              <JobDateEditor
+                                event={event}
+                                field="appliedAt"
+                                label="Applied date"
+                                onEventsChanged={onEventsChanged}
+                              />
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
                       )}
 
                       {/* Go to application link for applied events */}

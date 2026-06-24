@@ -25,6 +25,7 @@ type JobRow = {
   description?: string | null;
   notes?: string | null;
   applied_at?: string | null;
+  closing_date?: string | null;
   interest_level?: string | null;
   tags?: string[] | null;
   resume_submitted?: boolean | null;
@@ -56,7 +57,7 @@ export async function GET(request: NextRequest) {
     .select(
       "id, user_id, company, title, source_url, source, status, " +
         "location, remote_type, job_type, salary_raw, salary_min, salary_max, " +
-        "salary_currency, salary_requested, description, notes, applied_at, " +
+        "salary_currency, salary_requested, description, notes, applied_at, closing_date, " +
         "interest_level, tags, resume_submitted, cover_letter_submitted, " +
         "company_application_url, is_archived, archived_at, " +
         "current_interview_round, saved_at, updated_at",
@@ -92,6 +93,7 @@ export async function GET(request: NextRequest) {
     description: row.description ?? undefined,
     notes: row.notes ?? undefined,
     appliedAt: row.applied_at ?? undefined,
+    closingDate: row.closing_date ?? null,
     interestLevel: row.interest_level ?? undefined,
     tags: row.tags ?? undefined,
     resumeSubmitted: row.resume_submitted ?? undefined,
