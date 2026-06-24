@@ -228,7 +228,7 @@ export function CalendarApp() {
     <div ref={calendarRef} className="mx-6 my-6">
 
       {/* Mode toggle */}
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-4 flex items-center gap-3">
         <div className="inline-flex rounded-lg bg-gray-100 p-1">
           <button
             onClick={() => setMode("calendar")}

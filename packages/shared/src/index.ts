@@ -231,5 +231,7 @@ export interface CalendarFeedEvent {
   roundId: string | null;
   eventId: string | null;
   company: string | null;           // set for applied + deadline events; used for grouping display
-  jobTitle: string | null;          // set for interview_round events
+  jobTitle: string | null;          // set for interview_round and applied events
+  salary: string | null;            // raw salary string; set for applied events
+  interestLevel: "low" | "medium" | "high" | "very-high" | null;  // set for applied events
 }

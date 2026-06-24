@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { X, Plus, Pencil, Trash2, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import type { CalendarFeedEvent, InterviewType } from "@job-tracker/shared";
@@ -41,6 +41,17 @@ const SOURCE_LABELS: Record<string, string> = {
   deadline:        "Deadline",
   applied:         "Applied",
   manual:          "Manual",
+};
+
+const INTEREST_LEVEL_CLASSES: Record<string, string> = {
+  "low":       "bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300",
+  "medium":    "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/50 dark:text-yellow-300",
+  "high":      "bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300",
+  "very-high": "bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300",
+};
+
+const INTEREST_LEVEL_LABELS: Record<string, string> = {
+  "low": "Low", "medium": "Medium", "high": "High", "very-high": "Very high",
 };
 
 // ─── Inline date/time editor for interview round events ───────────────────────
@@ -85,11 +96,11 @@ function InterviewDateTimeEditor({ event, onEventsChanged }: InterviewDateTimeEd
     }
   }
 
-  const ic = "border border-gray-200 dark:border-neutral-700 rounded px-2 py-1 text-xs text-gray-800 dark:text-neutral-100 dark:bg-neutral-800 focus:outline-none focus:border-blue-400 disabled:opacity-50 bg-white";
-  const lc = "block text-xs text-gray-400 mb-0.5";
+  const ic = "border border-neutral-200 dark:border-neutral-600 rounded px-2 py-1 text-xs text-neutral-800 dark:text-neutral-100 dark:bg-neutral-700 focus:outline-none focus:border-blue-400 disabled:opacity-50 bg-white";
+  const lc = "block text-xs text-neutral-500 dark:text-neutral-400 mb-0.5";
 
   return (
-    <div className="mt-2 pt-2 border-t border-gray-100 dark:border-neutral-800">
+    <div className="mt-2 pt-2 border-t border-neutral-200 dark:border-neutral-700">
       <div className="flex gap-3 flex-wrap">
         <div>
           <label className={lc}>Date</label>
@@ -114,15 +125,8 @@ function InterviewDateTimeEditor({ event, onEventsChanged }: InterviewDateTimeEd
           />
         </div>
       </div>
-      {saving && <p className="text-xs text-gray-400 mt-1.5">Saving…</p>}
+      {saving && <p className="text-xs text-neutral-500 mt-1.5">Saving…</p>}
       {error && <p className="text-xs text-red-500 mt-1.5">{error}</p>}
-      <Link
-        href={`/interviews?highlight=${event.jobId}`}
-        className="mt-2 inline-flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 dark:hover:text-neutral-300 transition-colors"
-      >
-        Go to interview
-        <ArrowRight size={12} />
-      </Link>
     </div>
   );
 }
@@ -136,6 +140,7 @@ export function DayDetailPanel({ day, events, onClose, onEventsChanged }: DayDet
   const [deletingEventId, setDeletingEventId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [expandedRoundIds, setExpandedRoundIds] = useState<Record<string, boolean>>({});
 
   const dayEvents = events
     .map((e, i) => ({ e, i }))
@@ -169,10 +174,7 @@ export function DayDetailPanel({ day, events, onClose, onEventsChanged }: DayDet
 
     const res = await fetch("/api/calendar-events", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify({
         title: values.title.trim(),
         date: values.date,
@@ -184,7 +186,6 @@ export function DayDetailPanel({ day, events, onClose, onEventsChanged }: DayDet
     });
 
     if (!res.ok) throw new Error("Failed to create event");
-
     onEventsChanged();
     setShowForm(false);
   }
@@ -201,10 +202,7 @@ export function DayDetailPanel({ day, events, onClose, onEventsChanged }: DayDet
 
     const res = await fetch(`/api/calendar-events/${id}`, {
       method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify({
         title: values.title.trim(),
         date: values.date,
@@ -216,7 +214,6 @@ export function DayDetailPanel({ day, events, onClose, onEventsChanged }: DayDet
     });
 
     if (!res.ok) throw new Error("Failed to update event");
-
     onEventsChanged();
     setEditingEventId(null);
   }
@@ -255,15 +252,15 @@ export function DayDetailPanel({ day, events, onClose, onEventsChanged }: DayDet
 
       {/* Panel */}
       <motion.div
-        className="fixed right-0 top-0 h-full w-96 bg-white dark:bg-neutral-900 shadow-xl z-50 flex flex-col"
+        className="fixed right-0 top-0 h-full w-96 bg-neutral-100 dark:bg-neutral-800 shadow-xl z-50 flex flex-col"
         initial={{ x: "100%" }}
         animate={{ x: 0 }}
         exit={{ x: "100%" }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-neutral-700">
-          <h2 className="text-sm font-semibold text-gray-800 dark:text-neutral-100">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-200 dark:border-neutral-700">
+          <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
             {format(day, "EEEE d MMMM yyyy")}
           </h2>
           <div className="flex items-center gap-3">
@@ -278,7 +275,7 @@ export function DayDetailPanel({ day, events, onClose, onEventsChanged }: DayDet
             )}
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 dark:text-neutral-500 dark:hover:text-neutral-300 transition-colors"
+              className="text-neutral-400 hover:text-neutral-600 dark:text-neutral-500 dark:hover:text-neutral-300 transition-colors"
               aria-label="Close"
             >
               <X size={18} />
@@ -297,7 +294,7 @@ export function DayDetailPanel({ day, events, onClose, onEventsChanged }: DayDet
             />
           ) : dayEvents.length === 0 ? (
             <div className="flex items-center justify-center h-full">
-              <p className="text-sm text-gray-400">No events for this day.</p>
+              <p className="text-sm text-neutral-500">No events for this day.</p>
             </div>
           ) : (
             <div className="flex flex-col gap-4">
@@ -334,7 +331,7 @@ export function DayDetailPanel({ day, events, onClose, onEventsChanged }: DayDet
                 if (deletingEventId === event.id) {
                   return (
                     <div key={event.id} className="border border-red-100 rounded-lg p-3 bg-red-50/30">
-                      <p className="text-sm text-gray-700 dark:text-neutral-200 mb-2">
+                      <p className="text-sm text-neutral-700 dark:text-neutral-200 mb-2">
                         Delete &ldquo;{event.title}&rdquo;?
                       </p>
                       {deleteError && (
@@ -351,7 +348,7 @@ export function DayDetailPanel({ day, events, onClose, onEventsChanged }: DayDet
                         <button
                           onClick={() => { setDeletingEventId(null); setDeleteError(null); }}
                           disabled={isDeleting}
-                          className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800 border border-gray-200 rounded hover:bg-gray-50 disabled:opacity-50 transition-colors"
+                          className="px-3 py-1.5 text-sm text-neutral-600 hover:text-neutral-800 border border-neutral-200 rounded hover:bg-neutral-50 disabled:opacity-50 transition-colors"
                         >
                           Cancel
                         </button>
@@ -361,14 +358,15 @@ export function DayDetailPanel({ day, events, onClose, onEventsChanged }: DayDet
                 }
 
                 // Normal row
-                const token = resolveColorKey(event);
-                const dotClass = colorClasses(token, "dot");
+                const colorToken = resolveColorKey(event);
+                const dotClass = colorClasses(colorToken, "dot");
                 const timeRange = formatTimeRange(event.time, event.endTime);
                 const badgeText =
                   event.source === "manual"
                     ? (manualLabel ?? "Manual")
                     : (SOURCE_LABELS[event.source] ?? event.source);
                 const bodyText = event.source === "manual" ? manualBody : event.description;
+                const isExpanded = !!expandedRoundIds[event.id];
 
                 return (
                   <div key={event.id} className="flex gap-3 items-start group">
@@ -378,33 +376,51 @@ export function DayDetailPanel({ day, events, onClose, onEventsChanged }: DayDet
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
-                          {timeRange && (
-                            <p className="text-xs text-gray-400 mb-0.5">{timeRange}</p>
+                          {/* Time shown above title only for non-interview events */}
+                          {event.source !== "interview_round" && timeRange && (
+                            <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-0.5">{timeRange}</p>
                           )}
-                          <p className="text-sm font-medium text-gray-800 dark:text-neutral-100">
+                          <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
                             {event.title}
                           </p>
                         </div>
                         <div className="flex items-center gap-1 flex-shrink-0">
+                          {/* Manual event: edit + delete */}
                           {event.source === "manual" && (
                             <>
                               <button
                                 onClick={() => { setEditingEventId(event.id); setDeletingEventId(null); }}
-                                className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-gray-600 p-0.5 rounded"
+                                className="opacity-0 group-hover:opacity-100 transition-opacity text-neutral-400 hover:text-neutral-600 p-0.5 rounded"
                                 aria-label="Edit event"
                               >
                                 <Pencil size={14} />
                               </button>
                               <button
                                 onClick={() => { setDeletingEventId(event.id); setEditingEventId(null); setDeleteError(null); }}
-                                className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-red-500 p-0.5 rounded"
+                                className="opacity-0 group-hover:opacity-100 transition-opacity text-neutral-400 hover:text-red-500 p-0.5 rounded"
                                 aria-label="Delete event"
                               >
                                 <Trash2 size={14} />
                               </button>
                             </>
                           )}
-                          <span className="text-xs text-gray-400 bg-gray-100 dark:bg-neutral-800 dark:text-neutral-400 rounded px-1.5 py-0.5">
+                          {/* Interview round: toggle date/time editor */}
+                          {event.source === "interview_round" && (
+                            <button
+                              onClick={() => setExpandedRoundIds(prev => ({ ...prev, [event.id]: !prev[event.id] }))}
+                              className="opacity-0 group-hover:opacity-100 transition-opacity text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 p-0.5 rounded"
+                              aria-label={isExpanded ? "Collapse" : "Edit date/time"}
+                            >
+                              {isExpanded ? <X size={14} /> : <Pencil size={14} />}
+                            </button>
+                          )}
+                          {/* Applied: interest level pill */}
+                          {event.source === "applied" && event.interestLevel && (
+                            <span className={`${INTEREST_LEVEL_CLASSES[event.interestLevel]} rounded-full px-2 py-0.5 text-xs font-medium`}>
+                              {INTEREST_LEVEL_LABELS[event.interestLevel]}
+                            </span>
+                          )}
+                          <span className="text-xs text-neutral-500 bg-neutral-200 dark:bg-neutral-700 dark:text-neutral-400 rounded px-1.5 py-0.5">
                             {badgeText}
                           </span>
                         </div>
@@ -415,28 +431,73 @@ export function DayDetailPanel({ day, events, onClose, onEventsChanged }: DayDet
                         <div className="flex items-center gap-1.5 mt-1">
                           {(() => {
                             const Icon = INTERVIEW_TYPE_ICONS[event.roundType as InterviewType] ?? INTERVIEW_TYPE_ICONS.other;
-                            return <Icon size={14} className="flex-shrink-0 text-gray-400" />;
+                            return <Icon size={14} className="flex-shrink-0 text-neutral-400" />;
                           })()}
                           {event.roundNumber !== null && (
-                            <span className="text-xs text-gray-500 dark:text-neutral-400">
+                            <span className="text-xs text-neutral-500 dark:text-neutral-400">
                               Round {event.roundNumber}
                             </span>
                           )}
                         </div>
                       )}
 
-                      {/* Description / notes body */}
-                      {bodyText && (
-                        <p className="text-xs text-gray-400 mt-1 line-clamp-3">{bodyText}</p>
+                      {/* Collapsed time display for interview rounds */}
+                      {event.source === "interview_round" && !isExpanded && timeRange && (
+                        <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">{timeRange}</p>
                       )}
 
-                      {/* Inline date/time editor for interview rounds */}
+                      {/* Applied: job title + salary */}
+                      {event.source === "applied" && event.jobTitle && (
+                        <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                          {event.jobTitle}{event.salary ? ` · ${event.salary}` : ""}
+                        </p>
+                      )}
+
+                      {/* Description / notes body */}
+                      {bodyText && (
+                        <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1 line-clamp-3">{bodyText}</p>
+                      )}
+
+                      {/* Animated date/time editor for interview rounds */}
                       {event.source === "interview_round" && (
-                        <InterviewDateTimeEditor
-                          key={`${event.date}-${event.time ?? ""}`}
-                          event={event}
-                          onEventsChanged={onEventsChanged}
-                        />
+                        <AnimatePresence>
+                          {isExpanded && (
+                            <motion.div
+                              key="editor"
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: "auto", opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              transition={{ duration: 0.2, ease: "easeOut" }}
+                              style={{ overflow: "hidden" }}
+                            >
+                              <InterviewDateTimeEditor
+                                key={`${event.date}-${event.time ?? ""}`}
+                                event={event}
+                                onEventsChanged={onEventsChanged}
+                              />
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      )}
+
+                      {/* Go to interview link — always visible for interview rounds */}
+                      {event.source === "interview_round" && (
+                        <Link
+                          href={`/interviews?highlight=${event.jobId}`}
+                          className="mt-2 inline-flex items-center gap-1 text-xs text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors"
+                        >
+                          Go to interview <ArrowRight size={12} />
+                        </Link>
+                      )}
+
+                      {/* Go to application link for applied events */}
+                      {event.source === "applied" && event.jobId && (
+                        <Link
+                          href={`/?highlight=${event.jobId}`}
+                          className="mt-2 inline-flex items-center gap-1 text-xs text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors"
+                        >
+                          Go to application <ArrowRight size={12} />
+                        </Link>
                       )}
                     </div>
                   </div>
