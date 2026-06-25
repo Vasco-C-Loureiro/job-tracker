@@ -115,7 +115,7 @@ export function NotificationBell() {
                   key={n.id}
                   onClick={() => {
                     setOpen(false);
-                    router.push("/notifications");
+                    router.push("/dashboard/notifications");
                   }}
                   className="w-full text-left px-4 py-3 hover:bg-gray-50 border-b border-gray-100 last:border-0"
                 >

@@ -223,7 +223,7 @@ export function FinalPreview({ state, onUpdate }: Props) {
         )}
         <div className="flex flex-col sm:flex-row gap-3 justify-center mt-6">
           <Link
-            href="/"
+            href="/dashboard"
             className="px-5 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
           >
             View my applications

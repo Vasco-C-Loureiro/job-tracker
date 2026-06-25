@@ -25,13 +25,13 @@ type NavItem = {
 };
 
 const NAV_ITEMS: NavItem[] = [
-  { href: "/",           icon: Briefcase, label: "Applications" },
-  { href: "/interviews", icon: Mail,      label: "Interviews"   },
-  { href: "/import",     icon: Upload,    label: "Import"       },
-  { href: "/archived",       icon: Archive,   label: "Archived"       },
-  { href: "/notifications",  icon: Bell,      label: "Notifications"  },
-  { href: "/calendar",       icon: Calendar,  label: "Calendar"  },
-  { href: "/analytics",  icon: BarChart2, label: "Analytics", disabled: true },
+  { href: "/dashboard",              icon: Briefcase, label: "Applications" },
+  { href: "/dashboard/interviews",   icon: Mail,      label: "Interviews"   },
+  { href: "/dashboard/import",       icon: Upload,    label: "Import"       },
+  { href: "/dashboard/archived",     icon: Archive,   label: "Archived"     },
+  { href: "/dashboard/notifications",icon: Bell,      label: "Notifications"},
+  { href: "/dashboard/calendar",     icon: Calendar,  label: "Calendar"     },
+  { href: "/dashboard/analytics",    icon: BarChart2, label: "Analytics", disabled: true },
 ];
 
 const STORAGE_KEY = "job-tracker-sidebar-expanded";
@@ -130,11 +130,11 @@ export function Sidebar() {
       <div className="shrink-0 p-2 border-t border-gray-100 flex flex-col gap-0.5">
         <div className="relative group/nav">
           <Link
-            href="/settings"
+            href="/dashboard/settings"
             className={`flex items-center gap-3 px-2.5 py-2 rounded-md text-sm transition-colors ${
               isExpanded ? "" : "justify-center"
             } ${
-              pathname === "/settings"
+              pathname === "/dashboard/settings"
                 ? "bg-blue-50 text-blue-700 font-medium"
                 : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
             }`}
