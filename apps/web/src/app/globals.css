@@ -135,3 +135,33 @@ body {
 .highlight-pulse td {
   animation: highlight-pulse-bg 1.2s ease-in-out 3;
 }
+
+/* ── Landing page CTA button hover ───────────────────────────── */
+
+.landing-cta-btn {
+  background-color: #3C896D;
+  transition: background-color 0.2s ease;
+}
+.landing-cta-btn:hover {
+  background-color: #2d6b55;
+}
+
+.landing-login-link {
+  color: #3C896D;
+  text-decoration: none;
+}
+.landing-login-link:hover {
+  text-decoration: underline;
+}
+
+/* ── Landing page logo banner scroll animations ───────────────── */
+
+@keyframes slide-left {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+@keyframes slide-right {
+  from { transform: translateX(-50%); }
+  to   { transform: translateX(0); }
+}
