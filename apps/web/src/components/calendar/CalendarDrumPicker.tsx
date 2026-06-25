@@ -243,7 +243,7 @@ export function CalendarDrumPicker({
   }
 
   function handleYearSnap(idx: number) {
-    const year = initBaseYear.current + idx;
+    const year = initBaseYear + idx;
     setDisplayYear(year);
     navigate(displayMonth, year);
   }
@@ -302,7 +302,7 @@ export function CalendarDrumPicker({
                 selectedIndex={yearSelectedIdx}
                 loop={false}
                 onSnap={handleYearSnap}
-                onDragUpdate={(idx) => setDisplayYear(initBaseYear.current + idx)}
+                onDragUpdate={(idx) => setDisplayYear(initBaseYear + idx)}
               />
             </motion.div>
           </div>
