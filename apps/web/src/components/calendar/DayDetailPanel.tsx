@@ -584,7 +584,7 @@ export function DayDetailPanel({ day, events, onClose, onEventsChanged, defaultC
                           </AnimatePresence>
                           {event.jobId && (
                             <Link
-                              href={`/?highlight=${event.jobId}`}
+                              href={`/dashboard?highlight=${event.jobId}`}
                               className="mt-2 inline-flex items-center gap-1 text-xs text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors"
                             >
                               Go to application <ArrowRight size={12} />
@@ -623,7 +623,7 @@ export function DayDetailPanel({ day, events, onClose, onEventsChanged, defaultC
                       {/* Go to interview link — always visible for interview rounds */}
                       {event.source === "interview_round" && (
                         <Link
-                          href={`/interviews?highlight=${event.jobId}`}
+                          href={`/dashboard/interviews?highlight=${event.jobId}`}
                           className="mt-2 inline-flex items-center gap-1 text-xs text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors"
                         >
                           Go to interview <ArrowRight size={12} />
@@ -656,7 +656,7 @@ export function DayDetailPanel({ day, events, onClose, onEventsChanged, defaultC
                       {/* Go to application link for applied events */}
                       {event.source === "applied" && event.jobId && (
                         <Link
-                          href={`/?highlight=${event.jobId}`}
+                          href={`/dashboard?highlight=${event.jobId}`}
                           className="mt-2 inline-flex items-center gap-1 text-xs text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors"
                         >
                           Go to application <ArrowRight size={12} />

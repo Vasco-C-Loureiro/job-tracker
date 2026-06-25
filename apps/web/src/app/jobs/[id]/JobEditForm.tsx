@@ -288,7 +288,7 @@ export default function JobEditForm({
 
     if (response.ok) {
       setMessage({ type: "success", text: "Saved." });
-      setTimeout(() => router.push("/"), 500);
+      setTimeout(() => router.push("/dashboard"), 500);
     } else {
       const body = await response.json().catch(() => ({})) as { error?: string };
       setMessage({
