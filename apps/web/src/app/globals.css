@@ -154,6 +154,25 @@ body {
   text-decoration: underline;
 }
 
+/* ── Landing page footer links and social icons ──────────────── */
+
+.footer-link {
+  font-size: 14px;
+  color: rgba(255,255,255,0.65);
+  text-decoration: none;
+  display: block;
+  transition: color 0.2s ease;
+}
+.footer-link:hover { color: #FFFFFF; }
+
+.footer-social {
+  color: rgba(255,255,255,0.5);
+  display: inline-flex;
+  align-items: center;
+  transition: color 0.2s ease;
+}
+.footer-social:hover { color: #FFFFFF; }
+
 /* ── Landing page logo banner scroll animations ───────────────── */
 
 @keyframes slide-left {
