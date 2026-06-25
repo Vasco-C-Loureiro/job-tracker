@@ -117,10 +117,12 @@ export function AddJobModal({ isOpen, onClose, onJobAdded }: Props) {
   // Reset form whenever the modal opens
   useEffect(() => {
     if (!isOpen) return;
-    setCompany(""); setTitle(""); setLocation(""); setRemoteType(""); setJobType("");
-    setSalary(""); setStatus("saved"); setSourceUrl(""); setAppliedAt("");
-    setClosingDate(""); setInterestLevel(""); setTags(""); setNotes("");
-    setErrors({}); setClosing(false);
+    setTimeout(() => {
+      setCompany(""); setTitle(""); setLocation(""); setRemoteType(""); setJobType("");
+      setSalary(""); setStatus("saved"); setSourceUrl(""); setAppliedAt("");
+      setClosingDate(""); setInterestLevel(""); setTags(""); setNotes("");
+      setErrors({}); setClosing(false);
+    }, 0);
   }, [isOpen]);
 
   if (!isOpen) return null;

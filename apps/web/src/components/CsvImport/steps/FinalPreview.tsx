@@ -88,8 +88,10 @@ export function FinalPreview({ state, onUpdate }: Props) {
 
   useEffect(() => {
     const rows = buildImportRows(state);
-    setFinalRows(rows);
-    setSelectedFinalRows(new Set(rows.map((_, i) => i)));
+    setTimeout(() => {
+      setFinalRows(rows);
+      setSelectedFinalRows(new Set(rows.map((_, i) => i)));
+    }, 0);
 
     async function checkDuplicates() {
       const supabase = createSupabaseBrowserClient();

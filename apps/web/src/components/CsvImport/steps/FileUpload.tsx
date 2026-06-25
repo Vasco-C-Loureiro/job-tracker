@@ -25,7 +25,7 @@ export function FileUpload({ state, onUpdate }: FileUploadProps) {
       const id = setTimeout(() => setShowTable(true), 50);
       return () => clearTimeout(id);
     } else {
-      setShowTable(false);
+      setTimeout(() => setShowTable(false), 0);
     }
   }, [substate]);
 

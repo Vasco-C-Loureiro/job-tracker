@@ -51,10 +51,10 @@ export function ArchivedView({ jobs }: { jobs: ArchivedJobRow[] }) {
   useEffect(() => {
     const param = searchParams.get("highlight");
     if (param) {
-      setHighlightIds(param.split(",").filter(Boolean));
+      setTimeout(() => setHighlightIds(param.split(",").filter(Boolean)), 0);
       router.replace(pathname, { scroll: false });
     }
-  }, [searchParams]);
+  }, [searchParams, pathname, router]);
 
   useEffect(() => {
     if (highlightIds.length === 0) return;

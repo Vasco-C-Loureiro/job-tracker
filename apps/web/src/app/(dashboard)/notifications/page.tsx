@@ -62,32 +62,31 @@ export default function NotificationsPage() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   useEffect(() => {
+    async function init() {
+      const token = await getToken();
+      if (!token) return;
+
+      const [notifRes] = await Promise.all([
+        fetch("/api/notifications?page=1", {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        fetch("/api/notifications", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ all: true, silentOnly: true }),
+        }),
+      ]);
+
+      if (notifRes.ok) {
+        const data = await notifRes.json();
+        setItems(data.items);
+        setTotal(data.total);
+        setHasMore(data.hasMore);
+      }
+      setLoading(false);
+    }
     void init();
   }, []);
-
-  async function init() {
-    const token = await getToken();
-    if (!token) return;
-
-    const [notifRes] = await Promise.all([
-      fetch("/api/notifications?page=1", {
-        headers: { Authorization: `Bearer ${token}` },
-      }),
-      fetch("/api/notifications", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ all: true, silentOnly: true }),
-      }),
-    ]);
-
-    if (notifRes.ok) {
-      const data = await notifRes.json();
-      setItems(data.items);
-      setTotal(data.total);
-      setHasMore(data.hasMore);
-    }
-    setLoading(false);
-  }
 
   async function loadMore() {
     const token = await getToken();

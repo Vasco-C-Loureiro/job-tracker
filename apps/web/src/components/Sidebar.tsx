@@ -43,8 +43,10 @@ export function Sidebar() {
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored !== null) setExpanded(stored === "true");
-    setMounted(true);
+    setTimeout(() => {
+      if (stored !== null) setExpanded(stored === "true");
+      setMounted(true);
+    }, 0);
   }, []);
 
   const toggle = () => {
