@@ -151,10 +151,14 @@ export default function InterviewKanban({
     initialHighlight ? initialHighlight.split(",").filter(Boolean) : []
   );
 
+  const initialHighlightRef = useRef(initialHighlight);
+  const routerRef = useRef(router);
+  const pathnameRef = useRef(pathname);
+
   // Clean the URL once on mount if a highlight was passed in
   useEffect(() => {
-    if (initialHighlight) {
-      router.replace(pathname, { scroll: false });
+    if (initialHighlightRef.current) {
+      routerRef.current.replace(pathnameRef.current, { scroll: false });
     }
   }, []); // intentional empty deps — run once on mount only
 
@@ -164,7 +168,7 @@ export default function InterviewKanban({
     if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
   }, [highlightIds]);
 
-  const dragWasExpanded = useRef(false);
+  const [dragWasExpanded, setDragWasExpanded] = useState(false);
 
   // Single scroll container for both kanban and rejected section (Fix 4)
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -185,7 +189,7 @@ export default function InterviewKanban({
         Array.isArray(stored) &&
         stored.every((n) => typeof n === "number")
       ) {
-        setExtraRounds(stored as number[]);
+        setTimeout(() => setExtraRounds(stored as number[]), 0);
       }
     } catch {}
 
@@ -446,7 +450,7 @@ export default function InterviewKanban({
     const jobId = event.active.id as string;
 
     // Capture BEFORE selectedJobId is cleared — this info is lost after setSelectedJobId(null)
-    dragWasExpanded.current = selectedJobId === jobId;
+    setDragWasExpanded(selectedJobId === jobId);
 
     if (selectedJobId) {
       saveJobSilently(selectedJobId);
@@ -461,7 +465,7 @@ export default function InterviewKanban({
 
   async function handleDragEnd(event: DragEndEvent) {
     setHighlightIds([]);
-    dragWasExpanded.current = false;
+    setDragWasExpanded(false);
     const { active, over } = event;
     setDraggingJobId(null);
     setOverColumnId(null);
@@ -750,7 +754,7 @@ export default function InterviewKanban({
               isRejecting={false}
               onNextRound={() => {}}
               onReject={() => {}}
-              className={`shadow-2xl rotate-1${dragWasExpanded.current ? " animate-drag-lift" : ""}`}
+              className={`shadow-2xl rotate-1${dragWasExpanded ? " animate-drag-lift" : ""}`}
             />
           </div>
         )}

@@ -99,7 +99,6 @@ export default function InterviewCard({
   isSelected,
   onSelect,
   onRoundChange,
-  onStatusChange,
   maxRoundColumn,
   getToken,
   onRoundsChange,
@@ -142,9 +141,8 @@ export default function InterviewCard({
 
   // Sync when parent rounds change (e.g. after add/delete elsewhere)
   useEffect(() => {
-    setLocalRounds(
-      initialRounds.map(rowToRoundState).sort((a, b) => a.roundNumber - b.roundNumber),
-    );
+    const rounds = initialRounds.map(rowToRoundState).sort((a, b) => a.roundNumber - b.roundNumber);
+    setTimeout(() => setLocalRounds(rounds), 0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialRounds.length]);
 
@@ -161,8 +159,10 @@ export default function InterviewCard({
 
   // Close round pill dropdown when editing round changes
   useEffect(() => {
-    setRoundPillOpen(false);
-    setRoundPillPos(null);
+    setTimeout(() => {
+      setRoundPillOpen(false);
+      setRoundPillPos(null);
+    }, 0);
   }, [editingRoundIdx]);
 
   // Close main pill on outside click

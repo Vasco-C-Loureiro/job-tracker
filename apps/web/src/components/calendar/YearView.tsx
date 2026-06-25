@@ -23,7 +23,7 @@ interface YearViewProps {
   onYearHover?: (year: number) => void;
 }
 
-export function YearView({ focusedDate, events: _events, onYearClick, onYearSelect, onYearHover }: YearViewProps) {
+export function YearView({ focusedDate, onYearClick, onYearSelect, onYearHover }: YearViewProps) {
   const focusedYear = focusedDate.getFullYear();
   const currentYear = new Date().getFullYear();
 

@@ -52,10 +52,6 @@ const INTEREST_LEVEL_CLASSES: Record<string, string> = {
   "very-high": "bg-blue-100 text-blue-700 dark:bg-blue-700 dark:text-blue-100",
 };
 
-const INTEREST_LEVEL_LABELS: Record<string, string> = {
-  "low": "Low", "medium": "Medium", "high": "High", "very-high": "Very high",
-};
-
 // ─── Inline date/time editor for interview round events ───────────────────────
 
 interface InterviewDateTimeEditorProps {

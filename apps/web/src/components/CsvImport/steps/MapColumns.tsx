@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import type { ImportWizardState, FieldKey, ColumnMapKey } from "../types";
-import { detectHeaderRow } from "../utils";
 
 type Props = {
   state: ImportWizardState;

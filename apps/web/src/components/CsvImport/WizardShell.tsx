@@ -71,7 +71,7 @@ function getPrevStep(current: WizardStep, state: ImportWizardState): WizardStep 
   return prev;
 }
 
-function isNextDisabled(_state: ImportWizardState): boolean {
+function isNextDisabled(): boolean {
   return false;
 }
 
@@ -154,7 +154,8 @@ export function WizardShell({ state, onUpdate }: WizardShellProps) {
   useEffect(() => {
     const sidebar = document.querySelector("aside");
     if (!sidebar) return;
-    setSidebarLeft(`${sidebar.getBoundingClientRect().width}px`);
+    const initialWidth = sidebar.getBoundingClientRect().width;
+    setTimeout(() => setSidebarLeft(`${initialWidth}px`), 0);
     const ro = new ResizeObserver((entries) => {
       const w = entries[0]?.contentRect.width;
       if (w != null) setSidebarLeft(`${Math.round(w)}px`);
@@ -250,7 +251,7 @@ export function WizardShell({ state, onUpdate }: WizardShellProps) {
             {state.step !== "preview" && (
               <button
                 onClick={goNext}
-                disabled={isNextDisabled(state)}
+                disabled={isNextDisabled()}
                 className="px-5 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {nextLabel(state)}

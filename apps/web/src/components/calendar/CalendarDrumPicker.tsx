@@ -180,14 +180,18 @@ export function CalendarDrumPicker({
   const [displayYear,  setDisplayYear]  = useState(currentYear);
   const containerRef = useRef<HTMLDivElement>(null);
   // Fixed base year for the year column — never shifts as focusedDate changes
-  const initBaseYear = useRef(currentYear - 30);
+  const [initBaseYear] = useState(() => currentYear - 30);
 
   // Keep pill label in sync when focusedDate changes while picker is closed
+  const wasOpenRef = useRef(false);
   useEffect(() => {
-    if (!isOpen) {
-      setDisplayMonth(getMonth(focusedDate));
-      setDisplayYear(getYear(focusedDate));
+    if (wasOpenRef.current && !isOpen) {
+      setTimeout(() => {
+        setDisplayMonth(getMonth(focusedDate));
+        setDisplayYear(getYear(focusedDate));
+      }, 0);
     }
+    wasOpenRef.current = isOpen;
   }, [focusedDate, isOpen]);
 
   // Escape closes drum
@@ -216,8 +220,8 @@ export function CalendarDrumPicker({
   if (view === "year") return null;
 
   const showMonth       = view !== "year-months";
-  const yearItems       = Array.from({ length: 61 }, (_, i) => String(initBaseYear.current + i));
-  const yearSelectedIdx = Math.max(0, Math.min(60, currentYear - initBaseYear.current));
+  const yearItems       = Array.from({ length: 61 }, (_, i) => String(initBaseYear + i));
+  const yearSelectedIdx = Math.max(0, Math.min(60, currentYear - initBaseYear));
 
   const pillLabel = showMonth
     ? `${MONTH_LABELS[displayMonth]} ${displayYear}`

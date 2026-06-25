@@ -49,6 +49,16 @@ export async function POST(req: NextRequest) {
   const normalizedUrl = normalizeUrl(rawUrl);
 
   // ── Queries — run in parallel ─────────────────────────────────────────────
+  type DuplicateRow = {
+    id: string;
+    company: string;
+    title: string;
+    status: string;
+    saved_at: string;
+    is_archived: boolean;
+    archived_at: string | null;
+  };
+
   const FIELDS = 'id, company, title, status, saved_at, is_archived, archived_at';
 
   // Query 1: URL match — hits the (user_id, source_url_normalized) index
@@ -69,7 +79,7 @@ export async function POST(req: NextRequest) {
           .ilike('title', rawTitle)
           .ilike('company', rawCompany)
           .limit(3)
-      : Promise.resolve({ data: [] as any[], error: null });
+      : Promise.resolve({ data: [] as DuplicateRow[], error: null });
 
   const [urlResult, textResult] = await Promise.all([urlMatchPromise, textMatchPromise]);
 

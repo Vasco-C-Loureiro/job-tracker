@@ -643,6 +643,33 @@ function ConfirmModal({
   );
 }
 
+// ─── SortHeader ───────────────────────────────────────────────────────────────
+
+interface SortHeaderProps {
+  column: SortColumn;
+  children: React.ReactNode;
+  className?: string;
+  sort: SortState;
+  onSort: (col: SortColumn) => void;
+}
+
+function SortHeader({ column, children, className = "", sort, onSort }: SortHeaderProps) {
+  const isActive = sort.column === column;
+  return (
+    <th
+      className={`py-2 pb-3 pr-4 cursor-pointer select-none text-xs font-semibold uppercase tracking-wide group transition-colors ${className} ${
+        isActive ? "text-blue-500" : "text-gray-500 hover:text-gray-700"
+      }`}
+      onClick={() => onSort(column)}
+    >
+      {children}
+      <span className={`ml-1 text-xs ${isActive ? "text-blue-400" : "text-gray-400 group-hover:text-gray-600"}`}>
+        {isActive ? (sort.direction === "asc" ? "▲" : "▼") : "⇅"}
+      </span>
+    </th>
+  );
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
 
 type Props = {
@@ -655,7 +682,7 @@ type Props = {
 export function JobTable({ jobs, newJobId, onAddJob, highlightId }: Props) {
   // Local copy — lets us optimistically remove deleted rows without a page reload
   const [localJobs, setLocalJobs] = useState<JobApplicationListItem[]>(jobs);
-  useEffect(() => { setLocalJobs(jobs); }, [jobs]);
+  useEffect(() => { setTimeout(() => setLocalJobs(jobs), 0); }, [jobs]);
 
   const [sort, setSort] = useState<SortState>({ column: "appliedAt", direction: "desc" });
   const [search, setSearch] = useState("");
@@ -732,7 +759,7 @@ export function JobTable({ jobs, newJobId, onAddJob, highlightId }: Props) {
 
   useEffect(() => {
     if (!newJobId) return;
-    setHighlightedId(newJobId);
+    setTimeout(() => setHighlightedId(newJobId), 0);
     const t1 = setTimeout(() => {
       setFadingId(newJobId);
       setHighlightedId(null);
@@ -752,10 +779,10 @@ export function JobTable({ jobs, newJobId, onAddJob, highlightId }: Props) {
   useEffect(() => {
     const param = searchParams.get("highlight");
     if (param) {
-      setNotifHighlightIds(param.split(",").filter(Boolean));
+      setTimeout(() => setNotifHighlightIds(param.split(",").filter(Boolean)), 0);
       router.replace(pathname, { scroll: false });
     }
-  }, [searchParams]);
+  }, [searchParams, pathname, router]);
 
   useEffect(() => {
     if (notifHighlightIds.length === 0) return;
@@ -1214,25 +1241,6 @@ export function JobTable({ jobs, newJobId, onAddJob, highlightId }: Props) {
     });
   }
 
-  // ─── SortHeader (closure over sort state) ─────────────────────────────────
-
-  function SortHeader({ column, children, className = "" }: { column: SortColumn; children: React.ReactNode; className?: string }) {
-    const isActive = sort.column === column;
-    return (
-      <th
-        className={`py-2 pb-3 pr-4 cursor-pointer select-none text-xs font-semibold uppercase tracking-wide group transition-colors ${className} ${
-          isActive ? "text-blue-500" : "text-gray-500 hover:text-gray-700"
-        }`}
-        onClick={() => handleSort(column)}
-      >
-        {children}
-        <span className={`ml-1 text-xs ${isActive ? "text-blue-400" : "text-gray-400 group-hover:text-gray-600"}`}>
-          {isActive ? (sort.direction === "asc" ? "▲" : "▼") : "⇅"}
-        </span>
-      </th>
-    );
-  }
-
   // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
@@ -1488,16 +1496,16 @@ export function JobTable({ jobs, newJobId, onAddJob, highlightId }: Props) {
                     className="w-4 h-4 cursor-pointer"
                   />
                 </th>
-                <SortHeader column="status" className="w-24">Status</SortHeader>
-                <SortHeader column="company" className="w-44">Company</SortHeader>
-                <SortHeader column="title" className="w-52">Title</SortHeader>
-                {show("location") && <SortHeader column="location" className="w-32">Location</SortHeader>}
+                <SortHeader column="status" className="w-24" sort={sort} onSort={handleSort}>Status</SortHeader>
+                <SortHeader column="company" className="w-44" sort={sort} onSort={handleSort}>Company</SortHeader>
+                <SortHeader column="title" className="w-52" sort={sort} onSort={handleSort}>Title</SortHeader>
+                {show("location") && <SortHeader column="location" className="w-32" sort={sort} onSort={handleSort}>Location</SortHeader>}
                 {show("remoteType") && <th className="py-2 pb-3 pr-4 w-20 text-gray-500 text-xs font-semibold uppercase tracking-wide">Remote</th>}
                 {show("jobType") && <th className="py-2 pb-3 pr-4 w-24 text-gray-500 text-xs font-semibold uppercase tracking-wide">Job Type</th>}
-                {show("salaryRaw") && <SortHeader column="salary" className="w-28">Salary</SortHeader>}
+                {show("salaryRaw") && <SortHeader column="salary" className="w-28" sort={sort} onSort={handleSort}>Salary</SortHeader>}
                 {show("interestLevel") && <th className="py-2 pb-3 pr-4 w-24 text-gray-500 text-xs font-semibold uppercase tracking-wide">Interest</th>}
                 <th className="py-2 pb-3 pr-4 w-20 text-gray-500 text-xs font-semibold uppercase tracking-wide">Source</th>
-                {show("appliedAt") && <SortHeader column="appliedAt" className="w-28">Applied</SortHeader>}
+                {show("appliedAt") && <SortHeader column="appliedAt" className="w-28" sort={sort} onSort={handleSort}>Applied</SortHeader>}
                 {show("resumeCoverLetter") && <th className="py-2 pb-3 pr-4 w-20 text-gray-500 text-xs font-semibold uppercase tracking-wide">Docs</th>}
                 {show("sourceUrl") && <th className="py-2 pb-3 w-10 text-gray-500 text-xs font-semibold uppercase tracking-wide">URL</th>}
               </tr>

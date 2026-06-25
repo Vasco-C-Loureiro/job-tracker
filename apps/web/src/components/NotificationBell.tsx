@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Bell } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { Notification } from "@job-tracker/shared";
@@ -14,26 +14,32 @@ export function NotificationBell() {
   const [displayedItems, setDisplayedItems] = useState<Notification[]>([]);
   const [open, setOpen] = useState(false);
 
-  async function fetchUnread() {
-    const supabase = createSupabaseBrowserClient();
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.access_token) return;
-    const res = await fetch("/api/notifications/unread", {
-      headers: { Authorization: `Bearer ${session.access_token}` },
-    });
-    if (!res.ok) return;
-    const data = await res.json();
-    setUnreadCount(data.unreadCount);
-    // Only update pending items when the dropdown is closed so we don't
-    // overwrite the snapshot the user is currently reading.
-    if (!open) {
-      setDropdownItems(data.items);
-    }
-  }
+  const openRef = useRef(open);
+  useEffect(() => {
+    openRef.current = open;
+  });
 
   useEffect(() => {
-    fetchUnread();
-    const onFocus = () => fetchUnread();
+    async function fetchUnread() {
+      try {
+        const supabase = createSupabaseBrowserClient();
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.access_token) return;
+        const res = await fetch("/api/notifications/unread", {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        setUnreadCount(data.unreadCount);
+        // Only update pending items when the dropdown is closed so we don't
+        // overwrite the snapshot the user is currently reading.
+        if (!openRef.current) {
+          setDropdownItems(data.items);
+        }
+      } catch {}
+    }
+    void fetchUnread();
+    const onFocus = () => { void fetchUnread(); };
     window.addEventListener("focus", onFocus);
     return () => window.removeEventListener("focus", onFocus);
   }, []);
