@@ -241,9 +241,11 @@ export function HeroSection() {
           <div
             style={{
               display: "flex",
-              alignItems: "center",
+              flexDirection: "column",
               justifyContent: "center",
+              alignItems: "flex-start",
               position: "relative",
+              paddingTop: "138px",
             }}
           >
             {/* Curved arrow + label pointing to popup */}
@@ -295,79 +297,62 @@ export function HeroSection() {
 
             {/* Dashboard + popup positioning wrapper */}
             <div style={{ position: "relative", width: "640px" }}>
-              {/* Extension popup — corners intersect with dashboard top-right */}
+              {/* Extension popup — peeks behind dashboard top-right corner */}
               <div
                 style={{
                   position: "absolute",
-                  top: "-80px",
-                  right: "-176px",
-                  zIndex: 0,
-                  width: "264px",
-                  padding: "20px",
+                  top: "-138px",
+                  right: "-100px",
+                  width: "200px",
+                  padding: "16px",
                   background: "#FFFFFF",
                   borderRadius: "16px",
                   boxShadow: "0 8px 32px rgba(0,0,0,0.16)",
                   border: "1px solid #E5E7EB",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "8px",
+                  zIndex: 0,
                 }}
               >
-                <div
-                  style={{ display: "flex", alignItems: "center", gap: "8px" }}
-                >
-                  <div
-                    style={{
-                      width: "32px",
-                      height: "32px",
-                      borderRadius: "50%",
-                      background: "#3C896D",
-                      flexShrink: 0,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <span
-                      style={{
-                        color: "#FFFFFF",
-                        fontSize: "15px",
-                        fontWeight: 700,
-                      }}
-                    >
-                      A
-                    </span>
-                  </div>
-                  <div>
-                    <div
-                      style={{
-                        fontSize: "14px",
-                        fontWeight: 600,
-                        color: "#1A1A1A",
-                      }}
-                    >
-                      Ascend
-                    </div>
-                    <div style={{ fontSize: "12px", color: "#6B7280" }}>
-                      Software Engineer · Stripe
-                    </div>
-                  </div>
-                </div>
-                <button
-                  style={{
-                    width: "100%",
+                {/* Header: logo + app name */}
+                <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px" }}>
+                  <div style={{
+                    width: "32px", height: "32px", borderRadius: "50%",
                     background: "#3C896D",
-                    color: "#FFFFFF",
-                    fontSize: "13px",
-                    padding: "10px 0",
-                    borderRadius: "6px",
-                    border: "none",
-                    cursor: "default",
-                    fontWeight: 600,
-                  }}
-                >
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    flexShrink: 0,
+                  }}>
+                    <span style={{ color: "#fff", fontWeight: 700, fontSize: "14px" }}>A</span>
+                  </div>
+                  <span style={{ fontSize: "13px", fontWeight: 700, color: "#1A1A1A" }}>
+                    Ascend Extension
+                  </span>
+                </div>
+
+                {/* Job info */}
+                <div style={{ marginBottom: "14px", display: "flex", flexDirection: "column", gap: "4px" }}>
+                  <span style={{ fontSize: "12px", fontWeight: 600, color: "#1A1A1A" }}>
+                    Software Engineer
+                  </span>
+                  <span style={{ fontSize: "11px", color: "#6B7280" }}>
+                    Stripe
+                  </span>
+                  <span style={{ fontSize: "11px", color: "#3C896D", fontWeight: 500 }}>
+                    £85,000 / year
+                  </span>
+                </div>
+
+                {/* Save button */}
+                <div style={{
+                  background: "#3C896D",
+                  color: "#FFFFFF",
+                  fontSize: "12px",
+                  fontWeight: 600,
+                  padding: "9px 0",
+                  borderRadius: "8px",
+                  textAlign: "center",
+                  cursor: "pointer",
+                }}>
                   Save Job ✓
-                </button>
+                </div>
               </div>
 
               {/* Dashboard mockup */}
