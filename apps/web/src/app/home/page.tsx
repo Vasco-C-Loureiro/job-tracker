@@ -5,6 +5,7 @@ import { ProblemSection }  from "./_components/ProblemSection";
 import { FeaturesSection } from "./_components/FeaturesSection";
 import { DemoSection }     from "./_components/DemoSection";
 import { ReviewsSection }  from "./_components/ReviewsSection";
+import { FAQSection }      from "./_components/FAQSection";
 import { PricingSection }  from "./_components/PricingSection";
 import { Footer }          from "./_components/Footer";
 
@@ -31,6 +32,7 @@ export default async function HomePage() {
         <FeaturesSection />
         <DemoSection />
         <ReviewsSection />
+        <FAQSection />
         <PricingSection />
       </main>
       <Footer />
