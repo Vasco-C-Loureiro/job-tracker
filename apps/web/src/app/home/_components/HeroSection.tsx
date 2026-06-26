@@ -470,7 +470,7 @@ export function HeroSection() {
                   }}
                 >
                   {["Status", "Company", "Role", "Salary", "Location"].map(
-                    (h) => (
+                    (h, i, arr) => (
                       <span
                         key={h}
                         style={{
@@ -479,6 +479,8 @@ export function HeroSection() {
                           textTransform: "uppercase",
                           letterSpacing: "0.06em",
                           color: "#9CA3AF",
+                          ...(i === 0 && { paddingLeft: "18px" }),
+                          ...(i === arr.length - 1 && { paddingRight: "6px" }),
                         }}
                       >
                         {h}
@@ -507,22 +509,24 @@ export function HeroSection() {
                         opacity: i === 4 ? 0.4 : 1,
                       }}
                     >
-                      <span
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          padding: "3px 8px",
-                          borderRadius: "999px",
-                          fontSize: "10px",
-                          fontWeight: 600,
-                          textTransform: "capitalize",
-                          background: st.bg,
-                          color: st.color,
-                          width: "fit-content",
-                        }}
-                      >
-                        {st.label}
-                      </span>
+                      <div style={{ paddingLeft: "18px" }}>
+                        <span
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            padding: "3px 8px",
+                            borderRadius: "999px",
+                            fontSize: "10px",
+                            fontWeight: 600,
+                            textTransform: "capitalize",
+                            background: st.bg,
+                            color: st.color,
+                            width: "fit-content",
+                          }}
+                        >
+                          {st.label}
+                        </span>
+                      </div>
                       <span
                         style={{
                           fontWeight: 600,
@@ -538,7 +542,7 @@ export function HeroSection() {
                       <span style={{ color: "#6B7280", fontSize: "14px" }}>
                         {row.salary}
                       </span>
-                      <span style={{ color: "#6B7280", fontSize: "14px" }}>
+                      <span style={{ color: "#6B7280", fontSize: "14px", paddingRight: "6px" }}>
                         {row.location}
                       </span>
                     </div>
