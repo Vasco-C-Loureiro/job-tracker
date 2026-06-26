@@ -360,7 +360,7 @@ export function HeroSection() {
                     style={{
                       display: "flex",
                       flexDirection: "column",
-                      gap: "2px",
+                      gap: "0px",
                     }}
                   >
                     <span
@@ -374,13 +374,13 @@ export function HeroSection() {
                     </span>
                     <svg
                       width="100%"
-                      height="4"
-                      viewBox="0 0 120 4"
+                      height="6"
+                      viewBox="0 0 120 6"
                       preserveAspectRatio="none"
                       xmlns="http://www.w3.org/2000/svg"
                     >
                       <path
-                        d="M0 3 Q3 0 6 3 Q9 6 12 3 Q15 0 18 3 Q21 6 24 3 Q27 0 30 3 Q33 6 36 3 Q39 0 42 3 Q45 6 48 3 Q51 0 54 3 Q57 6 60 3 Q63 0 66 3 Q69 6 72 3 Q75 0 78 3 Q81 6 84 3 Q87 0 90 3 Q93 6 96 3 Q99 0 102 3 Q105 6 108 3 Q111 0 114 3 Q117 6 120 3"
+                        d="M0 3 Q4 0 8 3 Q12 6 16 3 Q20 0 24 3 Q28 6 32 3 Q36 0 40 3 Q44 6 48 3 Q52 0 56 3 Q60 6 64 3 Q68 0 72 3 Q76 6 80 3 Q84 0 88 3 Q92 6 96 3 Q100 0 104 3 Q108 6 112 3 Q116 0 120 3"
                         stroke="#3C896D"
                         strokeWidth="1"
                         fill="none"
