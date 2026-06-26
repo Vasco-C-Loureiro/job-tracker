@@ -296,7 +296,7 @@ export function HeroSection() {
             </div>
 
             {/* Dashboard + popup positioning wrapper */}
-            <div style={{ position: "relative", width: "640px" }}>
+            <div style={{ position: "relative", width: "fit-content" }}>
               {/* Extension popup — peeks behind dashboard top-right corner */}
               <div
                 style={{
