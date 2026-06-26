@@ -26,38 +26,37 @@ const DEMO_BLOCKS: {
   },
   {
     step: "03 · Interview",
-    heading: "Never lose track of what's next.",
+    heading: "Never lose track of what's next",
     body: "Schedule interview rounds, set closing date reminders, and see every commitment in one calendar. Add prep notes to each round so you always walk in prepared.",
     demo: <CalendarDemo />,
     direction: "demo-first",
   },
   {
     step: "04 · Offer",
-    heading: "The moment it all pays off.",
+    heading: "The moment it all pays off",
     body: "Mark it as an offer. Compare your options. Ascend tracks the whole journey — from the first save to the signed contract — so you can focus on choosing the right role.",
     demo: <OfferDemo />,
     direction: "text-first",
   },
 ];
 
-function Divider() {
+function ArrowRight() {
   return (
-    <div style={{ margin: "48px 0", textAlign: "center" }}>
-      <svg
-        viewBox="0 0 20 20"
-        fill="none"
-        width={20}
-        height={20}
-        style={{ margin: "0 auto", display: "block", opacity: 0.5 }}
-        aria-hidden="true"
-      >
-        <polyline
-          points="4,6 10,14 16,6"
-          stroke="#3C896D"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
+    <div style={{ display: "flex", justifyContent: "center", margin: "0 auto", width: "100%" }}>
+      <svg width="80" height="60" viewBox="0 0 80 60" fill="none" aria-hidden="true">
+        <path d="M 20 10 C 20 10 70 10 60 30 C 50 50 10 50 40 50" stroke="#3C896D" strokeWidth="2" strokeOpacity="0.5" fill="none" strokeLinecap="round"/>
+        <path d="M 34 44 L 40 50 L 34 56" stroke="#3C896D" strokeWidth="2" strokeOpacity="0.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    </div>
+  );
+}
+
+function ArrowLeft() {
+  return (
+    <div style={{ display: "flex", justifyContent: "center", margin: "0 auto", width: "100%" }}>
+      <svg width="80" height="60" viewBox="0 0 80 60" fill="none" aria-hidden="true">
+        <path d="M 60 10 C 60 10 10 10 20 30 C 30 50 70 50 40 50" stroke="#3C896D" strokeWidth="2" strokeOpacity="0.5" fill="none" strokeLinecap="round"/>
+        <path d="M 46 44 L 40 50 L 46 56" stroke="#3C896D" strokeWidth="2" strokeOpacity="0.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
       </svg>
     </div>
   );
@@ -121,7 +120,7 @@ export function DemoSection() {
           textAlign: "center",
           marginBottom: "16px",
         }}>
-          From job listing to offer letter
+          Save it. Track it. Land it.
         </h2>
         <p style={{
           fontSize: "17px",
@@ -135,7 +134,7 @@ export function DemoSection() {
         {/* Demo blocks */}
         {DEMO_BLOCKS.map((block, i) => (
           <div key={block.step}>
-            {i > 0 && <Divider />}
+            {i > 0 && (i % 2 !== 0 ? <ArrowRight /> : <ArrowLeft />)}
 
             {block.direction === "demo-first" ? (
               <div className="flex flex-col lg:flex-row items-center gap-8 lg:gap-16">
