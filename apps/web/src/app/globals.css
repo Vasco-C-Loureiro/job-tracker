@@ -188,3 +188,11 @@ body {
   from { transform: translateX(-50%); }
   to   { transform: translateX(0); }
 }
+
+.logo-banner-item {
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+.logo-banner-item:hover {
+  opacity: 1;
+}

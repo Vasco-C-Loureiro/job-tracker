@@ -252,8 +252,8 @@ export function HeroSection() {
             <div
               style={{
                 position: "absolute",
-                top: "-32px",
-                right: "90px",
+                top: "90px",
+                right: "100px",
                 zIndex: 2,
                 display: "flex",
                 alignItems: "center",
@@ -270,7 +270,13 @@ export function HeroSection() {
               >
                 Save any job with one click
               </span>
-              <svg width="32" height="24" viewBox="0 0 32 24" fill="none" aria-hidden="true">
+              <svg
+                width="32"
+                height="24"
+                viewBox="0 0 32 24"
+                fill="none"
+                aria-hidden="true"
+              >
                 <path
                   d="M2 4 C8 4, 20 4, 28 20"
                   stroke="#3C896D"
