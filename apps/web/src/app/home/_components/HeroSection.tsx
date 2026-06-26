@@ -313,44 +313,108 @@ export function HeroSection() {
                 }}
               >
                 {/* Header: logo + app name */}
-                <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px" }}>
-                  <div style={{
-                    width: "32px", height: "32px", borderRadius: "50%",
-                    background: "#3C896D",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    flexShrink: 0,
-                  }}>
-                    <span style={{ color: "#fff", fontWeight: 700, fontSize: "14px" }}>A</span>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "10px",
+                    marginBottom: "12px",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: "32px",
+                      height: "32px",
+                      borderRadius: "50%",
+                      background: "#3C896D",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <svg width="20" height="20" viewBox="0 0 28 28" fill="none" aria-hidden="true">
+                      <polyline
+                        points="6 18 14 10 22 18"
+                        stroke="rgba(255,255,255,0.5)"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                      <polyline
+                        points="6 14 14 6 22 14"
+                        stroke="#FFFFFF"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
                   </div>
-                  <span style={{ fontSize: "13px", fontWeight: 700, color: "#1A1A1A" }}>
-                    Ascend Extension
-                  </span>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                    <span
+                      style={{
+                        fontSize: "13px",
+                        fontWeight: 700,
+                        color: "#1A1A1A",
+                      }}
+                    >
+                      Ascend Extension
+                    </span>
+                    <svg width="100%" height="4" viewBox="0 0 120 4" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+                      <path
+                        d="M0 2 Q5 0 10 2 Q15 4 20 2 Q25 0 30 2 Q35 4 40 2 Q45 0 50 2 Q55 4 60 2 Q65 0 70 2 Q75 4 80 2 Q85 0 90 2 Q95 4 100 2 Q105 0 110 2 Q115 4 120 2"
+                        stroke="#3C896D" strokeWidth="1.5" fill="none" strokeLinecap="round"
+                      />
+                    </svg>
+                  </div>
                 </div>
 
                 {/* Job info */}
-                <div style={{ marginBottom: "14px", display: "flex", flexDirection: "column", gap: "4px" }}>
-                  <span style={{ fontSize: "12px", fontWeight: 600, color: "#1A1A1A" }}>
-                    Software Engineer
-                  </span>
-                  <span style={{ fontSize: "11px", color: "#6B7280" }}>
+                <div
+                  style={{
+                    marginBottom: "12px",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "4px",
+                  }}
+                >
+                  <span
+                    style={{
+                      fontSize: "12px",
+                      fontWeight: 600,
+                      color: "#1A1A1A",
+                    }}
+                  >
                     Stripe
                   </span>
-                  <span style={{ fontSize: "11px", color: "#3C896D", fontWeight: 500 }}>
+                  <span style={{ fontSize: "11px", color: "#6B7280", paddingLeft: "10px" }}>
+                    Software Engineer
+                  </span>
+                  <span
+                    style={{
+                      fontSize: "11px",
+                      color: "#3C896D",
+                      fontWeight: 500,
+                      paddingLeft: "10px",
+                    }}
+                  >
                     £85,000 / year
                   </span>
                 </div>
 
                 {/* Save button */}
-                <div style={{
-                  background: "#3C896D",
-                  color: "#FFFFFF",
-                  fontSize: "12px",
-                  fontWeight: 600,
-                  padding: "9px 0",
-                  borderRadius: "8px",
-                  textAlign: "center",
-                  cursor: "pointer",
-                }}>
+                <div
+                  style={{
+                    background: "#3C896D",
+                    color: "#FFFFFF",
+                    fontSize: "12px",
+                    fontWeight: 600,
+                    padding: "8px 0",
+                    borderRadius: "8px",
+                    textAlign: "center",
+                    cursor: "pointer",
+                  }}
+                >
                   Save Job ✓
                 </div>
               </div>
