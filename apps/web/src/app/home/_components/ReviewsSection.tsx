@@ -128,7 +128,7 @@ export function ReviewsSection() {
   return (
     <section
       id="reviews"
-      style={{ background: "#F9FAFB", padding: "96px 0", scrollMarginTop: "80px" }}
+      style={{ background: "#F9FAFB", padding: "96px 0", scrollMarginTop: "80px", fontFamily: "var(--font-geist-sans), Arial, sans-serif" }}
     >
       <div className="max-w-6xl mx-auto px-6">
         {/* Section header */}

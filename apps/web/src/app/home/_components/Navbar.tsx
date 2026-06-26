@@ -60,6 +60,7 @@ export function Navbar({ isLoggedIn }: NavbarProps) {
     right: 0,
     zIndex: 50,
     height: "64px",
+    fontFamily: "var(--font-geist-sans), Arial, sans-serif",
     backgroundColor: scrolled ? "rgba(255,255,255,0.95)" : "transparent",
     backdropFilter: scrolled ? "blur(8px)" : "none",
     borderBottom: scrolled ? "1px solid rgba(0,0,0,0.08)" : "1px solid transparent",
