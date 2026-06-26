@@ -463,7 +463,7 @@ export function HeroSection() {
                   style={{
                     background: "#F9FAFB",
                     borderBottom: "1px solid #E5E7EB",
-                    padding: "12px 14px",
+                    padding: "12px 6px 12px 14px",
                     display: "grid",
                     gridTemplateColumns: dashGridCols,
                     gap: "8px",
@@ -499,7 +499,7 @@ export function HeroSection() {
                         display: "grid",
                         gridTemplateColumns: dashGridCols,
                         gap: "8px",
-                        padding: "12px 14px",
+                        padding: "12px 6px 12px 14px",
                         borderBottom:
                           i < MOCK_ROWS.length - 1
                             ? "1px solid #F3F4F6"
