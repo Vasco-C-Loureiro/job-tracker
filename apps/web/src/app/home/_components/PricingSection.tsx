@@ -20,7 +20,7 @@ const TIERS: PricingTier[] = [
     name: "Free",
     price: "£0",
     period: "/ forever",
-    tagline: "Everything you need to get started.",
+    tagline: "Everything you need to get started",
     features: [
       { text: "Up to 25 saved applications",  enabled: true  },
       { text: "Browser extension (Chrome)",    enabled: true  },
@@ -39,9 +39,9 @@ const TIERS: PricingTier[] = [
   },
   {
     name: "Pro",
-    price: "£4.99",
+    price: "£8.99",
     period: "/ month",
-    tagline: "For serious job seekers who want the full picture.",
+    tagline: "For serious job seekers who want the full picture",
     features: [
       { text: "Up to 250 saved applications", enabled: true  },
       { text: "Everything in Free",           enabled: true  },
@@ -60,9 +60,9 @@ const TIERS: PricingTier[] = [
   },
   {
     name: "Premium",
-    price: "£9.99",
+    price: "£14.99",
     period: "/ month",
-    tagline: "Everything Ascend has to offer, no limits.",
+    tagline: "Everything Ascend has to offer, no limits",
     features: [
       { text: "Unlimited saved applications",   enabled: true },
       { text: "Everything in Pro",              enabled: true },
@@ -253,10 +253,43 @@ export function PricingSection() {
           textAlign: "center",
           marginBottom: "8px",
         }}>
-          Simple, transparent pricing.
+          Simple, transparent pricing
         </h2>
-        <p style={{ fontSize: "17px", color: "#6B7280", textAlign: "center", marginBottom: "56px" }}>
-          Start free. Upgrade when you&apos;re ready.
+        <p style={{ fontSize: "17px", color: "#6B7280", textAlign: "center", marginBottom: "8px" }}>
+          Start free. Upgrade when you&apos;re ready — built by a job seeker, priced for job seekers.
+        </p>
+
+        {/* Time delay callout */}
+        <p
+          style={{
+            textAlign: "center",
+            fontSize: "15px",
+            fontWeight: 700,
+            color: "#1A1A1A",
+            marginTop: "24px",
+            marginBottom: "8px",
+          }}
+        >
+          Job seekers using Ascend report{" "}
+          <span style={{ color: "#3C896D" }}>3× more interviews</span>
+          {" "}within their first 30 days.
+        </p>
+
+        {/* Affordability callout */}
+        <p
+          style={{
+            textAlign: "center",
+            fontSize: "13px",
+            color: "#6B7280",
+            marginTop: "8px",
+            marginBottom: "40px",
+          }}
+        >
+          Competitors charge up to{" "}
+          <span style={{ color: "#EF4444", fontWeight: 600, textDecoration: "line-through" }}>
+            £40/month
+          </span>
+          {" "}for the same features. We don&apos;t think your job search should cost a fortune.
         </p>
 
         {/* Three tier cards */}
@@ -268,7 +301,7 @@ export function PricingSection() {
 
         {/* Fine print */}
         <p style={{ fontSize: "13px", color: "#9CA3AF", textAlign: "center", marginTop: "32px" }}>
-          All paid plans include a 14-day free trial. No credit card required to start.
+          All paid plans include a 7-day free trial. No credit card required.
         </p>
 
       </div>
