@@ -252,7 +252,7 @@ export function HeroSection() {
             <div
               style={{
                 position: "absolute",
-                top: "-52px",
+                top: "-72px",
                 right: "90px",
                 zIndex: 2,
                 display: "flex",
@@ -270,16 +270,16 @@ export function HeroSection() {
               >
                 Save any job with one click
               </span>
-              <svg width="40" height="40" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+              <svg width="48" height="80" viewBox="0 0 48 80" fill="none" aria-hidden="true">
                 <path
-                  d="M4 4 C4 4, 8 4, 20 16 C28 24, 36 30, 38 36"
+                  d="M4 4 C4 20, 20 40, 40 72"
                   stroke="#3C896D"
                   strokeWidth="1.5"
                   strokeLinecap="round"
                   fill="none"
                 />
                 <polyline
-                  points="32,36 38,36 38,30"
+                  points="34,72 40,72 40,66"
                   stroke="#3C896D"
                   strokeWidth="1.5"
                   strokeLinecap="round"
