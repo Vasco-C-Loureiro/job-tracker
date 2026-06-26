@@ -299,7 +299,7 @@ export function HeroSection() {
               <div
                 style={{
                   position: "absolute",
-                  bottom: "42px",
+                  top: "-80px",
                   right: "-176px",
                   zIndex: 0,
                   width: "264px",
@@ -489,7 +489,7 @@ export function HeroSection() {
         </div>
 
         {/* Logo banner — negative margin pulls it closer to the hero */}
-        <div style={{ marginTop: "-32px" }}>
+        <div style={{ marginTop: "-20px" }}>
           <LogoBanner />
         </div>
       </div>
