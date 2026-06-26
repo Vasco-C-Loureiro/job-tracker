@@ -1,6 +1,6 @@
 export function Footer() {
   return (
-    <footer style={{ background: "#143642", padding: "64px 0 0 0" }}>
+    <footer style={{ background: "#143642", padding: "64px 0 0 0", fontFamily: "var(--font-geist-sans), Arial, sans-serif" }}>
       <div className="max-w-6xl mx-auto px-6">
 
         {/* Three-column grid */}

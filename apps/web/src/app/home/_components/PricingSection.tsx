@@ -227,7 +227,7 @@ export function PricingSection() {
   return (
     <section
       id="pricing"
-      style={{ background: "#FFFFFF", padding: "96px 0", scrollMarginTop: "80px" }}
+      style={{ background: "#FFFFFF", padding: "96px 0", scrollMarginTop: "80px", fontFamily: "var(--font-geist-sans), Arial, sans-serif" }}
     >
       <div className="max-w-6xl mx-auto px-6">
 

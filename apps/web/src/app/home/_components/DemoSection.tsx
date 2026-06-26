@@ -95,7 +95,7 @@ export function DemoSection() {
   return (
     <section
       id="how-it-works"
-      style={{ background: "#143642", padding: "96px 0", scrollMarginTop: "80px" }}
+      style={{ background: "#143642", padding: "96px 0", scrollMarginTop: "80px", fontFamily: "var(--font-geist-sans), Arial, sans-serif" }}
     >
       <div className="max-w-6xl mx-auto px-6">
 
@@ -121,7 +121,7 @@ export function DemoSection() {
           textAlign: "center",
           marginBottom: "16px",
         }}>
-          From job listing to offer letter.
+          From job listing to offer letter
         </h2>
         <p style={{
           fontSize: "17px",

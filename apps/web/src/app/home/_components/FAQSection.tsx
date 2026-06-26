@@ -115,6 +115,7 @@ export function FAQSection() {
         padding: "96px 24px",
         maxWidth: "760px",
         margin: "0 auto",
+        fontFamily: "var(--font-geist-sans), Arial, sans-serif",
       }}
     >
       <p

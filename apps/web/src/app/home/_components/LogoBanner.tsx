@@ -108,7 +108,7 @@ const LOGOS: { name: string; svg: React.ReactNode }[] = [
 
 export function LogoBanner() {
   return (
-    <section style={{ marginTop: "48px", marginBottom: "48px", width: "100%" }}>
+    <section style={{ marginTop: "48px", marginBottom: "48px", width: "100%", fontFamily: "var(--font-geist-sans), Arial, sans-serif" }}>
       <p
         style={{
           textAlign: "center",
