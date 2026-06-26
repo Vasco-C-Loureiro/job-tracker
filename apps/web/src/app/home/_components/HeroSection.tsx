@@ -95,7 +95,7 @@ export function HeroSection() {
                 fontSize: "12px",
                 fontWeight: 500,
                 color: "#3C896D",
-                marginBottom: "20px",
+                marginBottom: "12px",
               }}
             >
               <span style={{ color: "#F59E0B" }}>★</span>
@@ -248,12 +248,12 @@ export function HeroSection() {
               paddingTop: "138px",
             }}
           >
-            {/* Curved arrow + label pointing to popup */}
+            {/* Curved arrow + label pointing to Save Job button */}
             <div
               style={{
                 position: "absolute",
-                top: "-44px",
-                right: "120px",
+                top: "-52px",
+                right: "90px",
                 zIndex: 2,
                 display: "flex",
                 alignItems: "center",
@@ -268,24 +268,18 @@ export function HeroSection() {
                   fontStyle: "italic",
                 }}
               >
-                Save any job — one click
+                Save any job with one click
               </span>
-              <svg
-                width="32"
-                height="24"
-                viewBox="0 0 32 24"
-                fill="none"
-                aria-hidden="true"
-              >
+              <svg width="40" height="40" viewBox="0 0 40 40" fill="none" aria-hidden="true">
                 <path
-                  d="M2 20 C8 20, 20 20, 28 4"
+                  d="M4 4 C4 4, 8 4, 20 16 C28 24, 36 30, 38 36"
                   stroke="#3C896D"
                   strokeWidth="1.5"
                   strokeLinecap="round"
                   fill="none"
                 />
                 <polyline
-                  points="23,2 28,4 26,9"
+                  points="32,36 38,36 38,30"
                   stroke="#3C896D"
                   strokeWidth="1.5"
                   strokeLinecap="round"
@@ -296,7 +290,13 @@ export function HeroSection() {
             </div>
 
             {/* Dashboard + popup positioning wrapper */}
-            <div style={{ position: "relative", width: "fit-content", marginLeft: "12px" }}>
+            <div
+              style={{
+                position: "relative",
+                width: "fit-content",
+                marginLeft: "40px",
+              }}
+            >
               {/* Extension popup — peeks behind dashboard top-right corner */}
               <div
                 style={{
