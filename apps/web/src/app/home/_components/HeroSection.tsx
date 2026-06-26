@@ -1,7 +1,7 @@
 import { LogoBanner } from "./LogoBanner";
 
 const BULLETS = [
-  "Free to start — no credit card required",
+  "Free to start, no credit card needed",
   "Works on Indeed, LinkedIn & more",
   "Your data is always private",
   "30-day money-back guarantee",
@@ -185,8 +185,8 @@ export function HeroSection() {
                   display: "grid",
                   gridTemplateColumns: "1fr 1fr",
                   gap: "6px 12px",
-                  marginTop: "8px",
-                  marginBottom: "8px",
+                  marginTop: "4px",
+                  marginBottom: "4px",
                 }}
               >
                 {BULLETS.map((text) => (
@@ -299,13 +299,13 @@ export function HeroSection() {
               <div
                 style={{
                   position: "absolute",
-                  top: "-60px",
-                  right: "-28px",
+                  bottom: "42px",
+                  right: "-176px",
                   zIndex: 0,
-                  width: "240px",
-                  padding: "18px",
+                  width: "264px",
+                  padding: "20px",
                   background: "#FFFFFF",
-                  borderRadius: "14px",
+                  borderRadius: "16px",
                   boxShadow: "0 8px 32px rgba(0,0,0,0.16)",
                   border: "1px solid #E5E7EB",
                   display: "flex",
@@ -318,8 +318,8 @@ export function HeroSection() {
                 >
                   <div
                     style={{
-                      width: "28px",
-                      height: "28px",
+                      width: "32px",
+                      height: "32px",
                       borderRadius: "50%",
                       background: "#3C896D",
                       flexShrink: 0,
@@ -331,7 +331,7 @@ export function HeroSection() {
                     <span
                       style={{
                         color: "#FFFFFF",
-                        fontSize: "13px",
+                        fontSize: "15px",
                         fontWeight: 700,
                       }}
                     >
@@ -341,14 +341,14 @@ export function HeroSection() {
                   <div>
                     <div
                       style={{
-                        fontSize: "13px",
+                        fontSize: "14px",
                         fontWeight: 600,
                         color: "#1A1A1A",
                       }}
                     >
                       Ascend
                     </div>
-                    <div style={{ fontSize: "11px", color: "#6B7280" }}>
+                    <div style={{ fontSize: "12px", color: "#6B7280" }}>
                       Software Engineer · Stripe
                     </div>
                   </div>
@@ -358,8 +358,8 @@ export function HeroSection() {
                     width: "100%",
                     background: "#3C896D",
                     color: "#FFFFFF",
-                    fontSize: "12px",
-                    padding: "9px 0",
+                    fontSize: "13px",
+                    padding: "10px 0",
                     borderRadius: "6px",
                     border: "none",
                     cursor: "default",
@@ -488,8 +488,10 @@ export function HeroSection() {
           </div>
         </div>
 
-        {/* Logo banner */}
-        <LogoBanner />
+        {/* Logo banner — negative margin pulls it closer to the hero */}
+        <div style={{ marginTop: "-32px" }}>
+          <LogoBanner />
+        </div>
       </div>
     </section>
   );
