@@ -296,7 +296,7 @@ export function HeroSection() {
             </div>
 
             {/* Dashboard + popup positioning wrapper */}
-            <div style={{ position: "relative", width: "fit-content" }}>
+            <div style={{ position: "relative", width: "fit-content", marginLeft: "12px" }}>
               {/* Extension popup — peeks behind dashboard top-right corner */}
               <div
                 style={{
@@ -542,7 +542,13 @@ export function HeroSection() {
                       <span style={{ color: "#6B7280", fontSize: "14px" }}>
                         {row.salary}
                       </span>
-                      <span style={{ color: "#6B7280", fontSize: "14px", paddingRight: "6px" }}>
+                      <span
+                        style={{
+                          color: "#6B7280",
+                          fontSize: "14px",
+                          paddingRight: "6px",
+                        }}
+                      >
                         {row.location}
                       </span>
                     </div>
