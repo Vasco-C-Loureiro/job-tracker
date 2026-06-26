@@ -301,8 +301,8 @@ export function HeroSection() {
               <div
                 style={{
                   position: "absolute",
-                  top: "-138px",
-                  right: "-100px",
+                  top: "-158px",
+                  right: "-80px",
                   width: "200px",
                   padding: "16px",
                   background: "#FFFFFF",
@@ -333,7 +333,13 @@ export function HeroSection() {
                       flexShrink: 0,
                     }}
                   >
-                    <svg width="20" height="20" viewBox="0 0 28 28" fill="none" aria-hidden="true">
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 28 28"
+                      fill="none"
+                      aria-hidden="true"
+                    >
                       <polyline
                         points="6 18 14 10 22 18"
                         stroke="rgba(255,255,255,0.5)"
@@ -350,7 +356,13 @@ export function HeroSection() {
                       />
                     </svg>
                   </div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "2px",
+                    }}
+                  >
                     <span
                       style={{
                         fontSize: "13px",
@@ -360,10 +372,19 @@ export function HeroSection() {
                     >
                       Ascend Extension
                     </span>
-                    <svg width="100%" height="4" viewBox="0 0 120 4" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+                    <svg
+                      width="100%"
+                      height="4"
+                      viewBox="0 0 120 4"
+                      preserveAspectRatio="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
                       <path
-                        d="M0 2 Q5 0 10 2 Q15 4 20 2 Q25 0 30 2 Q35 4 40 2 Q45 0 50 2 Q55 4 60 2 Q65 0 70 2 Q75 4 80 2 Q85 0 90 2 Q95 4 100 2 Q105 0 110 2 Q115 4 120 2"
-                        stroke="#3C896D" strokeWidth="1.5" fill="none" strokeLinecap="round"
+                        d="M0 3 Q3 0 6 3 Q9 6 12 3 Q15 0 18 3 Q21 6 24 3 Q27 0 30 3 Q33 6 36 3 Q39 0 42 3 Q45 6 48 3 Q51 0 54 3 Q57 6 60 3 Q63 0 66 3 Q69 6 72 3 Q75 0 78 3 Q81 6 84 3 Q87 0 90 3 Q93 6 96 3 Q99 0 102 3 Q105 6 108 3 Q111 0 114 3 Q117 6 120 3"
+                        stroke="#3C896D"
+                        strokeWidth="1"
+                        fill="none"
+                        strokeLinecap="round"
                       />
                     </svg>
                   </div>
@@ -387,7 +408,13 @@ export function HeroSection() {
                   >
                     Stripe
                   </span>
-                  <span style={{ fontSize: "11px", color: "#6B7280", paddingLeft: "10px" }}>
+                  <span
+                    style={{
+                      fontSize: "11px",
+                      color: "#6B7280",
+                      paddingLeft: "10px",
+                    }}
+                  >
                     Software Engineer
                   </span>
                   <span
