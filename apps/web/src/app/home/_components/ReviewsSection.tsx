@@ -1,5 +1,3 @@
-import { ExternalLink } from "lucide-react";
-
 type Review = {
   title: string;
   body: string;
@@ -8,7 +6,7 @@ type Review = {
   avatarKey: string;
 };
 
-const REVIEWS_LEFT: Review[] = [
+const REVIEWS: Review[] = [
   {
     title: "Finally deleted my tracking spreadsheet.",
     body: "I'd been maintaining a monster spreadsheet with 15 columns for three months. Found Ascend, spent 10 minutes importing everything, and haven't opened Excel since. The one-click extension alone is worth it.",
@@ -37,9 +35,6 @@ const REVIEWS_LEFT: Review[] = [
     role: "UX Designer · Landed at Airbnb",
     avatarKey: "marcus-webb",
   },
-];
-
-const REVIEWS_RIGHT: Review[] = [
   {
     title: "Extension + dashboard is a genuinely great combo.",
     body: "I save jobs while I'm browsing Indeed in the morning, then spend five minutes updating statuses in the dashboard before bed. It's become part of my daily routine and my response tracking has got way more accurate.",
@@ -72,35 +67,19 @@ const REVIEWS_RIGHT: Review[] = [
 
 function ReviewCard({ review }: { review: Review }) {
   return (
-    <div style={{
-      background: "#FFFFFF",
-      border: "1px solid #E5E7EB",
-      borderRadius: "16px",
-      padding: "24px",
-      boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
-      display: "flex",
-      flexDirection: "column",
-    }}>
-      {/* Stars + external link icon */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "12px" }}>
-        <span style={{ color: "#F59E0B", fontSize: "14px" }}>★★★★★</span>
-        <ExternalLink size={13} color="#D1D5DB" aria-hidden="true" />
-      </div>
-
-      {/* Title */}
-      <p style={{ fontSize: "15px", fontWeight: 700, color: "#1A1A1A", lineHeight: 1.3, marginBottom: "8px" }}>
-        {review.title}
-      </p>
-
-      {/* Body */}
-      <p style={{ fontSize: "14px", lineHeight: 1.65, color: "#6B7280", marginBottom: "16px" }}>
-        {review.body}
-      </p>
-
-      {/* Divider */}
-      <div style={{ borderTop: "1px solid #F3F4F6", marginBottom: "16px" }} />
-
-      {/* Avatar + name + role */}
+    <div
+      style={{
+        background: "#FFFFFF",
+        border: "1px solid #E5E7EB",
+        borderRadius: "16px",
+        padding: "20px",
+        boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+        display: "flex",
+        flexDirection: "column",
+        gap: "12px",
+      }}
+    >
+      {/* Reviewer info at top */}
       <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
@@ -112,14 +91,35 @@ function ReviewCard({ review }: { review: Review }) {
           style={{ borderRadius: "50%", flexShrink: 0 }}
         />
         <div>
-          <span style={{ fontSize: "13px", fontWeight: 600, color: "#1A1A1A", display: "block" }}>
+          <span
+            style={{
+              fontSize: "13px",
+              fontWeight: 600,
+              color: "#1A1A1A",
+              display: "block",
+            }}
+          >
             {review.name}
           </span>
-          <span style={{ fontSize: "12px", color: "#9CA3AF", display: "block" }}>
+          <span style={{ fontSize: "12px", color: "#6B7280", display: "block" }}>
             {review.role}
           </span>
         </div>
       </div>
+
+      {/* Divider */}
+      <div style={{ borderTop: "1px solid #F3F4F6" }} />
+
+      {/* Stars */}
+      <span style={{ color: "#F59E0B", fontSize: "13px" }}>★★★★★</span>
+
+      {/* Title */}
+      <p style={{ fontSize: "14px", fontWeight: 700, color: "#1A1A1A", lineHeight: 1.3 }}>
+        {review.title}
+      </p>
+
+      {/* Body */}
+      <p style={{ fontSize: "13px", lineHeight: 1.65, color: "#6B7280" }}>{review.body}</p>
     </div>
   );
 }
@@ -131,54 +131,51 @@ export function ReviewsSection() {
       style={{ background: "#F9FAFB", padding: "96px 0", scrollMarginTop: "80px" }}
     >
       <div className="max-w-6xl mx-auto px-6">
-
         {/* Section header */}
-        <span style={{
-          display: "block",
-          textAlign: "center",
-          fontSize: "12px",
-          fontWeight: 600,
-          letterSpacing: "0.12em",
-          textTransform: "uppercase",
-          color: "#3C896D",
-          marginBottom: "12px",
-        }}>
-          Reviews
+        <span
+          style={{
+            display: "block",
+            textAlign: "center",
+            fontSize: "12px",
+            fontWeight: 600,
+            letterSpacing: "0.12em",
+            textTransform: "uppercase",
+            color: "#3C896D",
+            marginBottom: "12px",
+          }}
+        >
+          What our users say
         </span>
-        <h2 style={{
-          fontSize: "clamp(28px, 3.5vw, 40px)",
-          fontWeight: 800,
-          lineHeight: 1.15,
-          letterSpacing: "-0.02em",
-          color: "#1A1A1A",
-          textAlign: "center",
-          marginBottom: "8px",
-        }}>
-          Job seekers love Ascend.
+        <h2
+          style={{
+            fontSize: "clamp(28px, 3.5vw, 40px)",
+            fontWeight: 800,
+            lineHeight: 1.15,
+            letterSpacing: "-0.02em",
+            color: "#1A1A1A",
+            textAlign: "center",
+            marginBottom: "8px",
+          }}
+        >
+          Job seekers love Ascend
         </h2>
-        <p style={{ fontSize: "17px", color: "#6B7280", textAlign: "center", marginBottom: "56px" }}>
+        <p
+          style={{
+            fontSize: "17px",
+            color: "#6B7280",
+            textAlign: "center",
+            marginBottom: "56px",
+          }}
+        >
           Don&apos;t take our word for it.
         </p>
 
-        {/* Two-column staggered grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-
-          {/* Left column */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-            {REVIEWS_LEFT.map((review) => (
-              <ReviewCard key={review.name} review={review} />
-            ))}
-          </div>
-
-          {/* Right column — offset down on md+ */}
-          <div className="md:mt-10" style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-            {REVIEWS_RIGHT.map((review) => (
-              <ReviewCard key={review.name} review={review} />
-            ))}
-          </div>
-
+        {/* 3-column grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {REVIEWS.map((review) => (
+            <ReviewCard key={review.name} review={review} />
+          ))}
         </div>
-
       </div>
     </section>
   );
