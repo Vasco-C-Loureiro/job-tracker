@@ -3,19 +3,24 @@
 import React from "react";
 
 export function LogoBanner() {
-  const COMPANIES: { name: string; file: string; height?: string; style?: React.CSSProperties }[] = [
-    { name: "Microsoft",     file: "microsoft.svg" },
-    { name: "Amazon",        file: "amazon.svg",                              style: { marginTop: "18px" } },
-    { name: "Netflix",       file: "netflix.svg" },
-    { name: "Airbnb",        file: "airbnb.svg",       height: "56px" },
-    { name: "IBM",           file: "ibm.svg" },
-    { name: "Deloitte",      file: "deloitte.svg" },
+  const COMPANIES: {
+    name: string;
+    file: string;
+    height?: string;
+    style?: React.CSSProperties;
+  }[] = [
+    { name: "Microsoft", file: "microsoft.svg" },
+    { name: "Amazon", file: "amazon.svg", style: { marginTop: "18px" } },
+    { name: "Netflix", file: "netflix.svg" },
+    { name: "Airbnb", file: "airbnb.svg", height: "44px", style: { maxWidth: "180px" } },
+    { name: "IBM", file: "ibm.svg" },
+    { name: "Deloitte", file: "deloitte.svg" },
     { name: "Goldman Sachs", file: "goldman-sachs.svg", height: "36px" },
-    { name: "HSBC",          file: "hsbc.svg" },
-    { name: "Google",        file: "google.svg",        height: "28px" },
-    { name: "Siemens",       file: "siemens.svg",       height: "200px" },
-    { name: "Unilever",      file: "unilever.svg",      height: "44px" },
-    { name: "Adidas",        file: "adidas.svg",        height: "36px" },
+    { name: "HSBC", file: "hsbc.svg", height: "36px" },
+    { name: "Google", file: "google.svg", height: "36px" },
+    { name: "Siemens", file: "siemens.svg", height: "200px" },
+    { name: "Unilever", file: "unilever.svg", height: "56px" },
+    { name: "Adidas", file: "adidas.svg", height: "36px" },
   ];
 
   const LOOP = [...COMPANIES, ...COMPANIES];
