@@ -1,11 +1,13 @@
 "use client";
 
+import React from "react";
+
 export function LogoBanner() {
-  const COMPANIES: { name: string; file: string; height?: string }[] = [
+  const COMPANIES: { name: string; file: string; height?: string; style?: React.CSSProperties }[] = [
     { name: "Microsoft",     file: "microsoft.svg" },
-    { name: "Amazon",        file: "amazon.svg" },
+    { name: "Amazon",        file: "amazon.svg",                              style: { marginTop: "10px" } },
     { name: "Netflix",       file: "netflix.svg" },
-    { name: "Airbnb",        file: "airbnb.svg",       height: "36px" },
+    { name: "Airbnb",        file: "airbnb.svg",       height: "44px" },
     { name: "IBM",           file: "ibm.svg" },
     { name: "Deloitte",      file: "deloitte.svg" },
     { name: "Goldman Sachs", file: "goldman-sachs.svg", height: "36px" },
@@ -53,7 +55,7 @@ export function LogoBanner() {
             overflow: "visible",
           }}
         >
-          {LOOP.map(({ name, file, height }, i) => (
+          {LOOP.map(({ name, file, height, style }, i) => (
             <div
               key={`${name}-${i}`}
               style={{
@@ -78,6 +80,7 @@ export function LogoBanner() {
                   filter: "grayscale(15%)",
                   display: "block",
                   verticalAlign: "middle",
+                  ...style,
                 }}
               />
             </div>
