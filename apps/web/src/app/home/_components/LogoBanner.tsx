@@ -1,23 +1,32 @@
-const COMPANIES = [
-  { name: "Google",        domain: "google.com" },
-  { name: "Microsoft",     domain: "microsoft.com" },
-  { name: "Amazon",        domain: "amazon.com" },
-  { name: "Meta",          domain: "meta.com" },
-  { name: "Spotify",       domain: "spotify.com" },
-  { name: "Netflix",       domain: "netflix.com" },
-  { name: "Adobe",         domain: "adobe.com" },
-  { name: "Apple",         domain: "apple.com" },
-  { name: "Goldman Sachs", domain: "goldmansachs.com" },
-  { name: "JPMorgan",      domain: "jpmorgan.com" },
-  { name: "Deloitte",      domain: "deloitte.com" },
-  { name: "BBC",           domain: "bbc.co.uk" },
-];
-
-const LOOP = [...COMPANIES, ...COMPANIES];
+"use client";
 
 export function LogoBanner() {
+  const COMPANIES = [
+    { name: "Microsoft",     file: "microsoft.svg" },
+    { name: "Amazon",        file: "amazon.svg" },
+    { name: "Netflix",       file: "netflix.svg" },
+    { name: "Airbnb",        file: "airbnb.svg" },
+    { name: "IBM",           file: "ibm.svg" },
+    { name: "Deloitte",      file: "deloitte.svg" },
+    { name: "Goldman Sachs", file: "goldman-sachs.svg" },
+    { name: "HSBC",          file: "hsbc.svg" },
+    { name: "PwC",           file: "pwc.svg" },
+    { name: "Siemens",       file: "siemens.svg" },
+    { name: "Unilever",      file: "unilever.svg" },
+    { name: "Adidas",        file: "adidas.svg" },
+  ];
+
+  const LOOP = [...COMPANIES, ...COMPANIES];
+
   return (
-    <section style={{ marginTop: "48px", marginBottom: "48px", width: "100%", fontFamily: "var(--font-geist-sans), Arial, sans-serif" }}>
+    <section
+      style={{
+        marginTop: "48px",
+        marginBottom: "48px",
+        width: "100%",
+        fontFamily: "var(--font-geist-sans), Arial, sans-serif",
+      }}
+    >
       <p
         style={{
           textAlign: "center",
@@ -30,33 +39,41 @@ export function LogoBanner() {
       >
         Join job seekers who landed roles at
       </p>
+
+      {/* Single left-scrolling row */}
       <div style={{ overflow: "hidden", width: "100%" }}>
         <div
           style={{
             display: "flex",
+            alignItems: "center",
             width: "max-content",
             animation: "slide-left 30s linear infinite",
             willChange: "transform",
           }}
         >
-          {LOOP.map(({ name, domain }, i) => (
+          {LOOP.map(({ name, file }, i) => (
             <div
               key={`${name}-${i}`}
-              className="logo-banner-item"
-              style={{ padding: "0 28px", display: "flex", alignItems: "center" }}
+              style={{
+                padding: "0 36px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+              }}
               aria-hidden={i >= COMPANIES.length ? true : undefined}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={`https://logo.clearbit.com/${domain}`}
+                src={`/logos/${file}`}
                 alt={name}
-                height={28}
                 style={{
                   height: "28px",
                   width: "auto",
-                  opacity: 0.7,
-                  filter: "grayscale(20%)",
+                  maxWidth: "120px",
                   objectFit: "contain",
+                  opacity: 0.65,
+                  filter: "grayscale(15%)",
                   display: "block",
                 }}
               />
