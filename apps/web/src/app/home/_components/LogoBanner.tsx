@@ -1,19 +1,19 @@
 "use client";
 
 export function LogoBanner() {
-  const COMPANIES = [
+  const COMPANIES: { name: string; file: string; height?: string }[] = [
     { name: "Microsoft",     file: "microsoft.svg" },
     { name: "Amazon",        file: "amazon.svg" },
     { name: "Netflix",       file: "netflix.svg" },
-    { name: "Airbnb",        file: "airbnb.svg" },
+    { name: "Airbnb",        file: "airbnb.svg",       height: "36px" },
     { name: "IBM",           file: "ibm.svg" },
     { name: "Deloitte",      file: "deloitte.svg" },
-    { name: "Goldman Sachs", file: "goldman-sachs.svg" },
+    { name: "Goldman Sachs", file: "goldman-sachs.svg", height: "36px" },
     { name: "HSBC",          file: "hsbc.svg" },
-    { name: "PwC",           file: "pwc.svg" },
-    { name: "Siemens",       file: "siemens.svg" },
-    { name: "Unilever",      file: "unilever.svg" },
-    { name: "Adidas",        file: "adidas.svg" },
+    { name: "PwC",           file: "pwc.svg",           height: "36px" },
+    { name: "Siemens",       file: "siemens.svg",       height: "80px" },
+    { name: "Unilever",      file: "unilever.svg",      height: "44px" },
+    { name: "Adidas",        file: "adidas.svg",        height: "36px" },
   ];
 
   const LOOP = [...COMPANIES, ...COMPANIES];
@@ -51,7 +51,7 @@ export function LogoBanner() {
             willChange: "transform",
           }}
         >
-          {LOOP.map(({ name, file }, i) => (
+          {LOOP.map(({ name, file, height }, i) => (
             <div
               key={`${name}-${i}`}
               style={{
@@ -68,13 +68,14 @@ export function LogoBanner() {
                 src={`/logos/${file}`}
                 alt={name}
                 style={{
-                  height: "28px",
+                  height: height ?? "28px",
                   width: "auto",
                   maxWidth: "120px",
                   objectFit: "contain",
                   opacity: 0.65,
                   filter: "grayscale(15%)",
                   display: "block",
+                  verticalAlign: "middle",
                 }}
               />
             </div>
