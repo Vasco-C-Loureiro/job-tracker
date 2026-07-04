@@ -11,7 +11,7 @@ export function LogoBanner() {
     { name: "Goldman Sachs", file: "goldman-sachs.svg", height: "36px" },
     { name: "HSBC",          file: "hsbc.svg" },
     { name: "PwC",           file: "pwc.svg",           height: "36px" },
-    { name: "Siemens",       file: "siemens.svg",       height: "340px" },
+    { name: "Siemens",       file: "siemens.svg",       height: "200px" },
     { name: "Unilever",      file: "unilever.svg",      height: "44px" },
     { name: "Adidas",        file: "adidas.svg",        height: "36px" },
   ];
@@ -41,7 +41,7 @@ export function LogoBanner() {
       </p>
 
       {/* Single left-scrolling row */}
-      <div style={{ overflow: "hidden", width: "100%", height: "48px" }}>
+      <div style={{ overflow: "hidden", width: "100%" }}>
         <div
           style={{
             display: "flex",
@@ -49,6 +49,8 @@ export function LogoBanner() {
             width: "max-content",
             animation: "slide-left 30s linear infinite",
             willChange: "transform",
+            height: "56px",
+            overflow: "visible",
           }}
         >
           {LOOP.map(({ name, file, height }, i) => (
