@@ -5,14 +5,14 @@ import React from "react";
 export function LogoBanner() {
   const COMPANIES: { name: string; file: string; height?: string; style?: React.CSSProperties }[] = [
     { name: "Microsoft",     file: "microsoft.svg" },
-    { name: "Amazon",        file: "amazon.svg",                              style: { marginTop: "10px" } },
+    { name: "Amazon",        file: "amazon.svg",                              style: { marginTop: "18px" } },
     { name: "Netflix",       file: "netflix.svg" },
-    { name: "Airbnb",        file: "airbnb.svg",       height: "44px" },
+    { name: "Airbnb",        file: "airbnb.svg",       height: "56px" },
     { name: "IBM",           file: "ibm.svg" },
     { name: "Deloitte",      file: "deloitte.svg" },
     { name: "Goldman Sachs", file: "goldman-sachs.svg", height: "36px" },
     { name: "HSBC",          file: "hsbc.svg" },
-    { name: "PwC",           file: "pwc.svg",           height: "36px" },
+    { name: "Google",        file: "google.svg",        height: "28px" },
     { name: "Siemens",       file: "siemens.svg",       height: "200px" },
     { name: "Unilever",      file: "unilever.svg",      height: "44px" },
     { name: "Adidas",        file: "adidas.svg",        height: "36px" },
