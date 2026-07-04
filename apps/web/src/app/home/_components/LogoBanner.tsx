@@ -11,7 +11,7 @@ export function LogoBanner() {
     { name: "Goldman Sachs", file: "goldman-sachs.svg", height: "36px" },
     { name: "HSBC",          file: "hsbc.svg" },
     { name: "PwC",           file: "pwc.svg",           height: "36px" },
-    { name: "Siemens",       file: "siemens.svg",       height: "80px" },
+    { name: "Siemens",       file: "siemens.svg",       height: "340px" },
     { name: "Unilever",      file: "unilever.svg",      height: "44px" },
     { name: "Adidas",        file: "adidas.svg",        height: "36px" },
   ];
@@ -21,8 +21,8 @@ export function LogoBanner() {
   return (
     <section
       style={{
-        marginTop: "48px",
-        marginBottom: "48px",
+        marginTop: "32px",
+        marginBottom: "32px",
         width: "100%",
         fontFamily: "var(--font-geist-sans), Arial, sans-serif",
       }}
@@ -41,7 +41,7 @@ export function LogoBanner() {
       </p>
 
       {/* Single left-scrolling row */}
-      <div style={{ overflow: "hidden", width: "100%" }}>
+      <div style={{ overflow: "hidden", width: "100%", height: "48px" }}>
         <div
           style={{
             display: "flex",
