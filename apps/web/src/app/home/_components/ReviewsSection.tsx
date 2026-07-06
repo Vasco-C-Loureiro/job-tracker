@@ -189,26 +189,26 @@ export function ReviewsSection() {
 
         {/* 3-column brick stagger grid with edge fades */}
         <div style={{ position: "relative" }}>
-          {/* Left edge fade */}
+          {/* Top fade */}
           <div style={{
             position: "absolute",
             top: 0,
             left: 0,
-            width: "80px",
-            height: "100%",
-            background: "linear-gradient(to right, #F9FAFB 0%, transparent 100%)",
+            right: 0,
+            height: "120px",
+            background: "linear-gradient(to bottom, #F9FAFB 0%, transparent 100%)",
             pointerEvents: "none",
             zIndex: 2,
           }} />
 
-          {/* Right edge fade */}
+          {/* Bottom fade */}
           <div style={{
             position: "absolute",
-            top: 0,
+            bottom: 0,
+            left: 0,
             right: 0,
-            width: "80px",
-            height: "100%",
-            background: "linear-gradient(to left, #F9FAFB 0%, transparent 100%)",
+            height: "120px",
+            background: "linear-gradient(to top, #F9FAFB 0%, transparent 100%)",
             pointerEvents: "none",
             zIndex: 2,
           }} />
