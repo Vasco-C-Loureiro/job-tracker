@@ -12,7 +12,12 @@ export function LogoBanner() {
     { name: "Microsoft", file: "microsoft.svg" },
     { name: "Amazon", file: "amazon.svg", style: { marginTop: "18px" } },
     { name: "Netflix", file: "netflix.svg" },
-    { name: "Airbnb", file: "airbnb.svg", height: "44px", style: { maxWidth: "180px" } },
+    {
+      name: "Airbnb",
+      file: "airbnb.svg",
+      height: "48px",
+      style: { maxWidth: "180px" },
+    },
     { name: "IBM", file: "ibm.svg" },
     { name: "Deloitte", file: "deloitte.svg" },
     { name: "Goldman Sachs", file: "goldman-sachs.svg", height: "36px" },
@@ -20,7 +25,7 @@ export function LogoBanner() {
     { name: "Google", file: "google.svg", height: "36px" },
     { name: "Siemens", file: "siemens.svg", height: "200px" },
     { name: "Unilever", file: "unilever.svg", height: "56px" },
-    { name: "Adidas", file: "adidas.svg", height: "36px" },
+    { name: "Adidas", file: "adidas.svg", height: "52px" },
   ];
 
   const LOOP = [...COMPANIES, ...COMPANIES];

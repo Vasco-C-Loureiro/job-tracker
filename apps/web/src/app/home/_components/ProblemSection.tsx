@@ -113,7 +113,10 @@ export function ProblemSection() {
     const handleTouchMove = (e: TouchEvent) => {
       if (!isDragging.current || !containerRef.current) return;
       const rect = containerRef.current.getBoundingClientRect();
-      const x = Math.max(0, Math.min(SLIDER_WIDTH, e.touches[0].clientX - rect.left));
+      const x = Math.max(
+        0,
+        Math.min(SLIDER_WIDTH, e.touches[0].clientX - rect.left),
+      );
       updateRevealX(x);
     };
 
@@ -151,10 +154,10 @@ export function ProblemSection() {
 
       const rawRange = rawVisibleStart - rawVisibleEnd;
 
-      const topMargin = rawRange * 0.10;
+      const topMargin = rawRange * 0.2;
       const visibleStart = rawVisibleStart - topMargin;
 
-      const bottomMargin = rawRange * 0.10;
+      const bottomMargin = rawRange * 0.1;
       const visibleEnd = rawVisibleEnd + bottomMargin;
 
       const totalRange = visibleStart - visibleEnd;
@@ -173,7 +176,8 @@ export function ProblemSection() {
           if (remainingProgress <= 0) {
             newX = SLIDER_WIDTH;
           } else {
-            newX = as_ + ((progress - ap) / remainingProgress) * remainingSlider;
+            newX =
+              as_ + ((progress - ap) / remainingProgress) * remainingSlider;
           }
         } else {
           if (ap <= 0) {
@@ -192,7 +196,9 @@ export function ProblemSection() {
 
         updateRevealX(newX);
       } else {
-        updateRevealX(Math.max(0, Math.min(SLIDER_WIDTH, progress * SLIDER_WIDTH)));
+        updateRevealX(
+          Math.max(0, Math.min(SLIDER_WIDTH, progress * SLIDER_WIDTH)),
+        );
       }
     };
 
@@ -208,7 +214,12 @@ export function ProblemSection() {
     <section
       ref={sectionRef}
       id="problem"
-      style={{ background: "#F9FAFB", padding: "96px 0", scrollMarginTop: "80px", fontFamily: "var(--font-geist-sans), Arial, sans-serif" }}
+      style={{
+        background: "#F9FAFB",
+        padding: "96px 0",
+        scrollMarginTop: "80px",
+        fontFamily: "var(--font-geist-sans), Arial, sans-serif",
+      }}
     >
       <div className="max-w-6xl mx-auto px-6">
         {/* Section header */}
@@ -252,7 +263,10 @@ export function ProblemSection() {
           }}
         >
           {/* ── LEFT: slider reveal visual ── */}
-          <div ref={stickyRef} style={{ flexShrink: 0, position: "sticky", top: "120px" }}>
+          <div
+            ref={stickyRef}
+            style={{ flexShrink: 0, position: "sticky", top: "120px" }}
+          >
             {/* Slider reveal container */}
             <div
               ref={containerRef}
@@ -268,76 +282,164 @@ export function ProblemSection() {
             >
               {/* BASE LAYER — Excel spreadsheet (always full width underneath) */}
               <div style={{ width: `${SLIDER_WIDTH}px` }}>
-                <div style={{
-                  padding: "6px 12px 6px 28px",
-                  background: "#FEF2F2",
-                  borderBottom: "1px solid #FECACA",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "6px",
-                }}>
-                  <span style={{ fontSize: "10px", fontWeight: 700, color: "#EF4444",
-                    letterSpacing: "0.1em" }}>BEFORE</span>
-                  <span style={{ fontSize: "10px", color: "#9CA3AF" }}>Manual spreadsheet</span>
+                <div
+                  style={{
+                    padding: "6px 12px 6px 40px",
+                    background: "#FEF2F2",
+                    borderBottom: "1px solid #FECACA",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px",
+                  }}
+                >
+                  <span
+                    style={{
+                      fontSize: "10px",
+                      fontWeight: 700,
+                      color: "#EF4444",
+                      letterSpacing: "0.1em",
+                    }}
+                  >
+                    BEFORE
+                  </span>
+                  <span style={{ fontSize: "10px", color: "#9CA3AF" }}>
+                    Manual spreadsheet
+                  </span>
                 </div>
 
-                <table style={{
-                  width: "100%",
-                  borderCollapse: "collapse",
-                  fontSize: "11px",
-                  background: "#FFFFFF",
-                }}>
+                <table
+                  style={{
+                    width: "100%",
+                    borderCollapse: "collapse",
+                    fontSize: "11px",
+                    background: "#FFFFFF",
+                  }}
+                >
                   <thead>
                     <tr style={{ background: "#F3F4F6", height: "30px" }}>
-                      {["", "A — Job Title", "B — Company", "C — Status", "D — Notes"].map((h, i) => (
-                        <th key={i} style={{
-                          padding: "6px 8px",
-                          textAlign: "left",
-                          fontSize: "10px",
-                          fontWeight: 600,
-                          color: "#6B7280",
-                          borderBottom: "2px solid #E5E7EB",
-                          borderRight: "1px solid #E5E7EB",
-                          whiteSpace: "nowrap",
-                        }}>{h}</th>
+                      {[
+                        "",
+                        "A — Job Title",
+                        "B — Company",
+                        "C — Status",
+                        "D — Notes",
+                      ].map((h, i) => (
+                        <th
+                          key={i}
+                          style={{
+                            padding: "6px 8px",
+                            textAlign: "left",
+                            fontSize: "10px",
+                            fontWeight: 600,
+                            color: "#6B7280",
+                            borderBottom: "2px solid #E5E7EB",
+                            borderRight: "1px solid #E5E7EB",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {h}
+                        </th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {[
-                      ["1", "Software Eng...", "Google??",    "Applied??",      "forgot to follow up"],
-                      ["2", "Frontend Dev",   "Meta",         "REJECTED",       ""],
-                      ["3", "React Dev",      "???",           "maybe applied",  "check email!!"],
-                      ["4", "Junior Dev",     "Startup co.",  "GHOSTED 😭",     ""],
-                      ["5", "Full Stack",     "Amazon",       "Rejected",       "❌❌❌"],
-                      ["6", "Engineer",       "",             "??",             "update this!!"],
-                      ["7", "Eng role",       "some company", "did I apply?",   ""],
+                      [
+                        "1",
+                        "Software Eng...",
+                        "Google??",
+                        "Applied??",
+                        "forgot to follow up",
+                      ],
+                      ["2", "Frontend Dev", "Meta", "REJECTED", ""],
+                      [
+                        "3",
+                        "React Dev",
+                        "???",
+                        "maybe applied",
+                        "check email!!",
+                      ],
+                      ["4", "Junior Dev", "Startup co.", "GHOSTED 😭", ""],
+                      ["5", "Full Stack", "Amazon", "Rejected", "❌❌❌"],
+                      ["6", "Engineer", "", "??", "update this!!"],
+                      ["7", "Eng role", "some company", "did I apply?", ""],
                     ].map(([num, title, company, status, notes], i) => {
-                      const isRejected = status.toLowerCase().includes("reject") ||
+                      const isRejected =
+                        status.toLowerCase().includes("reject") ||
                         status.toLowerCase().includes("ghost");
                       return (
-                        <tr key={i} style={{
-                          background: i % 2 === 0 ? "#FFFFFF" : "#F9FAFB",
-                          borderBottom: "1px solid #E5E7EB",
-                          height: "32px",
-                        }}>
-                          <td style={{ padding: "5px 8px", color: "#9CA3AF", fontSize: "10px",
-                            borderRight: "1px solid #E5E7EB", textAlign: "center" }}>{num}</td>
-                          <td style={{ padding: "5px 8px", color: "#374151", fontSize: "11px",
-                            borderRight: "1px solid #E5E7EB", maxWidth: "80px",
-                            overflow: "hidden", textOverflow: "ellipsis",
-                            whiteSpace: "nowrap" }}>{title}</td>
-                          <td style={{ padding: "5px 8px", color: "#374151", fontSize: "11px",
-                            borderRight: "1px solid #E5E7EB", whiteSpace: "nowrap",
-                            overflow: "hidden", textOverflow: "ellipsis",
-                            maxWidth: "72px" }}>{company}</td>
-                          <td style={{ padding: "5px 8px", fontSize: "11px", fontWeight: 600,
-                            color: isRejected ? "#EF4444" : "#374151",
-                            borderRight: "1px solid #E5E7EB" }}>{status}</td>
-                          <td style={{ padding: "5px 8px", color: "#9CA3AF", fontSize: "10px",
-                            fontStyle: "italic", whiteSpace: "nowrap",
-                            overflow: "hidden", textOverflow: "ellipsis",
-                            maxWidth: "90px" }}>{notes}</td>
+                        <tr
+                          key={i}
+                          style={{
+                            background: i % 2 === 0 ? "#FFFFFF" : "#F9FAFB",
+                            borderBottom: "1px solid #E5E7EB",
+                            height: "32px",
+                          }}
+                        >
+                          <td
+                            style={{
+                              padding: "5px 8px",
+                              color: "#9CA3AF",
+                              fontSize: "10px",
+                              borderRight: "1px solid #E5E7EB",
+                              textAlign: "center",
+                            }}
+                          >
+                            {num}
+                          </td>
+                          <td
+                            style={{
+                              padding: "5px 8px",
+                              color: "#374151",
+                              fontSize: "11px",
+                              borderRight: "1px solid #E5E7EB",
+                              maxWidth: "80px",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {title}
+                          </td>
+                          <td
+                            style={{
+                              padding: "5px 8px",
+                              color: "#374151",
+                              fontSize: "11px",
+                              borderRight: "1px solid #E5E7EB",
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              maxWidth: "72px",
+                            }}
+                          >
+                            {company}
+                          </td>
+                          <td
+                            style={{
+                              padding: "5px 8px",
+                              fontSize: "11px",
+                              fontWeight: 600,
+                              color: isRejected ? "#EF4444" : "#374151",
+                              borderRight: "1px solid #E5E7EB",
+                            }}
+                          >
+                            {status}
+                          </td>
+                          <td
+                            style={{
+                              padding: "5px 8px",
+                              color: "#9CA3AF",
+                              fontSize: "10px",
+                              fontStyle: "italic",
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              maxWidth: "90px",
+                            }}
+                          >
+                            {notes}
+                          </td>
                         </tr>
                       );
                     })}
@@ -346,78 +448,184 @@ export function ProblemSection() {
               </div>
 
               {/* TOP LAYER — Dashboard (clipped to revealX from the left) */}
-              <div style={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                width: `${revealX}px`,
-                overflow: "hidden",
-                height: "100%",
-                borderRight: `2px solid #3C896D`,
-              }}>
+              <div
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  width: `${revealX}px`,
+                  overflow: "hidden",
+                  height: "100%",
+                  borderRight: `2px solid #3C896D`,
+                }}
+              >
                 <div style={{ width: `${SLIDER_WIDTH}px` }}>
-                  <div style={{
-                    padding: "6px 12px 6px 28px",
-                    background: "#F0FDF4",
-                    borderBottom: "1px solid #BBF7D0",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "6px",
-                  }}>
-                    <span style={{ fontSize: "10px", fontWeight: 700, color: "#3C896D",
-                      letterSpacing: "0.1em" }}>AFTER</span>
-                    <span style={{ fontSize: "10px", color: "#9CA3AF" }}>Ascend dashboard</span>
+                  <div
+                    style={{
+                      padding: "6px 12px 6px 40px",
+                      background: "#F0FDF4",
+                      borderBottom: "1px solid #BBF7D0",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontSize: "10px",
+                        fontWeight: 700,
+                        color: "#3C896D",
+                        letterSpacing: "0.1em",
+                      }}
+                    >
+                      AFTER
+                    </span>
+                    <span style={{ fontSize: "10px", color: "#9CA3AF" }}>
+                      Ascend dashboard
+                    </span>
                   </div>
 
-                  <table style={{
-                    width: "100%",
-                    borderCollapse: "collapse",
-                    fontSize: "11px",
-                    background: "#FFFFFF",
-                  }}>
+                  <table
+                    style={{
+                      width: "100%",
+                      borderCollapse: "collapse",
+                      fontSize: "11px",
+                      background: "#FFFFFF",
+                    }}
+                  >
                     <thead>
                       <tr style={{ background: "#F9FAFB", height: "30px" }}>
                         {["Status", "Company", "Role", "Location"].map((h) => (
-                          <th key={h} style={{
-                            padding: "6px 10px",
-                            textAlign: "left",
-                            fontSize: "10px",
-                            fontWeight: 600,
-                            color: "#9CA3AF",
-                            letterSpacing: "0.06em",
-                            textTransform: "uppercase",
-                            borderBottom: "2px solid #E5E7EB",
-                            whiteSpace: "nowrap",
-                          }}>{h}</th>
+                          <th
+                            key={h}
+                            style={{
+                              padding: "6px 10px",
+                              textAlign: "left",
+                              fontSize: "10px",
+                              fontWeight: 600,
+                              color: "#9CA3AF",
+                              letterSpacing: "0.06em",
+                              textTransform: "uppercase",
+                              borderBottom: "2px solid #E5E7EB",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {h}
+                          </th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
                       {[
-                        { status: "Offer 🎉",    bg: "#D1FAE5", color: "#065F46", company: "Stripe",    role: "Software Engineer",  loc: "London" },
-                        { status: "Interview",   bg: "#DBEAFE", color: "#1D40AF", company: "Google",    role: "Frontend Engineer",  loc: "Remote" },
-                        { status: "Interview",   bg: "#DBEAFE", color: "#1D40AF", company: "Anthropic", role: "Full Stack Dev",     loc: "Remote" },
-                        { status: "Applied",     bg: "#FEF3C7", color: "#92400E", company: "Monzo",     role: "React Developer",    loc: "London" },
-                        { status: "Applied",     bg: "#FEF3C7", color: "#92400E", company: "Revolut",   role: "Junior Engineer",    loc: "London" },
-                        { status: "Saved",       bg: "#F3F4F6", color: "#374151", company: "Linear",    role: "Backend Engineer",   loc: "Remote" },
-                        { status: "Saved",       bg: "#F3F4F6", color: "#374151", company: "Figma",     role: "React Developer",    loc: "Hybrid" },
+                        {
+                          status: "Offer 🎉",
+                          bg: "#D1FAE5",
+                          color: "#065F46",
+                          company: "Stripe",
+                          role: "Software Engineer",
+                          loc: "London",
+                        },
+                        {
+                          status: "Interview",
+                          bg: "#DBEAFE",
+                          color: "#1D40AF",
+                          company: "Google",
+                          role: "Frontend Engineer",
+                          loc: "Remote",
+                        },
+                        {
+                          status: "Interview",
+                          bg: "#DBEAFE",
+                          color: "#1D40AF",
+                          company: "Anthropic",
+                          role: "Full Stack Dev",
+                          loc: "Remote",
+                        },
+                        {
+                          status: "Applied",
+                          bg: "#FEF3C7",
+                          color: "#92400E",
+                          company: "Monzo",
+                          role: "React Developer",
+                          loc: "London",
+                        },
+                        {
+                          status: "Applied",
+                          bg: "#FEF3C7",
+                          color: "#92400E",
+                          company: "Revolut",
+                          role: "Junior Engineer",
+                          loc: "London",
+                        },
+                        {
+                          status: "Saved",
+                          bg: "#F3F4F6",
+                          color: "#374151",
+                          company: "Linear",
+                          role: "Backend Engineer",
+                          loc: "Remote",
+                        },
+                        {
+                          status: "Saved",
+                          bg: "#F3F4F6",
+                          color: "#374151",
+                          company: "Figma",
+                          role: "React Developer",
+                          loc: "Hybrid",
+                        },
                       ].map((row, i) => (
-                        <tr key={i} style={{ borderBottom: "1px solid #F3F4F6", height: "32px" }}>
+                        <tr
+                          key={i}
+                          style={{
+                            borderBottom: "1px solid #F3F4F6",
+                            height: "32px",
+                          }}
+                        >
                           <td style={{ padding: "6px 10px" }}>
-                            <span style={{
-                              display: "inline-flex", alignItems: "center",
-                              padding: "2px 8px", borderRadius: "999px",
-                              fontSize: "10px", fontWeight: 600,
-                              background: row.bg, color: row.color,
-                              whiteSpace: "nowrap",
-                            }}>{row.status}</span>
+                            <span
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                padding: "2px 8px",
+                                borderRadius: "999px",
+                                fontSize: "10px",
+                                fontWeight: 600,
+                                background: row.bg,
+                                color: row.color,
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              {row.status}
+                            </span>
                           </td>
-                          <td style={{ padding: "6px 10px", fontWeight: 600, color: "#1A1A1A",
-                            fontSize: "11px" }}>{row.company}</td>
-                          <td style={{ padding: "6px 10px", color: "#374151",
-                            fontSize: "11px" }}>{row.role}</td>
-                          <td style={{ padding: "6px 10px", color: "#6B7280",
-                            fontSize: "11px" }}>{row.loc}</td>
+                          <td
+                            style={{
+                              padding: "6px 10px",
+                              fontWeight: 600,
+                              color: "#1A1A1A",
+                              fontSize: "11px",
+                            }}
+                          >
+                            {row.company}
+                          </td>
+                          <td
+                            style={{
+                              padding: "6px 10px",
+                              color: "#374151",
+                              fontSize: "11px",
+                            }}
+                          >
+                            {row.role}
+                          </td>
+                          <td
+                            style={{
+                              padding: "6px 10px",
+                              color: "#6B7280",
+                              fontSize: "11px",
+                            }}
+                          >
+                            {row.loc}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -444,23 +652,35 @@ export function ProblemSection() {
                 }}
               >
                 {/* Visible pill — 28px wide, centered inside 56px hit zone */}
-                <div style={{
-                  width: "28px",
-                  height: "48px",
-                  background: "#3C896D",
-                  borderRadius: "999px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  boxShadow: "0 2px 8px rgba(0,0,0,0.20)",
-                  flexShrink: 0,
-                  pointerEvents: "none",
-                }}>
+                <div
+                  style={{
+                    width: "28px",
+                    height: "48px",
+                    background: "#3C896D",
+                    borderRadius: "999px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.20)",
+                    flexShrink: 0,
+                    pointerEvents: "none",
+                  }}
+                >
                   <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                    <path d="M5 3L2 7L5 11" stroke="white" strokeWidth="1.5"
-                      strokeLinecap="round" strokeLinejoin="round"/>
-                    <path d="M9 3L12 7L9 11" stroke="white" strokeWidth="1.5"
-                      strokeLinecap="round" strokeLinejoin="round"/>
+                    <path
+                      d="M5 3L2 7L5 11"
+                      stroke="white"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <path
+                      d="M9 3L12 7L9 11"
+                      stroke="white"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
                   </svg>
                 </div>
               </div>
@@ -469,14 +689,28 @@ export function ProblemSection() {
           </div>
 
           {/* ── RIGHT: beats list ── */}
-          <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "48px" }}>
+          <div
+            style={{
+              flex: 1,
+              display: "flex",
+              flexDirection: "column",
+              gap: "48px",
+            }}
+          >
             {BEATS.map((beat, i) => (
               <div key={beat.num}>
                 {i > 0 && (
-                  <div style={{ borderTop: "1px solid #E5E7EB", marginBottom: "48px" }} />
+                  <div
+                    style={{
+                      borderTop: "1px solid #E5E7EB",
+                      marginBottom: "48px",
+                    }}
+                  />
                 )}
                 <div className="flex flex-col md:flex-row items-start gap-4 md:gap-8">
-                  <span style={{ ...numberStyle, color: beat.numColor }}>{beat.num}</span>
+                  <span style={{ ...numberStyle, color: beat.numColor }}>
+                    {beat.num}
+                  </span>
                   <div>
                     <h3 style={headingStyle}>{beat.heading}</h3>
                     <p style={bodyStyle}>{beat.body}</p>
@@ -495,13 +729,18 @@ export function ProblemSection() {
                           textDecoration: "none",
                         }}
                         onMouseEnter={(e) => {
-                          (e.currentTarget as HTMLAnchorElement).style.textDecoration =
-                            "underline";
-                          (e.currentTarget as HTMLAnchorElement).style.color = "#2d6b55";
+                          (
+                            e.currentTarget as HTMLAnchorElement
+                          ).style.textDecoration = "underline";
+                          (e.currentTarget as HTMLAnchorElement).style.color =
+                            "#2d6b55";
                         }}
                         onMouseLeave={(e) => {
-                          (e.currentTarget as HTMLAnchorElement).style.textDecoration = "none";
-                          (e.currentTarget as HTMLAnchorElement).style.color = "#3C896D";
+                          (
+                            e.currentTarget as HTMLAnchorElement
+                          ).style.textDecoration = "none";
+                          (e.currentTarget as HTMLAnchorElement).style.color =
+                            "#3C896D";
                         }}
                       >
                         See how it works →
