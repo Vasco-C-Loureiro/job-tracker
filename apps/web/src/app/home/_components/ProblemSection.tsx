@@ -65,6 +65,7 @@ export function ProblemSection() {
   const isDragging = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const sectionRef = useRef<HTMLElement>(null);
+  const stickyRef = useRef<HTMLDivElement>(null);
   const anchorProgress = useRef<number | null>(null);
   const anchorSlider = useRef<number | null>(null);
   const revealXRef = useRef(INITIAL_REVEAL);
@@ -136,11 +137,19 @@ export function ProblemSection() {
     const handleScroll = () => {
       if (isDragging.current) return;
 
-      const rect = section.getBoundingClientRect();
+      const sticky = stickyRef.current;
+      if (!sticky) return;
+
+      const sectionRect = section.getBoundingClientRect();
+      const stickyHeight = sticky.offsetHeight;
       const windowHeight = window.innerHeight;
-      const totalTravel = rect.height + windowHeight;
-      const travelled = windowHeight - rect.top;
-      const progress = Math.max(0, Math.min(1, travelled / totalTravel));
+
+      const visibleStart = windowHeight - stickyHeight;
+      const visibleEnd = -(section.offsetHeight - stickyHeight);
+
+      const totalRange = visibleStart - visibleEnd;
+      const travelled = visibleStart - sectionRect.top;
+      const progress = Math.max(0, Math.min(1, travelled / totalRange));
 
       if (anchorProgress.current !== null && anchorSlider.current !== null) {
         const ap = anchorProgress.current;
@@ -233,7 +242,7 @@ export function ProblemSection() {
           }}
         >
           {/* ── LEFT: slider reveal visual ── */}
-          <div style={{ flexShrink: 0, position: "sticky", top: "120px" }}>
+          <div ref={stickyRef} style={{ flexShrink: 0, position: "sticky", top: "120px" }}>
             {/* Slider reveal container */}
             <div
               ref={containerRef}
