@@ -1,7 +1,7 @@
 import { ExtensionDemo } from "./demos/ExtensionDemo";
-import { KanbanDemo }    from "./demos/KanbanDemo";
-import { CalendarDemo }  from "./demos/CalendarDemo";
-import { OfferDemo }     from "./demos/OfferDemo";
+import { KanbanDemo } from "./demos/KanbanDemo";
+import { CalendarDemo } from "./demos/CalendarDemo";
+import { OfferDemo } from "./demos/OfferDemo";
 
 const DEMO_BLOCKS: {
   step: string;
@@ -42,10 +42,38 @@ const DEMO_BLOCKS: {
 
 function ArrowRight() {
   return (
-    <div style={{ display: "flex", justifyContent: "center", margin: "0 auto", width: "100%" }}>
-      <svg width="80" height="60" viewBox="0 0 80 60" fill="none" aria-hidden="true">
-        <path d="M 20 10 C 20 10 70 10 60 30 C 50 50 10 50 40 50" stroke="#3C896D" strokeWidth="2" strokeOpacity="0.5" fill="none" strokeLinecap="round"/>
-        <path d="M 34 44 L 40 50 L 34 56" stroke="#3C896D" strokeWidth="2" strokeOpacity="0.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "center",
+        margin: "0 auto",
+        width: "100%",
+      }}
+    >
+      <svg
+        width="80"
+        height="60"
+        viewBox="0 0 80 60"
+        fill="none"
+        aria-hidden="true"
+      >
+        <path
+          d="M 20 10 C 20 10 70 10 60 30 C 50 50 10 50 40 50"
+          stroke="#3C896D"
+          strokeWidth="2"
+          strokeOpacity="0.5"
+          fill="none"
+          strokeLinecap="round"
+        />
+        <path
+          d="M 34 44 L 40 50 L 34 56"
+          stroke="#3C896D"
+          strokeWidth="2"
+          strokeOpacity="0.5"
+          fill="none"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
       </svg>
     </div>
   );
@@ -53,10 +81,38 @@ function ArrowRight() {
 
 function ArrowLeft() {
   return (
-    <div style={{ display: "flex", justifyContent: "center", margin: "0 auto", width: "100%" }}>
-      <svg width="80" height="60" viewBox="0 0 80 60" fill="none" aria-hidden="true">
-        <path d="M 60 10 C 60 10 10 10 20 30 C 30 50 70 50 40 50" stroke="#3C896D" strokeWidth="2" strokeOpacity="0.5" fill="none" strokeLinecap="round"/>
-        <path d="M 46 44 L 40 50 L 46 56" stroke="#3C896D" strokeWidth="2" strokeOpacity="0.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "center",
+        margin: "0 auto",
+        width: "100%",
+      }}
+    >
+      <svg
+        width="80"
+        height="60"
+        viewBox="0 0 80 60"
+        fill="none"
+        aria-hidden="true"
+      >
+        <path
+          d="M 60 10 C 60 10 10 10 20 30 C 30 50 70 50 40 50"
+          stroke="#3C896D"
+          strokeWidth="2"
+          strokeOpacity="0.5"
+          fill="none"
+          strokeLinecap="round"
+        />
+        <path
+          d="M 46 44 L 40 50 L 46 56"
+          stroke="#3C896D"
+          strokeWidth="2"
+          strokeOpacity="0.5"
+          fill="none"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
       </svg>
     </div>
   );
@@ -94,40 +150,50 @@ export function DemoSection() {
   return (
     <section
       id="how-it-works"
-      style={{ background: "#143642", padding: "96px 0", scrollMarginTop: "80px", fontFamily: "var(--font-geist-sans), Arial, sans-serif" }}
+      style={{
+        background: "#143642",
+        padding: "96px 0",
+        scrollMarginTop: "80px",
+        fontFamily: "var(--font-geist-sans), Arial, sans-serif",
+      }}
     >
       <div className="max-w-6xl mx-auto px-6">
-
         {/* Section header */}
-        <span style={{
-          display: "block",
-          textAlign: "center",
-          fontSize: "12px",
-          fontWeight: 600,
-          letterSpacing: "0.12em",
-          textTransform: "uppercase",
-          color: "#3C896D",
-          marginBottom: "12px",
-        }}>
+        <span
+          style={{
+            display: "block",
+            textAlign: "center",
+            fontSize: "12px",
+            fontWeight: 600,
+            letterSpacing: "0.12em",
+            textTransform: "uppercase",
+            color: "#3C896D",
+            marginBottom: "12px",
+          }}
+        >
           How it works
         </span>
-        <h2 style={{
-          fontSize: "clamp(28px, 3.5vw, 40px)",
-          fontWeight: 800,
-          lineHeight: 1.15,
-          letterSpacing: "-0.02em",
-          color: "#FFFFFF",
-          textAlign: "center",
-          marginBottom: "16px",
-        }}>
+        <h2
+          style={{
+            fontSize: "clamp(28px, 3.5vw, 40px)",
+            fontWeight: 800,
+            lineHeight: 1.15,
+            letterSpacing: "-0.02em",
+            color: "#FFFFFF",
+            textAlign: "center",
+            marginBottom: "12px",
+          }}
+        >
           Save it. Track it. Land it.
         </h2>
-        <p style={{
-          fontSize: "17px",
-          color: "rgba(255,255,255,0.55)",
-          textAlign: "center",
-          marginBottom: "80px",
-        }}>
+        <p
+          style={{
+            fontSize: "17px",
+            color: "rgba(255,255,255,0.55)",
+            textAlign: "center",
+            marginBottom: "80px",
+          }}
+        >
           Four steps. One place. Zero spreadsheets.
         </p>
 
@@ -149,8 +215,16 @@ export function DemoSection() {
             ) : (
               <div className="flex flex-col lg:flex-row items-center gap-8 lg:gap-16">
                 {/* Demo first on mobile (order -1), text first on desktop */}
-                <div style={{ flex: 1, width: "100%" }} className="order-first lg:order-last">{block.demo}</div>
-                <div style={textBlockStyle} className="order-last lg:order-first">
+                <div
+                  style={{ flex: 1, width: "100%" }}
+                  className="order-first lg:order-last"
+                >
+                  {block.demo}
+                </div>
+                <div
+                  style={textBlockStyle}
+                  className="order-last lg:order-first"
+                >
                   <span style={stepStyle}>{block.step}</span>
                   <h3 style={headingStyle}>{block.heading}</h3>
                   <p style={bodyStyle}>{block.body}</p>
@@ -159,7 +233,6 @@ export function DemoSection() {
             )}
           </div>
         ))}
-
       </div>
     </section>
   );
