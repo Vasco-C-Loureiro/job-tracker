@@ -1,5 +1,7 @@
 "use client";
 
+import React, { useState, useRef, useCallback } from "react";
+
 const numberStyle: React.CSSProperties = {
   fontSize: "48px",
   fontWeight: 900,
@@ -55,88 +57,42 @@ const BEATS = [
   },
 ];
 
-const BEFORE_ROWS: [string, string, string, string, string][] = [
-  ["Software Eng...", "Google??", "Applied", "❌", "forgot date"],
-  ["Frontend Dev", "Meta", "REJECTED", "❌❌", ""],
-  ["React Dev", "???", "maybe applied", "", "check email"],
-  ["Junior Dev", "Startup co.", "GHOSTED 😭", "", ""],
-  ["Full Stack", "Amazon", "Rejected", "❌❌❌", ""],
-  ["Engineer", "", "??", "", "update this!!"],
-];
-
-const AFTER_ROWS = [
-  {
-    status: "Offer 🎉",
-    statusBg: "#D1FAE5",
-    statusColor: "#065F46",
-    company: "Stripe",
-    role: "Software Engineer",
-    location: "London",
-  },
-  {
-    status: "Interview",
-    statusBg: "#DBEAFE",
-    statusColor: "#1D40AF",
-    company: "Google",
-    role: "Frontend Engineer",
-    location: "Remote",
-  },
-  {
-    status: "Interview",
-    statusBg: "#DBEAFE",
-    statusColor: "#1D40AF",
-    company: "Anthropic",
-    role: "Full Stack Dev",
-    location: "Remote",
-  },
-  {
-    status: "Applied",
-    statusBg: "#FEF3C7",
-    statusColor: "#92400E",
-    company: "Monzo",
-    role: "React Developer",
-    location: "London",
-  },
-  {
-    status: "Applied",
-    statusBg: "#FEF3C7",
-    statusColor: "#92400E",
-    company: "Revolut",
-    role: "Junior Engineer",
-    location: "London",
-  },
-];
-
-const cellStyle: React.CSSProperties = {
-  border: "1px solid #D1D5DB",
-  padding: "2px 3px",
-  fontSize: "10px",
-  color: "#374151",
-  whiteSpace: "nowrap",
-  overflow: "hidden",
-  maxWidth: "48px",
-  textOverflow: "ellipsis",
-};
-
-const thStyle: React.CSSProperties = {
-  ...cellStyle,
-  background: "#F3F4F6",
-  fontWeight: 600,
-  color: "#6B7280",
-  textAlign: "center",
-};
-
-function isRedCell(text: string) {
-  return text.includes("REJECT") || text.includes("Reject") || text.includes("GHOST");
-}
+const SLIDER_WIDTH = 380;
+const INITIAL_REVEAL = 110;
 
 export function ProblemSection() {
+  const [revealX, setRevealX] = useState(INITIAL_REVEAL);
+  const isDragging = useRef(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
   function scrollToHowItWorks(e: React.MouseEvent) {
     e.preventDefault();
     document
       .getElementById("how-it-works")
       ?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
+
+  const handleMouseDown = useCallback(() => {
+    isDragging.current = true;
+  }, []);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!isDragging.current || !containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const x = Math.max(24, Math.min(SLIDER_WIDTH - 24, e.clientX - rect.left));
+    setRevealX(x);
+  }, []);
+
+  const handleMouseUp = useCallback(() => {
+    isDragging.current = false;
+  }, []);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const x = Math.max(24, Math.min(SLIDER_WIDTH - 24, e.touches[0].clientX - rect.left));
+    setRevealX(x);
+  }, []);
 
   return (
     <section
@@ -184,62 +140,173 @@ export function ProblemSection() {
             margin: "0 auto",
           }}
         >
-          {/* ── LEFT: before/after visual ── */}
+          {/* ── LEFT: slider reveal visual ── */}
           <div style={{ flexShrink: 0, position: "sticky", top: "120px" }}>
+            {/* Slider reveal container */}
             <div
+              ref={containerRef}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={handleMouseUp}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleMouseUp}
               style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "12px",
-                marginTop: "32px",
+                position: "relative",
+                width: `${SLIDER_WIDTH}px`,
+                userSelect: "none",
+                cursor: isDragging.current ? "ew-resize" : "default",
+                borderRadius: "12px",
+                overflow: "hidden",
+                boxShadow: "0 4px 24px rgba(0,0,0,0.10)",
               }}
             >
-              {/* BEFORE panel */}
-              <div style={{ width: "160px" }}>
-                <div
-                  style={{
-                    fontSize: "10px",
-                    color: "#EF4444",
-                    fontWeight: 700,
-                    letterSpacing: "0.1em",
-                    marginBottom: "6px",
-                  }}
-                >
-                  BEFORE
+              {/* BASE LAYER — Excel spreadsheet (always full width underneath) */}
+              <div style={{ width: `${SLIDER_WIDTH}px` }}>
+                <div style={{
+                  padding: "6px 12px",
+                  background: "#FEF2F2",
+                  borderBottom: "1px solid #FECACA",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                }}>
+                  <span style={{ fontSize: "10px", fontWeight: 700, color: "#EF4444",
+                    letterSpacing: "0.1em" }}>BEFORE</span>
+                  <span style={{ fontSize: "10px", color: "#9CA3AF" }}>Manual spreadsheet</span>
                 </div>
-                <div
-                  style={{
+
+                <table style={{
+                  width: "100%",
+                  borderCollapse: "collapse",
+                  fontSize: "11px",
+                  background: "#FFFFFF",
+                }}>
+                  <thead>
+                    <tr style={{ background: "#F3F4F6" }}>
+                      {["", "A — Job Title", "B — Company", "C — Status", "D — Notes"].map((h, i) => (
+                        <th key={i} style={{
+                          padding: "6px 8px",
+                          textAlign: "left",
+                          fontSize: "10px",
+                          fontWeight: 600,
+                          color: "#6B7280",
+                          borderBottom: "2px solid #E5E7EB",
+                          borderRight: "1px solid #E5E7EB",
+                          whiteSpace: "nowrap",
+                        }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[
+                      ["1", "Software Eng...", "Google??",    "Applied??",      "forgot to follow up"],
+                      ["2", "Frontend Dev",   "Meta",         "REJECTED",       ""],
+                      ["3", "React Dev",      "???",           "maybe applied",  "check email!!"],
+                      ["4", "Junior Dev",     "Startup co.",  "GHOSTED 😭",     ""],
+                      ["5", "Full Stack",     "Amazon",       "Rejected",       "❌❌❌"],
+                      ["6", "Engineer",       "",             "??",             "update this!!"],
+                      ["7", "Eng role",       "some company", "did I apply?",   ""],
+                    ].map(([num, title, company, status, notes], i) => {
+                      const isRejected = status.toLowerCase().includes("reject") ||
+                        status.toLowerCase().includes("ghost");
+                      return (
+                        <tr key={i} style={{
+                          background: i % 2 === 0 ? "#FFFFFF" : "#F9FAFB",
+                          borderBottom: "1px solid #E5E7EB",
+                        }}>
+                          <td style={{ padding: "5px 8px", color: "#9CA3AF", fontSize: "10px",
+                            borderRight: "1px solid #E5E7EB", textAlign: "center" }}>{num}</td>
+                          <td style={{ padding: "5px 8px", color: "#374151", fontSize: "11px",
+                            borderRight: "1px solid #E5E7EB", maxWidth: "80px",
+                            overflow: "hidden", textOverflow: "ellipsis",
+                            whiteSpace: "nowrap" }}>{title}</td>
+                          <td style={{ padding: "5px 8px", color: "#374151", fontSize: "11px",
+                            borderRight: "1px solid #E5E7EB" }}>{company}</td>
+                          <td style={{ padding: "5px 8px", fontSize: "11px", fontWeight: 600,
+                            color: isRejected ? "#EF4444" : "#374151",
+                            borderRight: "1px solid #E5E7EB" }}>{status}</td>
+                          <td style={{ padding: "5px 8px", color: "#9CA3AF", fontSize: "10px",
+                            fontStyle: "italic" }}>{notes}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* TOP LAYER — Dashboard (clipped to revealX from the left) */}
+              <div style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                width: `${revealX}px`,
+                overflow: "hidden",
+                height: "100%",
+                borderRight: `2px solid #3C896D`,
+              }}>
+                <div style={{ width: `${SLIDER_WIDTH}px` }}>
+                  <div style={{
+                    padding: "6px 12px",
+                    background: "#F0FDF4",
+                    borderBottom: "1px solid #BBF7D0",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px",
+                  }}>
+                    <span style={{ fontSize: "10px", fontWeight: 700, color: "#3C896D",
+                      letterSpacing: "0.1em" }}>AFTER</span>
+                    <span style={{ fontSize: "10px", color: "#9CA3AF" }}>Ascend dashboard</span>
+                  </div>
+
+                  <table style={{
+                    width: "100%",
+                    borderCollapse: "collapse",
+                    fontSize: "11px",
                     background: "#FFFFFF",
-                    border: "2px solid #E5E7EB",
-                    borderRadius: "8px",
-                    padding: "12px",
-                    overflowX: "hidden",
-                  }}
-                >
-                  <table style={{ borderCollapse: "collapse", width: "100%" }}>
+                  }}>
                     <thead>
-                      <tr>
-                        {["A", "B", "C", "D", "E"].map((h) => (
-                          <th key={h} style={thStyle}>
-                            {h}
-                          </th>
+                      <tr style={{ background: "#F9FAFB" }}>
+                        {["Status", "Company", "Role", "Location"].map((h) => (
+                          <th key={h} style={{
+                            padding: "6px 10px",
+                            textAlign: "left",
+                            fontSize: "10px",
+                            fontWeight: 600,
+                            color: "#9CA3AF",
+                            letterSpacing: "0.06em",
+                            textTransform: "uppercase",
+                            borderBottom: "2px solid #E5E7EB",
+                            whiteSpace: "nowrap",
+                          }}>{h}</th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
-                      {BEFORE_ROWS.map((row, ri) => (
-                        <tr key={ri}>
-                          {row.map((cell, ci) => (
-                            <td
-                              key={ci}
-                              style={{
-                                ...cellStyle,
-                                color: isRedCell(cell) ? "#EF4444" : "#374151",
-                              }}
-                            >
-                              {cell}
-                            </td>
-                          ))}
+                      {[
+                        { status: "Offer 🎉",    bg: "#D1FAE5", color: "#065F46", company: "Stripe",    role: "Software Engineer",  loc: "London" },
+                        { status: "Interview",   bg: "#DBEAFE", color: "#1D40AF", company: "Google",    role: "Frontend Engineer",  loc: "Remote" },
+                        { status: "Interview",   bg: "#DBEAFE", color: "#1D40AF", company: "Anthropic", role: "Full Stack Dev",     loc: "Remote" },
+                        { status: "Applied",     bg: "#FEF3C7", color: "#92400E", company: "Monzo",     role: "React Developer",    loc: "London" },
+                        { status: "Applied",     bg: "#FEF3C7", color: "#92400E", company: "Revolut",   role: "Junior Engineer",    loc: "London" },
+                        { status: "Saved",       bg: "#F3F4F6", color: "#374151", company: "Linear",    role: "Backend Engineer",   loc: "Remote" },
+                        { status: "Saved",       bg: "#F3F4F6", color: "#374151", company: "Figma",     role: "React Developer",    loc: "Hybrid" },
+                      ].map((row, i) => (
+                        <tr key={i} style={{ borderBottom: "1px solid #F3F4F6" }}>
+                          <td style={{ padding: "6px 10px" }}>
+                            <span style={{
+                              display: "inline-flex", alignItems: "center",
+                              padding: "2px 8px", borderRadius: "999px",
+                              fontSize: "10px", fontWeight: 600,
+                              background: row.bg, color: row.color,
+                              whiteSpace: "nowrap",
+                            }}>{row.status}</span>
+                          </td>
+                          <td style={{ padding: "6px 10px", fontWeight: 600, color: "#1A1A1A",
+                            fontSize: "11px" }}>{row.company}</td>
+                          <td style={{ padding: "6px 10px", color: "#374151",
+                            fontSize: "11px" }}>{row.role}</td>
+                          <td style={{ padding: "6px 10px", color: "#6B7280",
+                            fontSize: "11px" }}>{row.loc}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -247,108 +314,45 @@ export function ProblemSection() {
                 </div>
               </div>
 
-              {/* Arrow */}
-              <span style={{ color: "#9CA3AF", fontSize: "20px", flexShrink: 0 }}>
-                →
-              </span>
-
-              {/* AFTER panel */}
-              <div style={{ width: "160px" }}>
-                <div
-                  style={{
-                    fontSize: "10px",
-                    color: "#3C896D",
-                    fontWeight: 700,
-                    letterSpacing: "0.1em",
-                    marginBottom: "6px",
-                  }}
-                >
-                  AFTER
-                </div>
-                <div
-                  style={{
-                    background: "#FFFFFF",
-                    border: "2px solid #3C896D",
-                    borderRadius: "8px",
-                    padding: "12px",
-                  }}
-                >
-                  <table style={{ borderCollapse: "collapse", width: "100%" }}>
-                    <thead>
-                      <tr>
-                        {["Status", "Company", "Role", "Location"].map((h) => (
-                          <th
-                            key={h}
-                            style={{
-                              fontSize: "10px",
-                              fontWeight: 600,
-                              color: "#6B7280",
-                              padding: "2px 4px",
-                              textAlign: "left",
-                              whiteSpace: "nowrap",
-                            }}
-                          >
-                            {h}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {AFTER_ROWS.map((row, ri) => (
-                        <tr key={ri}>
-                          <td style={{ padding: "3px 4px" }}>
-                            <span
-                              style={{
-                                display: "inline-block",
-                                background: row.statusBg,
-                                color: row.statusColor,
-                                fontSize: "9px",
-                                fontWeight: 600,
-                                padding: "1px 5px",
-                                borderRadius: "999px",
-                                whiteSpace: "nowrap",
-                              }}
-                            >
-                              {row.status}
-                            </span>
-                          </td>
-                          <td
-                            style={{
-                              fontSize: "10px",
-                              color: "#1A1A1A",
-                              padding: "3px 4px",
-                              whiteSpace: "nowrap",
-                            }}
-                          >
-                            {row.company}
-                          </td>
-                          <td
-                            style={{
-                              fontSize: "10px",
-                              color: "#374151",
-                              padding: "3px 4px",
-                              whiteSpace: "nowrap",
-                            }}
-                          >
-                            {row.role}
-                          </td>
-                          <td
-                            style={{
-                              fontSize: "10px",
-                              color: "#6B7280",
-                              padding: "3px 4px",
-                              whiteSpace: "nowrap",
-                            }}
-                          >
-                            {row.location}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+              {/* DRAG HANDLE */}
+              <div
+                onMouseDown={handleMouseDown}
+                onTouchStart={handleMouseDown}
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: `${revealX}px`,
+                  transform: "translateX(-50%)",
+                  width: "28px",
+                  height: "100%",
+                  cursor: "ew-resize",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  zIndex: 10,
+                }}
+              >
+                <div style={{
+                  width: "28px",
+                  height: "48px",
+                  background: "#3C896D",
+                  borderRadius: "999px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.20)",
+                  flexShrink: 0,
+                }}>
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                    <path d="M5 3L2 7L5 11" stroke="white" strokeWidth="1.5"
+                      strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M9 3L12 7L9 11" stroke="white" strokeWidth="1.5"
+                      strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
                 </div>
               </div>
             </div>
+            {/* End slider reveal container */}
           </div>
 
           {/* ── RIGHT: beats list ── */}
