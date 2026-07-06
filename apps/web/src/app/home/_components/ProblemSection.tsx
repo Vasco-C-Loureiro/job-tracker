@@ -57,8 +57,8 @@ const BEATS = [
   },
 ];
 
-const SLIDER_WIDTH = 380;
-const INITIAL_REVEAL = 110;
+const SLIDER_WIDTH = 480;
+const INITIAL_REVEAL = 30;
 
 export function ProblemSection() {
   const [revealX, setRevealX] = useState(INITIAL_REVEAL);
@@ -79,7 +79,7 @@ export function ProblemSection() {
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     if (!isDragging.current || !containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
-    const x = Math.max(24, Math.min(SLIDER_WIDTH - 24, e.clientX - rect.left));
+    const x = Math.max(0, Math.min(SLIDER_WIDTH, e.clientX - rect.left));
     setRevealX(x);
   }, []);
 
@@ -90,7 +90,7 @@ export function ProblemSection() {
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
     if (!containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
-    const x = Math.max(24, Math.min(SLIDER_WIDTH - 24, e.touches[0].clientX - rect.left));
+    const x = Math.max(0, Math.min(SLIDER_WIDTH, e.touches[0].clientX - rect.left));
     setRevealX(x);
   }, []);
 
@@ -163,7 +163,7 @@ export function ProblemSection() {
               {/* BASE LAYER — Excel spreadsheet (always full width underneath) */}
               <div style={{ width: `${SLIDER_WIDTH}px` }}>
                 <div style={{
-                  padding: "6px 12px",
+                  padding: "6px 12px 6px 28px",
                   background: "#FEF2F2",
                   borderBottom: "1px solid #FECACA",
                   display: "flex",
@@ -182,7 +182,7 @@ export function ProblemSection() {
                   background: "#FFFFFF",
                 }}>
                   <thead>
-                    <tr style={{ background: "#F3F4F6" }}>
+                    <tr style={{ background: "#F3F4F6", height: "30px" }}>
                       {["", "A — Job Title", "B — Company", "C — Status", "D — Notes"].map((h, i) => (
                         <th key={i} style={{
                           padding: "6px 8px",
@@ -213,6 +213,7 @@ export function ProblemSection() {
                         <tr key={i} style={{
                           background: i % 2 === 0 ? "#FFFFFF" : "#F9FAFB",
                           borderBottom: "1px solid #E5E7EB",
+                          height: "32px",
                         }}>
                           <td style={{ padding: "5px 8px", color: "#9CA3AF", fontSize: "10px",
                             borderRight: "1px solid #E5E7EB", textAlign: "center" }}>{num}</td>
@@ -221,12 +222,16 @@ export function ProblemSection() {
                             overflow: "hidden", textOverflow: "ellipsis",
                             whiteSpace: "nowrap" }}>{title}</td>
                           <td style={{ padding: "5px 8px", color: "#374151", fontSize: "11px",
-                            borderRight: "1px solid #E5E7EB" }}>{company}</td>
+                            borderRight: "1px solid #E5E7EB", whiteSpace: "nowrap",
+                            overflow: "hidden", textOverflow: "ellipsis",
+                            maxWidth: "72px" }}>{company}</td>
                           <td style={{ padding: "5px 8px", fontSize: "11px", fontWeight: 600,
                             color: isRejected ? "#EF4444" : "#374151",
                             borderRight: "1px solid #E5E7EB" }}>{status}</td>
                           <td style={{ padding: "5px 8px", color: "#9CA3AF", fontSize: "10px",
-                            fontStyle: "italic" }}>{notes}</td>
+                            fontStyle: "italic", whiteSpace: "nowrap",
+                            overflow: "hidden", textOverflow: "ellipsis",
+                            maxWidth: "90px" }}>{notes}</td>
                         </tr>
                       );
                     })}
@@ -246,7 +251,7 @@ export function ProblemSection() {
               }}>
                 <div style={{ width: `${SLIDER_WIDTH}px` }}>
                   <div style={{
-                    padding: "6px 12px",
+                    padding: "6px 12px 6px 28px",
                     background: "#F0FDF4",
                     borderBottom: "1px solid #BBF7D0",
                     display: "flex",
@@ -265,7 +270,7 @@ export function ProblemSection() {
                     background: "#FFFFFF",
                   }}>
                     <thead>
-                      <tr style={{ background: "#F9FAFB" }}>
+                      <tr style={{ background: "#F9FAFB", height: "30px" }}>
                         {["Status", "Company", "Role", "Location"].map((h) => (
                           <th key={h} style={{
                             padding: "6px 10px",
@@ -291,7 +296,7 @@ export function ProblemSection() {
                         { status: "Saved",       bg: "#F3F4F6", color: "#374151", company: "Linear",    role: "Backend Engineer",   loc: "Remote" },
                         { status: "Saved",       bg: "#F3F4F6", color: "#374151", company: "Figma",     role: "React Developer",    loc: "Hybrid" },
                       ].map((row, i) => (
-                        <tr key={i} style={{ borderBottom: "1px solid #F3F4F6" }}>
+                        <tr key={i} style={{ borderBottom: "1px solid #F3F4F6", height: "32px" }}>
                           <td style={{ padding: "6px 10px" }}>
                             <span style={{
                               display: "inline-flex", alignItems: "center",
