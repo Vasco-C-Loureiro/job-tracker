@@ -144,8 +144,13 @@ export function ProblemSection() {
       const stickyHeight = sticky.offsetHeight;
       const windowHeight = window.innerHeight;
 
-      const visibleStart = windowHeight - stickyHeight;
-      const visibleEnd = -(section.offsetHeight - stickyHeight);
+      const rawVisibleStart = windowHeight - stickyHeight;
+      const rawVisibleEnd = windowHeight - section.offsetHeight;
+      const rawRange = rawVisibleStart - rawVisibleEnd;
+
+      const topMargin = rawRange * 0.10;
+      const visibleStart = rawVisibleStart - topMargin;
+      const visibleEnd = rawVisibleEnd;
 
       const totalRange = visibleStart - visibleEnd;
       const travelled = visibleStart - sectionRect.top;
