@@ -63,6 +63,13 @@ const REVIEWS: Review[] = [
     role: "Quantitative Analyst · Landed at Goldman Sachs",
     avatarKey: "tomas-rueda",
   },
+  {
+    name: "Chloe Watkins",
+    role: "Graduate Trainee · Landed at Deloitte",
+    title: "Wish I'd had this during my first job hunt.",
+    body: "I spent months applying with zero structure. Ascend would have saved me so much stress — having everything in one place makes the whole process feel manageable.",
+    avatarKey: "chloe-watkins",
+  },
 ];
 
 function ReviewCard({ review }: { review: Review }) {
@@ -125,10 +132,20 @@ function ReviewCard({ review }: { review: Review }) {
 }
 
 export function ReviewsSection() {
+  const col1 = [REVIEWS[0], REVIEWS[3], REVIEWS[6]];
+  const col2 = [REVIEWS[1], REVIEWS[4], REVIEWS[7]];
+  const col3 = [REVIEWS[2], REVIEWS[5], REVIEWS[8]];
+
   return (
     <section
       id="reviews"
-      style={{ background: "#F9FAFB", padding: "96px 0", scrollMarginTop: "80px", fontFamily: "var(--font-geist-sans), Arial, sans-serif" }}
+      style={{
+        background: "#F9FAFB",
+        padding: "96px 0",
+        scrollMarginTop: "80px",
+        fontFamily: "var(--font-geist-sans), Arial, sans-serif",
+        overflow: "hidden",
+      }}
     >
       <div className="max-w-6xl mx-auto px-6">
         {/* Section header */}
@@ -170,11 +187,54 @@ export function ReviewsSection() {
           Don&apos;t take our word for it.
         </p>
 
-        {/* 3-column grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {REVIEWS.map((review) => (
-            <ReviewCard key={review.name} review={review} />
-          ))}
+        {/* 3-column brick stagger grid with edge fades */}
+        <div style={{ position: "relative" }}>
+          {/* Left edge fade */}
+          <div style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "80px",
+            height: "100%",
+            background: "linear-gradient(to right, #F9FAFB 0%, transparent 100%)",
+            pointerEvents: "none",
+            zIndex: 2,
+          }} />
+
+          {/* Right edge fade */}
+          <div style={{
+            position: "absolute",
+            top: 0,
+            right: 0,
+            width: "80px",
+            height: "100%",
+            background: "linear-gradient(to left, #F9FAFB 0%, transparent 100%)",
+            pointerEvents: "none",
+            zIndex: 2,
+          }} />
+
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr 1fr",
+            gap: "24px",
+            alignItems: "start",
+            position: "relative",
+          }}>
+            {/* Column 1 — flush top */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+              {col1.map((review) => <ReviewCard key={review.avatarKey} review={review} />)}
+            </div>
+
+            {/* Column 2 — shifted down by 40px for brick stagger */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "24px", marginTop: "40px" }}>
+              {col2.map((review) => <ReviewCard key={review.avatarKey} review={review} />)}
+            </div>
+
+            {/* Column 3 — flush top, same as column 1 */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+              {col3.map((review) => <ReviewCard key={review.avatarKey} review={review} />)}
+            </div>
+          </div>
         </div>
       </div>
     </section>
