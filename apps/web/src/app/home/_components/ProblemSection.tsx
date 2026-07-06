@@ -58,12 +58,21 @@ const BEATS = [
 ];
 
 const SLIDER_WIDTH = 480;
-const INITIAL_REVEAL = 30;
+const INITIAL_REVEAL = 0;
 
 export function ProblemSection() {
   const [revealX, setRevealX] = useState(INITIAL_REVEAL);
   const isDragging = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const sectionRef = useRef<HTMLElement>(null);
+  const anchorProgress = useRef<number | null>(null);
+  const anchorSlider = useRef<number | null>(null);
+  const revealXRef = useRef(INITIAL_REVEAL);
+
+  const updateRevealX = useCallback((x: number) => {
+    revealXRef.current = x;
+    setRevealX(x);
+  }, []);
 
   function scrollToHowItWorks(e: React.MouseEvent) {
     e.preventDefault();
@@ -81,10 +90,22 @@ export function ProblemSection() {
       if (!isDragging.current || !containerRef.current) return;
       const rect = containerRef.current.getBoundingClientRect();
       const x = Math.max(0, Math.min(SLIDER_WIDTH, e.clientX - rect.left));
-      setRevealX(x);
+      updateRevealX(x);
     };
 
     const handleMouseUp = () => {
+      if (isDragging.current) {
+        const section = sectionRef.current;
+        if (section) {
+          const rect = section.getBoundingClientRect();
+          const windowHeight = window.innerHeight;
+          const totalTravel = rect.height + windowHeight;
+          const travelled = windowHeight - rect.top;
+          const progress = Math.max(0, Math.min(1, travelled / totalTravel));
+          anchorProgress.current = progress;
+          anchorSlider.current = revealXRef.current;
+        }
+      }
       isDragging.current = false;
     };
 
@@ -92,7 +113,7 @@ export function ProblemSection() {
       if (!isDragging.current || !containerRef.current) return;
       const rect = containerRef.current.getBoundingClientRect();
       const x = Math.max(0, Math.min(SLIDER_WIDTH, e.touches[0].clientX - rect.left));
-      setRevealX(x);
+      updateRevealX(x);
     };
 
     window.addEventListener("mousemove", handleMouseMove);
@@ -106,10 +127,67 @@ export function ProblemSection() {
       window.removeEventListener("touchmove", handleTouchMove);
       window.removeEventListener("touchend", handleMouseUp);
     };
-  }, []);
+  }, [updateRevealX]);
+
+  useEffect(() => {
+    const section = sectionRef.current;
+    if (!section) return;
+
+    const handleScroll = () => {
+      if (isDragging.current) return;
+
+      const rect = section.getBoundingClientRect();
+      const windowHeight = window.innerHeight;
+      const totalTravel = rect.height + windowHeight;
+      const travelled = windowHeight - rect.top;
+      const progress = Math.max(0, Math.min(1, travelled / totalTravel));
+
+      if (anchorProgress.current !== null && anchorSlider.current !== null) {
+        const ap = anchorProgress.current;
+        const as_ = anchorSlider.current;
+
+        let newX: number;
+
+        if (progress >= ap) {
+          const remainingProgress = 1 - ap;
+          const remainingSlider = SLIDER_WIDTH - as_;
+          if (remainingProgress <= 0) {
+            newX = SLIDER_WIDTH;
+          } else {
+            newX = as_ + ((progress - ap) / remainingProgress) * remainingSlider;
+          }
+        } else {
+          if (ap <= 0) {
+            newX = 0;
+          } else {
+            newX = (progress / ap) * as_;
+          }
+        }
+
+        newX = Math.max(0, Math.min(SLIDER_WIDTH, newX));
+
+        if (progress <= 0.01 || progress >= 0.99) {
+          anchorProgress.current = null;
+          anchorSlider.current = null;
+        }
+
+        updateRevealX(newX);
+      } else {
+        updateRevealX(Math.max(0, Math.min(SLIDER_WIDTH, progress * SLIDER_WIDTH)));
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, [updateRevealX]);
 
   return (
     <section
+      ref={sectionRef}
       id="problem"
       style={{ background: "#F9FAFB", padding: "96px 0", scrollMarginTop: "80px", fontFamily: "var(--font-geist-sans), Arial, sans-serif" }}
     >
