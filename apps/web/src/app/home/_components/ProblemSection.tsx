@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
 
 const numberStyle: React.CSSProperties = {
   fontSize: "48px",
@@ -76,22 +76,36 @@ export function ProblemSection() {
     isDragging.current = true;
   }, []);
 
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    if (!isDragging.current || !containerRef.current) return;
-    const rect = containerRef.current.getBoundingClientRect();
-    const x = Math.max(0, Math.min(SLIDER_WIDTH, e.clientX - rect.left));
-    setRevealX(x);
-  }, []);
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDragging.current || !containerRef.current) return;
+      const rect = containerRef.current.getBoundingClientRect();
+      const x = Math.max(0, Math.min(SLIDER_WIDTH, e.clientX - rect.left));
+      setRevealX(x);
+    };
 
-  const handleMouseUp = useCallback(() => {
-    isDragging.current = false;
-  }, []);
+    const handleMouseUp = () => {
+      isDragging.current = false;
+    };
 
-  const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    if (!containerRef.current) return;
-    const rect = containerRef.current.getBoundingClientRect();
-    const x = Math.max(0, Math.min(SLIDER_WIDTH, e.touches[0].clientX - rect.left));
-    setRevealX(x);
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!isDragging.current || !containerRef.current) return;
+      const rect = containerRef.current.getBoundingClientRect();
+      const x = Math.max(0, Math.min(SLIDER_WIDTH, e.touches[0].clientX - rect.left));
+      setRevealX(x);
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+    window.addEventListener("touchmove", handleTouchMove);
+    window.addEventListener("touchend", handleMouseUp);
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+      window.removeEventListener("touchmove", handleTouchMove);
+      window.removeEventListener("touchend", handleMouseUp);
+    };
   }, []);
 
   return (
@@ -145,11 +159,6 @@ export function ProblemSection() {
             {/* Slider reveal container */}
             <div
               ref={containerRef}
-              onMouseMove={handleMouseMove}
-              onMouseUp={handleMouseUp}
-              onMouseLeave={handleMouseUp}
-              onTouchMove={handleTouchMove}
-              onTouchEnd={handleMouseUp}
               style={{
                 position: "relative",
                 width: `${SLIDER_WIDTH}px`,
@@ -319,7 +328,7 @@ export function ProblemSection() {
                 </div>
               </div>
 
-              {/* DRAG HANDLE */}
+              {/* DRAG HANDLE — large invisible hit area with visible pill inside */}
               <div
                 onMouseDown={handleMouseDown}
                 onTouchStart={handleMouseDown}
@@ -328,7 +337,7 @@ export function ProblemSection() {
                   top: 0,
                   left: `${revealX}px`,
                   transform: "translateX(-50%)",
-                  width: "28px",
+                  width: "56px",
                   height: "100%",
                   cursor: "ew-resize",
                   display: "flex",
@@ -337,6 +346,7 @@ export function ProblemSection() {
                   zIndex: 10,
                 }}
               >
+                {/* Visible pill — 28px wide, centered inside 56px hit zone */}
                 <div style={{
                   width: "28px",
                   height: "48px",
@@ -347,6 +357,7 @@ export function ProblemSection() {
                   justifyContent: "center",
                   boxShadow: "0 2px 8px rgba(0,0,0,0.20)",
                   flexShrink: 0,
+                  pointerEvents: "none",
                 }}>
                   <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                     <path d="M5 3L2 7L5 11" stroke="white" strokeWidth="1.5"
