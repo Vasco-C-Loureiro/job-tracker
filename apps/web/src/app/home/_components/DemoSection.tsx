@@ -40,83 +40,6 @@ const DEMO_BLOCKS: {
   },
 ];
 
-function ArrowRight() {
-  return (
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "center",
-        margin: "0 auto",
-        width: "100%",
-      }}
-    >
-      <svg
-        width="80"
-        height="60"
-        viewBox="0 0 80 60"
-        fill="none"
-        aria-hidden="true"
-      >
-        <path
-          d="M 20 10 C 20 10 70 10 60 30 C 50 50 10 50 40 50"
-          stroke="#3C896D"
-          strokeWidth="2"
-          strokeOpacity="0.5"
-          fill="none"
-          strokeLinecap="round"
-        />
-        <path
-          d="M 34 44 L 40 50 L 34 56"
-          stroke="#3C896D"
-          strokeWidth="2"
-          strokeOpacity="0.5"
-          fill="none"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
-    </div>
-  );
-}
-
-function ArrowLeft() {
-  return (
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "center",
-        margin: "0 auto",
-        width: "100%",
-      }}
-    >
-      <svg
-        width="80"
-        height="60"
-        viewBox="0 0 80 60"
-        fill="none"
-        aria-hidden="true"
-      >
-        <path
-          d="M 60 10 C 60 10 10 10 20 30 C 30 50 70 50 40 50"
-          stroke="#3C896D"
-          strokeWidth="2"
-          strokeOpacity="0.5"
-          fill="none"
-          strokeLinecap="round"
-        />
-        <path
-          d="M 46 44 L 40 50 L 46 56"
-          stroke="#3C896D"
-          strokeWidth="2"
-          strokeOpacity="0.5"
-          fill="none"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
-    </div>
-  );
-}
 
 const textBlockStyle: React.CSSProperties = { flex: 1 };
 
@@ -200,8 +123,6 @@ export function DemoSection() {
         {/* Demo blocks */}
         {DEMO_BLOCKS.map((block, i) => (
           <div key={block.step}>
-            {i > 0 && (i % 2 !== 0 ? <ArrowRight /> : <ArrowLeft />)}
-
             {block.direction === "demo-first" ? (
               <div className="flex flex-col lg:flex-row items-center gap-8 lg:gap-16">
                 {/* Demo always first on mobile; also first on desktop */}
